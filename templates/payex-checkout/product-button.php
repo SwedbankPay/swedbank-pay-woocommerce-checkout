@@ -11,7 +11,7 @@
 		data-payment-id="<?php echo esc_html($payment_id); ?>"
 		value="<?php echo esc_html($product_id); ?>"
 		class="single_add_to_cart_button button alt">
-		Buy now using PayEx
+        <?php _e( 'Buy now using PayEx', 'woocommerce-gateway-payex-checkout' ); ?>
 	</button>
 	<script>
 		jQuery(function ($) {
@@ -44,7 +44,7 @@
 	name="buy-payex"
 	value="<?php echo esc_html($product_id); ?>"
 	class="single_add_to_cart_button button alt">
-	Buy now using PayEx
+    <?php _e( 'Buy now using PayEx', 'woocommerce-gateway-payex-checkout' ); ?>
 </button>
 
 <?php endif; ?>
