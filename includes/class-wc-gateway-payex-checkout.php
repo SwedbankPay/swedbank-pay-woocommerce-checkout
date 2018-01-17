@@ -32,6 +32,18 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 */
 	public $culture = 'en-US';
 
+    /**
+     * Cart Button
+     * @var string
+     */
+    public $cart_button = 'yes';
+
+    /**
+     * Product Button
+     * @var string
+     */
+    public $prod_button = 'yes';
+
 	/**
 	 * Frontend Api Endpoint
 	 * @var string
@@ -67,6 +79,8 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+        $this->cart_button    = isset( $this->settings['cart_button'] ) ? $this->settings['cart_button'] : $this->cart_button;
+        $this->prod_button    = isset( $this->settings['prod_button'] ) ? $this->settings['prod_button'] : $this->prod_button;
 
 		if ( $this->testmode === 'yes' ) {
 			$this->frontend_api_endpoint = 'https://checkout.externalintegration.payex.com/js/payex-checkout.min.js';
@@ -171,6 +185,18 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-checkout' ),
 				'default'     => $this->culture
 			),
+            'cart_button'     => array(
+                'title'   => __( 'Cart Button', 'woocommerce-gateway-payex-checkout' ),
+                'type'    => 'checkbox',
+                'label'   => __( 'Cart Button', 'woocommerce-gateway-payex-checkout' ),
+                'default' => $this->cart_button
+            ),
+            'prod_button'     => array(
+                'title'   => __( 'Product Button', 'woocommerce-gateway-payex-checkout' ),
+                'type'    => 'checkbox',
+                'label'   => __( 'Product Button', 'woocommerce-gateway-payex-checkout' ),
+                'default' => $this->prod_button
+            ),
 		);
 	}
 
@@ -911,6 +937,10 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * Add Button to Cart page
 	 */
 	public function add_px_button_to_cart() {
+	    if ( $this->enabled !== 'yes' || $this->cart_button !== 'yes') {
+	        return;
+        }
+
 		$order_id = uniqid( 'cart_' );
 		$currency = get_woocommerce_currency();
 		$total    = WC()->cart->total;
@@ -951,6 +981,10 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * Add Button to Single Product page
 	 */
 	public function add_px_button_to_product_page() {
+        if ( $this->enabled !== 'yes' || $this->prod_button !== 'yes') {
+            return;
+        }
+
 		if ( ! is_single() ) {
 			return;
 		}
