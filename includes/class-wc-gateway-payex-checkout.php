@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 
-class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
+class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	implements WC_Payment_Gateway_Payex_Interface {
 
 	/**
@@ -13,6 +13,12 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * @var string
 	 */
 	public $merchant_token = '';
+
+	/**
+	 * Payee Id
+	 * @var string
+	 */
+	public $payee_id = '';
 
 	/**
 	 * Test Mode
@@ -32,23 +38,23 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 */
 	public $culture = 'en-US';
 
-    /**
-     * Cart Button
-     * @var string
-     */
-    public $cart_button = 'yes';
-
-    /**
-     * Product Button
-     * @var string
-     */
-    public $prod_button = 'yes';
-
 	/**
-	 * Frontend Api Endpoint
+	 * Use Instant Checkout
 	 * @var string
 	 */
-	public $frontend_api_endpoint = 'https://checkout.payex.com/js/payex-checkout.min.js';
+	public $instant_checkout = 'no';
+
+	/**
+     * Terms URL
+	 * @var string
+	 */
+	public $terms_url = '';
+
+	/**
+	 * Backend Api Endpoint
+	 * @var string
+	 */
+	public $backend_api_endpoint = 'https://api.payex.com';
 
 	/**
 	 * Init
@@ -72,19 +78,19 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
-		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-        $this->cart_button    = isset( $this->settings['cart_button'] ) ? $this->settings['cart_button'] : $this->cart_button;
-        $this->prod_button    = isset( $this->settings['prod_button'] ) ? $this->settings['prod_button'] : $this->prod_button;
+		$this->enabled           = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title             = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description       = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->merchant_token    = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->payee_id          = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->testmode          = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug             = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture           = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->instant_checkout  = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
+		$this->terms_url         = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		if ( $this->testmode === 'yes' ) {
-			$this->frontend_api_endpoint = 'https://checkout.externalintegration.payex.com/js/payex-checkout.min.js';
-			$this->backend_api_endpoint  = 'https://api.externalintegration.payex.com';
+			$this->backend_api_endpoint  = 'https://api.stage.payex.com';
 		}
 
 		// JS Scrips
@@ -100,36 +106,26 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 			'thankyou_page'
 		) );
 		// Payment listener/API hook
-		add_action( 'woocommerce_api_wc_gateway_' . $this->id, array(
+		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
 			$this,
 			'return_handler'
 		) );
 
-		add_action( 'woocommerce_checkout_update_order_meta', array(
+		// Payment confirmation
+		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
+
+		// Place Order
+		add_action( 'wp_ajax_payex_place_order', array( $this, 'payex_place_order' ) );
+		add_action( 'wp_ajax_nopriv_payex_place_order', array( $this, 'payex_place_order' ) );
+
+		// Checkout Page
+		add_filter( 'the_title', array( $this, 'override_endpoint_title' ) );
+		add_filter( 'wc_get_template', array(
 			$this,
-			'set_order_reference'
-		), 10, 2 );
+			'override_checkout'
+		), 10, 5 );
+		add_action( 'payex_checkout_page', array( $this, 'payex_checkout_page' ), 10, 1 );
 
-		// Add PayEx button to Cart Page
-		add_action( 'woocommerce_proceed_to_checkout', array(
-			$this,
-			'add_px_button_to_cart'
-		) );
-
-		// Add PayEx button to Product Page
-		if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '3.0.0', '<' ) ) {
-			add_action( 'woocommerce_after_add_to_cart_button', array(
-				$this,
-				'add_px_button_to_product_page'
-			), 1 );
-		} else {
-			add_action( 'woocommerce_after_add_to_cart_quantity', array(
-				$this,
-				'add_px_button_to_product_page'
-			), 1 );
-		}
-
-		add_action( 'wp_loaded', array( $this, 'action_buy_now' ), 20 );
 	}
 
 	/**
@@ -162,6 +158,12 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
 				'default'     => $this->merchant_token
 			),
+			'payee_id'       => array(
+				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->payee_id
+			),
 			'testmode'       => array(
 				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-checkout' ),
 				'type'    => 'checkbox',
@@ -185,18 +187,18 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-checkout' ),
 				'default'     => $this->culture
 			),
-            'cart_button'     => array(
-                'title'   => __( 'Cart Button', 'woocommerce-gateway-payex-checkout' ),
-                'type'    => 'checkbox',
-                'label'   => __( 'Cart Button', 'woocommerce-gateway-payex-checkout' ),
-                'default' => $this->cart_button
-            ),
-            'prod_button'     => array(
-                'title'   => __( 'Product Button', 'woocommerce-gateway-payex-checkout' ),
-                'type'    => 'checkbox',
-                'label'   => __( 'Product Button', 'woocommerce-gateway-payex-checkout' ),
-                'default' => $this->prod_button
-            ),
+			'instant_checkout'    => array(
+				'title'   => __( 'Use PayEx Checkout instead WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Use PayEx Checkout instead WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'default' => $this->instant_checkout
+			),
+			'terms_url'        => array(
+				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => get_site_url()
+			),
 		);
 	}
 
@@ -212,77 +214,37 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 			return;
 		}
 
-		// Add frontend script by PayEx
-		wp_enqueue_script( 'payex-checkout', $this->frontend_api_endpoint, NULL, NULL, TRUE );
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+		wp_enqueue_script( 'featherlight', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.js', array('jquery'), '1.7.13', TRUE );
+		wp_enqueue_style( 'featherlight-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.css', array(), '1.7.13', 'all' );
+		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style.css', array(), FALSE, 'all' );
 
 		// Checkout scripts
+		// @todo Add suffix
 		if ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() ) {
 			wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout.js', array(
 				'jquery',
 				'wc-checkout',
-				'payex-checkout'
+				'featherlight'
 			), FALSE, TRUE );
 
 			// Localize the script with new data
 			$translation_array = array(
-				'ajax_url' => admin_url( 'admin-ajax.php' ),
+			    'culture'                  => $this->culture,
+				'nonce'                    => wp_create_nonce( 'payex_checkout' ),
+				'ajax_url'                 => admin_url( 'admin-ajax.php' ),
+				'action_payex_place_order' => add_query_arg( 'action', 'payex_place_order', admin_url( 'admin-ajax.php' ) ),
 			);
 			wp_localize_script( 'wc-gateway-payex-checkout', 'WC_Gateway_PayEx_Checkout', $translation_array );
 
 			// Enqueued script with localized data.
 			wp_enqueue_script( 'wc-gateway-payex-checkout' );
+
+			// Add OnePage Script
+			wp_enqueue_script( 'wc-payex-onepage', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/onepage.js', array(
+				'jquery', 'wc-gateway-payex-checkout',
+			), FALSE, FALSE );
 		}
-
-		// Cart Scripts
-		if ( is_cart() || is_product() ) {
-			wp_register_script( 'wc-gateway-payex-cart', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/cart.js', array( 'payex-checkout' ), NULL, TRUE );
-
-			// Localize the script with new data
-			$translation_array = array(
-				'ajax_url'     => admin_url( 'admin-ajax.php' ),
-				'redirect_url' => add_query_arg( 'action', 'pxcheckout', WC()->api_request_url( __CLASS__ ) )
-			);
-			wp_localize_script( 'wc-gateway-payex-cart', 'WC_Gateway_PayEx_Cart', $translation_array );
-
-			// Enqueued script with localized data.
-			wp_enqueue_script( 'wc-gateway-payex-cart' );
-		}
-	}
-
-	/**
-	 * If There are no payment fields show the description if set.
-	 */
-	public function payment_fields() {
-		$order_id = uniqid( 'cart_' );
-		$currency = get_woocommerce_currency();
-		$total    = WC()->cart->total;
-
-		// If paying from order, we need to get total from order not cart.
-		if ( isset( $_GET['pay_for_order'] ) && ! empty( $_GET['key'] ) ) {
-			$order    = wc_get_order( wc_get_order_id_by_order_key( wc_clean( $_GET['key'] ) ) );
-			$order_id = px_obj_prop( $order, 'id' );
-			$total    = $order->get_total();
-			$currency = px_obj_prop( $order, 'currency' );
-		}
-
-		// Save Reference in session
-		WC()->session->set( 'payex_checkout_reference', $order_id );
-
-		try {
-			$payment_session_url = $this->init_payment_session();
-			WC()->session->set( 'payex_payment_session', $payment_session_url );
-
-			$result = $this->init_payment( $payment_session_url, $order_id, $total, $currency );
-			WC()->session->set( 'payex_payment_id', $result['id'] );
-
-			echo '<div id="payex-payment-data" data-payment-id="' . esc_attr( $result['id'] ) . '" ></div';
-		} catch ( Exception $e ) {
-			wc_add_notice( $e->getMessage(), 'error' );
-
-			return;
-		}
-
-		parent::payment_fields();
 	}
 
 	/**
@@ -299,8 +261,7 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * @param $order_id
 	 */
 	public function thankyou_page( $order_id ) {
-		WC()->session->__unset( 'payex_payment_id' );
-		WC()->session->__unset( 'payex_payment_session' );
+		//
 	}
 
 	/**
@@ -311,793 +272,356 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
-		$order           = wc_get_order( $order_id );
-		$payment_session = WC()->session->get( 'payex_payment_session' );
-		if ( empty( $payment_session ) ) {
-			wc_add_notice( 'Undefined payment session', 'error' );
+		$order = wc_get_order( $order_id );
 
-			return FALSE;
-		}
+		// Get Order UUID
+		$order_uuid = mb_strimwidth( px_uuid( uniqid() ), 0, 30, '', 'UTF-8' );
 
-		$payment_id = WC()->session->get( 'payex_payment_id' );
-		if ( empty( $payment_id ) ) {
-			wc_add_notice( 'Undefined payment id', 'error' );
+		$params = [
+			'paymentorder' => [
+				'operation' => 'Purchase',
+				'currency' => $order->get_currency(),
+				'amount' => round(100 * $order->get_total()),
+				'vatAmount' => 0,
+				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $order->get_order_number() ),
+				'userAgent' => $_SERVER['HTTP_USER_AGENT'],
+				'language' => $this->culture,
+				'urls' => [
+					'hostUrls' => [
+						get_bloginfo( 'url' )
+					],
+					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),
+					'cancelUrl' => $order->get_cancel_order_url_raw(),
+					'callbackUrl' => WC()->api_request_url( __CLASS__ ),
+					'termsAndConditionsUrl' => $this->terms_url
+				],
+				'payeeInfo' => [
+					'payeeId' => $this->payee_id,
+					'payeeReference' => str_replace('-', '', $order_uuid),
+					'payeeName' => 'Merchant1',
+					'productCategory' => 'A123'
+				],
+				'metadata' => [
+					'order_id' => $order_id
+				],
+				'items' => [
+					[
+						'creditCard' => [
+							'no3DSecure' => FALSE
+						]
+					]
+				]
+			]
+		];
 
-			return FALSE;
+		// Get Consumer Profile
+		$consumer_profile = get_post_meta( $order_id, '_payex_consumer_profile', TRUE );
+		if ( ! empty( $consumer_profile ) ) {
+			$params['paymentorder']['payer'] = [
+				'consumerProfileRef' => $consumer_profile
+			];
 		}
 
 		try {
-			// Get Payment Session
-			$result = $this->request( 'GET', $payment_session );
-			if ( ! empty( $result['addressee'] ) ) {
-				$address_url = $result['addressee'];
-				$result      = $this->request( 'GET', $address_url );
-				if ( ! isset( $result['payment'] ) ) {
-					throw new Exception( 'Invalid payment response' );
-				}
-
-				// Parse name
-				$parser = new FullNameParser();
-				$name   = $parser->parse_name( $result['fullName'] );
-
-				// Update address fields
-				$address = array(
-					'first_name' => $name['fname'],
-					'last_name'  => $name['lname'],
-					'company'    => '',
-					'address_1'  => $result['address']['streetAddress'],
-					'address_2'  => ! empty( $result['address']['coAddress'] ) ? 'c/o ' . $result['address']['coAddress'] : '',
-					'city'       => $result['address']['city'],
-					'state'      => '',
-					'postcode'   => $result['address']['zipCode'],
-					'country'    => $result['address']['countryCode'],
-					'email'      => $result['email'],
-					'phone'      => $result['mobilePhoneNumber'],
-				);
-				$order->set_address( $address, 'billing' );
-				$order->set_address( $address, 'shipping' );
-			}
-
-
-			// Get Payment Url
-			$result = $this->request( 'GET', $payment_id );
-			if ( ! isset( $result['payment'] ) ) {
-				throw new Exception( 'Invalid payment response' );
-			}
-
-			// Get Payment Status
-			$payment_url = $result['payment'];
-			$result      = $this->request( 'GET', $payment_url );
-			if ( ! isset( $result['payment'] ) ) {
-				throw new Exception( 'Invalid payment response' );
-			}
-
+			$result = $this->request( 'POST', '/psp/paymentorders', $params );
 		} catch ( Exception $e ) {
-			wc_add_notice( $e->getMessage(), 'error' );
+			if ( strpos( $e->getMessage(), 'is not active' ) !== false ) {
+				// Reference *** is not active, unable to complete
+				delete_user_meta( get_current_user_id(), '_payex_consumer_profile' );
 
-			return FALSE;
+				// Try again
+				return $this->process_payment( $order_id );
+			} else {
+				wc_add_notice( $e->getMessage(), 'error' );
+			}
+
+
+		    wc_add_notice( $e->getMessage(), 'error' );
+
+		    return FALSE;
 		}
 
-		update_post_meta( $order_id, '_payex_payment_id', $payment_id );
-		update_post_meta( $order_id, '_payex_payment_url', $payment_url );
-		update_post_meta( $order_id, '_payex_payment_state', $result['payment']['state'] );
-		foreach ( $result['operations'] as $id => $operation ) {
-			update_post_meta( $order_id, '_payex_operation_' . $operation['rel'], $operation['href'] );
-		}
+		// Save PaymentOrder ID
+		update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
 
-		switch ( $result['payment']['state'] ) {
-			case 'Ready':
-				$order->update_status( 'on-hold', 'Payment accepted' );
-				WC()->cart->empty_cart();
-				break;
-			case 'Pending':
-				$order->update_status( 'on-hold', 'Payment pending' );
-				WC()->cart->empty_cart();
-				break;
-			case 'Failed':
-			case 'Aborted':
-				$order->update_status( 'cancelled', 'Payment ' . $result['payment']['state'] );
-				break;
-			default:
-				$order->update_status( 'cancelled', 'Unknown payment state' );
-				break;
-		}
+		// @todo Save payment ID
+		//update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
 
-		return in_array( $result['payment']['state'], array(
-			'Ready',
-			'Pending'
-		) ) ? array(
-			'result'   => 'success',
-			'redirect' => html_entity_decode( $this->get_return_url( $order ) )
-		) : array(
-			'result'   => 'success',
-			'redirect' => $order->get_cancel_order_url_raw()
+		// Get JS URl
+		$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
+
+		return array(
+			'result'            => 'success',
+			'redirect'          => '#!payex-checkout',
+			'is_payex_checkout' => true,
+			'js_url'            => $js_url,
+			'payment_id'        => $result['paymentOrder']['id'],
 		);
 	}
 
 	/**
-	 * Set Checkout Reference for Order
-	 *
-	 * @param $order_id
-	 * @param $data
-	 *
-	 * @return void
+	 * Payment confirm action
 	 */
-	public function set_order_reference( $order_id, $data ) {
-		$order = wc_get_order( $order_id );
-		if ( ! $order || $order->get_payment_method() !== $this->id ) {
+	public function payment_confirm() {
+		if ( empty( $_GET['key'] ) ) {
 			return;
 		}
 
-		$reference = WC()->session->__get( 'payex_checkout_reference' );
-		if ( ! empty( $reference ) ) {
-			update_post_meta( $order_id, '_payex_checkout_reference', $reference );
-			WC()->session->__unset( 'payex_checkout_reference' );
+		// Validate Payment Method
+		$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
+		if ( ! $order_id ) {
+			return;
 		}
+
+		if ( ! ( $order = wc_get_order( $order_id ) ) ) {
+			return;
+		}
+
+		if ( px_obj_prop( $order, 'payment_method' ) !== $this->id ) {
+			return;
+		}
+
+		// Update address
+		try {
+			$this->update_address( $order_id );
+        } catch (\Exception $e) {
+			wc_add_notice( $e->getMessage(), 'error' );
+        }
+
+		parent::payment_confirm();
 	}
 
 	/**
 	 * IPN Callback
-	 * @todo Implement transactions import
 	 * @throws \Exception
 	 * @return void
 	 */
 	public function return_handler() {
-		if ( wc_clean( $_GET['action'] ) === 'pxcheckout' ) {
-			$this->process_payex_checkout();
-			return;
-		}
-
-		// IPN
-		$this->log( sprintf( 'IPN: Initialized %s from %s', $_SERVER['REQUEST_URI'], px_get_remote_address() ) );
-
-		// Get body
 		$raw_body = file_get_contents( 'php://input' );
-		$this->log( sprintf( 'IPN: Raw body: %s', $raw_body ) );
 
-		$reference = wc_clean( $_GET['reference'] );
-		if ( empty( $reference ) ) {
-			$this->log( 'IPN: Error: Undefined checkout reference' );
-
-			return;
-		}
-
-		$order_id = $this->get_post_id_by_meta( '_payex_checkout_reference', $reference );
-		if ( ! $order_id ) {
-			$this->log( sprintf( 'IPN: Error: Failed to get order Id by reference %s', $reference ) );
-
-			return;
-		}
-
-		// Get Order
-		$order = wc_get_order( $order_id );
-		if ( ! $order ) {
-			$this->log( sprintf( 'IPN: Error: Failed to get order Id %s', $order_id ) );
-
-			return;
-		}
+		$this->log( sprintf( 'IPN: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
+		$this->log( sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, TRUE ) ) );
 
 		// Decode raw body
 		$data = @json_decode( $raw_body, TRUE );
-		//$this->log( var_export( $data, TRUE ) );
 
-		if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['id'] ) ) {
-			$this->log( 'IPN: Error: Invalid transaction value' );
+		try {
+			if ( ! isset( $data['paymentOrder'] ) || ! isset( $data['paymentOrder']['id'] ) ) {
+				throw new \Exception( 'Error: Invalid paymentOrder value' );
+			}
 
-			return;
-		}
+			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
+				throw new \Exception( 'Error: Invalid payment value' );
+			}
 
-		$url    = $data['transaction']['id'];
-		$result = $this->request( 'GET', $url );
-		$this->log( sprintf( 'IPN: Debug: Transaction Url: %s. Response: %s', $url, var_export( $result, TRUE ) ) );
+			if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['number'] ) ) {
+				throw new \Exception( 'Error: Invalid transaction number' );
+			}
 
-		// Get Action
-		$action = '';
-		if ( isset( $result['authorization'] ) ) {
-			$action = 'authorization';
-		} elseif ( isset( $result['capture'] ) ) {
-			$action = 'capture';
-		} elseif ( isset( $result['reversal'] ) ) {
-			$action = 'reversal';
-		}
+			$paymentorder_id = $data['paymentOrder']['id'];
+			$payment_id      = $data['payment']['id'];
 
-		// Get State
-		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
-		$this->log( sprintf( 'IPN: Debug: Action: %s. Current payment state: %s', $action, $state ) );
-
-		// Check transaction state
-		if ( $result[ $action ]['transaction']['state'] !== 'Completed' ) {
-			$message = isset( $result[ $action ]['transaction']['failedReason'] ) ? $result[ $action ]['transaction']['failedReason'] : __( 'Transaction failed.', 'woocommerce-gateway-payex-checkout' );
-			$this->log( sprintf( 'IPN: Error: Order %s. Transaction failed: %s', $order_id, $message ) );
-
-			return;
-		}
-
-		switch ( $action ) {
-			case 'authorization':
-				if ( ! empty( $state ) ) {
-					$this->log( sprintf( 'IPN: Info: Authorization: Order %s already have state "%s"', $order_id, $state ) );
-
-					return;
+			// Check Payment ID
+			$order_id = $this->get_post_id_by_meta( '_payex_payment_id', $paymentorder_id );
+			if ( empty( $order_id ) ) {
+				// Get Order by Order Payment Id
+				$order_id = $this->get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
+				if ( ! $order_id ) {
+					throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Order Id %s', $paymentorder_id ) );
 				}
 
-				$payment_id  = $result['payment'];
-				$payment_url = $result['payment'];
-
-				// Get Payment Status
-				$result = $this->request( 'GET', $payment_url );
-				if ( ! isset( $result['payment'] ) ) {
-					$this->log( sprintf( 'IPN: Info: Authorization: "%s"', 'Invalid payment response' ) );
-
-					return;
-				}
-
+				// Save Payment ID
 				update_post_meta( $order_id, '_payex_payment_id', $payment_id );
-				update_post_meta( $order_id, '_payex_payment_url', $payment_url );
-				update_post_meta( $order_id, '_payex_payment_state', $result['payment']['state'] );
-				foreach ( $result['operations'] as $id => $operation ) {
-					update_post_meta( $order_id, '_payex_operation_' . $operation['rel'], $operation['href'] );
-				}
-
-				switch ( $result['payment']['state'] ) {
-					case 'Ready':
-						$order->update_status( 'on-hold', 'Payment accepted' );
-						WC()->cart->empty_cart();
-						break;
-					case 'Pending':
-						$order->update_status( 'on-hold', 'Payment pending' );
-						WC()->cart->empty_cart();
-						break;
-					case 'Failed':
-					case 'Aborted':
-						$order->update_status( 'cancelled', 'Payment ' . $result['payment']['state'] );
-						break;
-					default:
-						$order->update_status( 'cancelled', 'Unknown payment state' );
-						break;
-				}
-
-				break;
-			case 'capture':
-				if ( $state === 'Captured' || $order->is_paid() ) {
-					$this->log( sprintf( 'IPN: Info: Order %s already captured', $order_id ) );
-
-					return;
-				}
-
-				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
-				update_post_meta( $order_id, '_payex_transaction_capture', $result['capture']['transaction']['id'] );
-
-				$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-checkout' ) );
-				$order->payment_complete();
-
-				break;
-			case 'reversal':
-				if ( $state !== 'Captured' ) {
-					$this->log( sprintf( 'IPN: Error: Unable to refund: Order %s should be captured', $order_id ) );
-
-					return;
-				}
-
-				$amount = $result['reversal']['transaction']['amount'] / 100;
-				$reason = $result['reversal']['transaction']['description'];
-
-				// Check refund is already performed
-				$refunds = $order->get_refunds();
-				foreach ( $refunds as $refund ) {
-					/** @var WC_Order_Refund $refund */
-					$refunded = $refund->get_amount();
-					if ( $refunded === $amount ) {
-						$this->log( sprintf( 'IPN: Info: Order %s already refunded', $order_id ) );
-
-						return;
-					}
-				}
-
-				// Create Refund
-				$refund = wc_create_refund( array(
-					'amount'   => $amount,
-					'reason'   => $reason,
-					'order_id' => $order_id
-				) );
-
-				if ( $refund ) {
-					//update_post_meta( $order_id, '_payex_payment_state', 'Refunded' );
-					update_post_meta( $order_id, '_payex_transaction_refund', $result['reversal']['transaction']['id'] );
-					$order->add_order_note( sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-payex-payment' ), wc_price( $amount ), $reason ) );
-				}
-
-				break;
-			default:
-				//
-				break;
-		}
-
-		echo 'OK';
-		exit();
-	}
-
-	/**
-	 * Check is Capture possible
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool         $amount
-	 *
-	 * @return bool
-	 */
-	public function can_capture( $order, $amount = FALSE ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		$order_id = px_obj_prop( $order, 'id' );
-
-		$url = get_post_meta( $order_id, '_payex_operation_create-checkout-capture', TRUE );
-		if ( empty( $url ) ) {
-			// Capture unavailable
-			return FALSE;
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * Check is Cancel possible
-	 *
-	 * @param WC_Order|int $order
-	 *
-	 * @return bool
-	 */
-	public function can_cancel( $order ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		$order_id = px_obj_prop( $order, 'id' );
-
-		// Get Payment Id
-		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
-		if ( ! in_array( $state, array( 'Ready' ) ) ) {
-			// Wrong payment state
-			return FALSE;
-		}
-
-		$url = get_post_meta( $order_id, '_payex_operation_create-checkout-cancellation', TRUE );
-		if ( empty( $url ) ) {
-			// Cancellation unavailable
-			return FALSE;
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * Check is Refund possible
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool         $amount
-	 *
-	 * @return bool
-	 */
-	public function can_refund( $order, $amount = FALSE ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		$order_id = px_obj_prop( $order, 'id' );
-
-		// Get Payment Id
-		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
-		if ( ! in_array( $state, array( 'Captured' ) ) ) {
-			// The transaction must be captured
-			return FALSE;
-		}
-
-		$url = get_post_meta( $order_id, '_payex_operation_create-checkout-reversal', TRUE );
-		if ( empty( $url ) ) {
-			// Refund unavailable
-			return FALSE;
-
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * Capture
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool         $amount
-	 *
-	 * @throws \Exception
-	 * @return void
-	 */
-	public function capture_payment( $order, $amount = FALSE ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		$order_id = px_obj_prop( $order, 'id' );
-
-		// Get Payment Id
-		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
-		if ( ! in_array( $state, array( 'Ready' ) ) ) {
-			throw new Exception( __( 'Wrong payment state', 'woocommerce-gateway-payex-checkout' ) );
-		}
-
-		$url = get_post_meta( $order_id, '_payex_operation_create-checkout-capture', TRUE );
-		if ( empty( $url ) ) {
-			throw new Exception( __( 'Capture unavailable', 'woocommerce-gateway-payex-checkout' ) );
-		}
-
-		// Order Info
-		$info = $this->get_order_info( $order );
-
-		$params = array(
-			'transaction' => array(
-				'amount'      => $order->get_total(),
-				'vatAmount'   => $info['vat_amount'],
-				'description' => sprintf( 'Capture for Order #%s', $order_id )
-			),
-
-			'itemDescriptions' => $info['items']
-		);
-		$result = $this->request( 'POST', $url, $params );
-
-		switch ( $result['capture']['transaction']['state'] ) {
-			case 'Completed':
-				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
-				update_post_meta( $order_id, '_payex_transaction_capture', $result['capture']['transaction']['id'] );
-
-				$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-checkout' ) );
-				$order->payment_complete();
-
-				break;
-			default:
-				$message = isset( $result['capture']['transaction']['failedReason'] ) ? $result['capture']['transaction']['failedReason'] : __( 'Capture failed.', 'woocommerce-gateway-payex-checkout' );
-				throw new Exception( $message );
-				break;
-		}
-	}
-
-	/**
-	 * Cancel
-	 *
-	 * @param WC_Order|int $order
-	 *
-	 * @throws \Exception
-	 * @return void
-	 */
-	public function cancel_payment( $order ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		$order_id = px_obj_prop( $order, 'id' );
-
-		// Get Payment Id
-		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
-		if ( ! in_array( $state, array( 'Ready' ) ) ) {
-			throw new Exception( __( 'Wrong payment state', 'woocommerce-gateway-payex-checkout' ) );
-		}
-
-		$url = get_post_meta( $order_id, '_payex_operation_create-checkout-cancellation', TRUE );
-		if ( empty( $url ) ) {
-			throw new Exception( __( 'Cancellation unavailable', 'woocommerce-gateway-payex-checkout' ) );
-		}
-
-		$params = array(
-			'transaction' => array(
-				'description' => sprintf( 'Cancellation for Order #%s', $order_id )
-			),
-		);
-		$result = $this->request( 'POST', $url, $params );
-
-		switch ( $result['cancellation']['transaction']['state'] ) {
-			case 'Completed':
-				update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
-				update_post_meta( $order_id, '_payex_transaction_cancel', $result['cancellation']['transaction']['id'] );
-
-				$order->add_order_note( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-checkout' ) );
-
-				break;
-			default:
-				$message = isset( $result['cancellation']['transaction']['failedReason'] ) ? $result['cancellation']['transaction']['failedReason'] : __( 'Cancel failed.', 'woocommerce-gateway-payex-checkout' );
-				throw new Exception( $message );
-				break;
-		}
-	}
-
-	/**
-	 * Refund
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool         $amount
-	 * @param string       $reason
-	 *
-	 * @throws \Exception
-	 * @return void
-	 */
-	public function refund_payment( $order, $amount = FALSE, $reason = '' ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		$order_id = px_obj_prop( $order, 'id' );
-
-		// Full Refund
-		if ( is_null( $amount ) ) {
-			$amount = $order->get_total();
-		}
-
-		// Get Payment Id
-		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
-		if ( ! in_array( $state, array( 'Captured' ) ) ) {
-			throw new \Exception( __( 'Unable to perform refund. The transaction must be captured.', 'woocommerce-gateway-payex-checkout' ) );
-		}
-
-		$url = get_post_meta( $order_id, '_payex_operation_create-checkout-reversal', TRUE );
-		if ( empty( $url ) ) {
-			// Get Payment Status
-			$payment_url = get_post_meta( $order_id, '_payex_payment_url', TRUE );
-			$result      = $this->request( 'GET', $payment_url );
-			if ( ! isset( $result['payment'] ) ) {
-				throw new \Exception( 'Invalid payment response' );
 			}
 
-			// Update operations
-			foreach ( $result['operations'] as $id => $operation ) {
-				update_post_meta( $order_id, '_payex_operation_' . $operation['rel'], $operation['href'] );
-			}
-
-			$url = get_post_meta( $order_id, '_payex_operation_create-checkout-reversal', TRUE );
+			// Update address
+			$this->update_address( $order_id );
+		} catch ( \Exception $e ) {
+			$this->log( sprintf( 'IPN: %s', $e->getMessage() ) );
+			return;
 		}
 
-		$params = array(
-			'transaction' => array(
-				'amount'      => $amount,
-				'vatAmount'   => 0,
-				'description' => sprintf( 'Refund for Order #%s. Reason: %s', $order_id, $reason )
-			),
-		);
-		$result = $this->request( 'POST', $url, $params );
-
-		switch ( $result['reversal']['transaction']['state'] ) {
-			case 'Completed':
-				//update_post_meta( $order_id, '_payex_payment_state', 'Refunded' );
-				update_post_meta( $order_id, '_payex_transaction_refund', $result['reversal']['transaction']['id'] );
-				$order->add_order_note( sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-payex-payment' ), wc_price( $amount ), $reason ) );
-
-				break;
-			case 'Failed':
-			default:
-				$message = isset( $result['reversal']['transaction']['failedReason'] ) ? $result['reversal']['transaction']['failedReason'] : __( 'Refund failed.', 'woocommerce-gateway-payex-checkout' );
-				throw new \Exception( $message );
-				break;
-		}
+		parent::return_handler();
 	}
 
 	/**
-	 * Init Payment Session
-	 * @return mixed
-	 * @throws \Exception
+	 * Ajax Action
+	 * @throws Exception
 	 */
-	public function init_payment_session() {
-		// Init Session
-		$session = $this->request( 'GET', '/psp/checkout' );
-		if ( ! $session['authorized'] ) {
-			throw new Exception( 'Unauthorized. Please check settings.' );
+	public function payex_place_order() {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'payex_checkout' ) ) {
+			exit( 'No naughty business' );
 		}
 
-		return $session['paymentSession'];
-	}
-
-	/**
-	 * Init Payment
-	 *
-	 * @param $payment_session_url
-	 * @param $reference
-	 * @param $total
-	 * @param $currency
-	 *
-	 * @return array|mixed|object
-	 */
-	public function init_payment( $payment_session_url, $reference, $total, $currency ) {
-		// Get Payment URL
-		$params = array(
-			'amount'      => $total,
-			'vatAmount'   => 0,
-			'currency'    => $currency,
-			'callbackUrl' => add_query_arg( 'reference', $reference, WC()->api_request_url( __CLASS__ ) ),
-			'reference'   => $reference,
-			'culture'     => $this->culture,
-			'acquire'     => array(
-				"email",
-				"mobilePhoneNumber",
-				"shippingAddress"
-			)
-		);
-
-		//$email = WC()->customer->get_billing_email();
-		//$phone = WC()->customer->get_billing_phone();
-
-		//if ( ! empty( $email ) ) {
-		//	$params['payer']['email'] = $email;
-		//}
-
-		//if ( ! empty( $phone ) ) {
-		//	$params['payer']['mobilePhoneNumber'] = $phone;
-		//}
-		$result = $this->request( 'POST', $payment_session_url, $params );
-
-		return $result;
-	}
-
-	/**
-	 * Add Button to Cart page
-	 */
-	public function add_px_button_to_cart() {
-	    if ( $this->enabled !== 'yes' || $this->cart_button !== 'yes') {
-	        return;
-        }
-
-		$order_id = uniqid( 'cart_' );
-		$currency = get_woocommerce_currency();
-		$total    = WC()->cart->total;
-
-		// Backup Cart
-		$cart = array();
-		foreach ( WC()->cart->cart_session_data as $key => $default ) {
-			$cart[ $key ] = WC()->session->get( $key, $default );
-		}
-		$cart['cart'] = WC()->session->get( 'cart', NULL );
-		WC()->session->set( 'payex_saved_cart', $cart );
-
-		try {
-			$payment_session_url = $this->init_payment_session();
-			WC()->session->set( 'payex_payment_session', $payment_session_url );
-
-			$result = $this->init_payment( $payment_session_url, $order_id, $total, $currency );
-			WC()->session->set( 'payex_payment_id', $result['id'] );
-		} catch ( Exception $e ) {
-			$this->log( sprintf( 'add_px_button_to_cart: %s', $e->getMessage() ), 'error' );
-
-			return;
-		}
-
-		wc_get_template(
-			'payex-checkout/cart-button.php',
-			array(
-				'payment_id' => $result['id'],
-				'order_ref'  => $order_id,
-				'link'       => '#'
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
-		);
-	}
-
-	/**
-	 * Add Button to Single Product page
-	 */
-	public function add_px_button_to_product_page() {
-        if ( $this->enabled !== 'yes' || $this->prod_button !== 'yes') {
-            return;
-        }
-
-		if ( ! is_single() ) {
-			return;
-		}
-
-		global $post;
-		$product = wc_get_product( $post->ID );
-		if ( ! is_object( $product ) ) {
-			return;
-		}
-
-
-		$payment_id = WC()->session->get( 'payex_payment_id' );
-
-		wc_get_template(
-			'payex-checkout/product-button.php',
-			array(
-				'product_id' => $product->get_id(),
-				'payment_id' => ! empty( $_POST ) && isset( $_POST['buy-payex'] ) ? $payment_id : NULL,
-				'link'       => '#'
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
-		);
-
-	}
-
-	/**
-	 * Action for "Buy Now"
-	 */
-	public function action_buy_now() {
-		if ( empty( $_REQUEST['buy-payex'] ) || ! is_numeric( $_REQUEST['buy-payex'] ) ) {
-			return;
-		}
-
-		$product_id = apply_filters( 'woocommerce_add_to_cart_product_id', absint( $_REQUEST['buy-payex'] ) );
-		$product    = wc_get_product( $product_id );
-		if ( ! $product ) {
-			return;
-		}
-
-		$qty = empty( $_REQUEST['quantity'] ) ? 1 : wc_stock_amount( $_REQUEST['quantity'] );
-
-		// Add Products to Cart
-		WC()->cart->empty_cart( TRUE );
-		WC()->cart->add_to_cart( $product_id, $qty );
-		WC()->cart->calculate_totals();
-
-		// Backup Cart
-		$cart = array();
-		foreach ( WC()->cart->cart_session_data as $key => $default ) {
-			$cart[ $key ] = WC()->session->get( $key, $default );
-		}
-		$cart['cart'] = WC()->session->get( 'cart', NULL );
-		WC()->session->set( 'payex_saved_cart', $cart );
-
-		// Init payment
-		$order_id = uniqid( 'cart_' );
-		$currency = get_woocommerce_currency();
-		$total    = wc_get_price_including_tax( $product, array(
-			'qty'   => $qty,
-			'price' => $product->get_price()
-		) );
-
-		try {
-			$payment_session_url = $this->init_payment_session();
-			WC()->session->set( 'payex_payment_session', $payment_session_url );
-
-			$result = $this->init_payment( $payment_session_url, $order_id, $total, $currency );
-			WC()->session->set( 'payex_payment_id', $result['id'] );
-		} catch ( Exception $e ) {
-			$this->log( sprintf( 'action_buy_now: %s', $e->getMessage() ), 'error' );
-
-			return;
-		}
-	}
-
-	public function process_payex_checkout() {
-		// Restore Cart
-		$cart = WC()->session->get( 'payex_saved_cart', array() );
-		foreach ( $cart as $key => $value ) {
-			WC()->session->set( $key, $value );
-		}
-		WC()->cart->get_cart_from_session();
+		$user_id = get_current_user_id();
 
 		// Create Order
 		$data = array(
 			'payment_method' => $this->id,
-			//'status'        => $transaction_data['status'] === 'approved' ? 'completed' : 'failed',
-			'customer_id'    => get_current_user_id(),
+			'customer_id'    => $user_id,
 			'customer_note'  => 'Placed by PayEx Checkout',
-			//'total'         => $transaction_data['amount'],
-			//'total' => WC()->cart->total
 		);
 
 		$order_id = WC()->checkout()->create_order( $data );
-		$order    = wc_get_order( $order_id );
-
 		if ( is_wp_error( $order_id ) ) {
-			throw new Exception( $order_id->get_error_message() );
+			wp_send_json_error( $order_id->get_error_message() );
+			return;
 		}
 
+		$order = wc_get_order( $order_id );
 		do_action( 'woocommerce_checkout_order_processed', $order_id, $data, $order );
 
-		//if ( WC()->cart->needs_payment() ) {
-		//	$this->process_order_payment( $order_id, $posted_data['payment_method'] );
-		//} else {
-		//	$this->process_order_without_payment( $order_id );
-		//}
+		// Add consumer profile
+		if ( isset( $_REQUEST['consumerProfileRef'] ) ) {
+			$consumer_profile = wc_clean( $_REQUEST['consumerProfileRef'] );
+			update_post_meta( $order_id, '_payex_consumer_profile', $consumer_profile );
+
+			// Store Customer Profile
+			if ( is_user_logged_in() ) {
+			    $stored = get_user_meta( $user_id, '_payex_consumer_profile', TRUE );
+			    if ( empty( $stored ) ) {
+				    update_user_meta( $user_id, '_payex_consumer_profile', $consumer_profile );
+                }
+            }
+		}
 
 		$result = $this->process_payment( $order_id );
+		if ( ! isset($result['result'] ) || $result['result'] !== 'success' ) {
+			wp_send_json_error( __( 'Failed to process payment', 'woocommerce-gateway-payex-checkout' ) );
+			return;
+		}
 
-		wp_redirect( $result['redirect'] );
+		wp_send_json_success( array(
+			'js_url' => $result['js_url'],
+			'payment_id' => $result['payment_id']
+		) );
 	}
+
+	/**
+	 * Override Endpoint Title
+	 * @param $title
+	 *
+	 * @return string
+	 */
+	public function override_endpoint_title( $title ) {
+		if ( $this->enabled !== 'yes' || $this->instant_checkout !== 'yes' ) {
+			return $title;
+		}
+
+		global $wp_query;
+		$is_endpoint = isset( $wp_query->query_vars[ 'order-pay' ] );
+		if ( $is_endpoint && ! is_admin() && is_main_query() && in_the_loop() ) {
+			// New page title.
+			$title = __( 'Checkout', 'woocommerce' );
+		}
+		return $title;
+	}
+
+	/**
+	 * Override Standard Checkout template
+	 * @param $located
+	 * @param $template_name
+	 * @param $args
+	 * @param $template_path
+	 * @param $default_path
+	 *
+	 * @return string
+	 */
+	public function override_checkout( $located, $template_name, $args, $template_path, $default_path ) {
+		if ( $this->enabled !== 'yes' || $this->instant_checkout !== 'yes' ) {
+			return $located;
+		}
+
+		if ( strpos( $located, 'checkout/form-checkout.php' ) !== false ) {
+			do_action( 'payex_checkout_page', $args );
+
+			$located = wc_locate_template(
+				'checkout/payex/checkout.php',
+				$template_path,
+				dirname( __FILE__ ) . '/../templates/'
+			);
+		}
+
+		return $located;
+	}
+
+	/**
+     * Checkout Page Action
+	 * @param $args
+     * @return void
+	 */
+	public function payex_checkout_page( $args ) {
+		if ( is_user_logged_in() ) {
+			$user_id = get_current_user_id();
+			$consumer_profile = get_user_meta( $user_id, '_payex_consumer_profile', TRUE );
+			if ( ! empty( $consumer_profile ) ) {
+				return;
+            }
+		}
+
+	    // Initiate consumer session
+		$params = [
+			'operation'           => 'initiate-consumer-session',
+			'consumerCountryCode' => 'SE',
+		];
+
+		try {
+			$result = $this->request( 'POST', '/psp/consumers', $params );
+		} catch ( Exception $e ) {
+			wc_add_notice( $e->getMessage(), 'error' );
+
+			return;
+		}
+
+		$js_url = self::get_operation( $result['operations'], 'view-consumer-identification' );
+
+		?>
+
+		<script src="<?php echo $js_url; ?>"></script>
+        <?php
+	}
+
+	/**
+     * Update Address
+	 * @param $order_id
+	 *
+	 * @throws Exception
+	 */
+	public function update_address( $order_id ) {
+		$paymentorder_id = get_post_meta( $order_id, '_payex_paymentorder_id', TRUE );
+		if ( ! empty( $paymentorder_id ) ) {
+			$result = $this->request( 'GET', $paymentorder_id . '/payers' );
+
+			if (!isset($result['payer'])) {
+			    return;
+            }
+
+			// Parse name field
+			$parser = new \FullNameParser();
+			$name = $parser->parse_name( $result['payer']['shippingAddress']['addressee'] );
+			$co = ! empty( $result['payer']['shippingAddress']['coAddress'] ) ? 'c/o ' . $result['payer']['shippingAddress']['coAddress'] : '';
+
+			$address = array(
+				'first_name' => $name['fname'],
+				'last_name'  => $name['lname'],
+				'company'    => '',
+				'email'      => $result['payer']['email'],
+				'phone'      => $result['payer']['msisdn'],
+				'address_1'  => $result['payer']['shippingAddress']['streetAddress'],
+				'address_2'  => $co,
+				'city'       => $result['payer']['shippingAddress']['city'],
+				'state'      => '',
+				'postcode'   => $result['payer']['shippingAddress']['zipCode'],
+				'country'    => $result['payer']['shippingAddress']['countryCode']
+			);
+
+			$order = wc_get_order( $order_id );
+			$order->set_address( $address, 'billing' );
+			if ( $order->needs_shipping_address() ) {
+				$order->set_address( $address, 'shipping' );
+			}
+		}
+    }
 }
 
 // Register Gateway
