@@ -1,15 +1,16 @@
 <?php
 /*
-Plugin Name: WooCommerce PayEx Checkout Gateway
-Plugin URI: http://payex.com/
-Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
-Version: 1.0.0
-Author: AAIT Team
-Author URI: http://aait.se/
-License: GNU General Public License v3.0
-License URI: http://www.gnu.org/licenses/gpl-3.0.html
-Requires at least: 4.1
-*/
+ * Plugin Name: WooCommerce PayEx Checkout Gateway
+ * Plugin URI: http://payex.com/
+ * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
+ * Author: AAIT Team
+ * Author URI: http://aait.se/
+ * Version: 2.0.0
+ * Text Domain: woocommerce-gateway-payex-checkout
+ * Domain Path: /languages
+ * WC requires at least: 3.0.0
+ * WC tested up to: 3.4.5
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -184,23 +185,6 @@ class WC_Payex_Checkout {
 	}
 
 	/**
-	 * Get PSP Plugin path
-	 * @return bool|string
-	 */
-	protected static function get_psp_plugin() {
-		wp_cache_delete( 'plugins', 'plugins' );
-
-		$plugins = get_plugins();
-		foreach ( $plugins as $file => $plugin ) {
-			if ( strpos( $file, 'woocommerce-payex-psp.php' ) !== FALSE ) {
-				return $file;
-			}
-		}
-
-		return FALSE;
-	}
-
-	/**
 	 * Activate PSP Plugin
 	 * @return bool
 	 * @throws \Exception
@@ -216,6 +200,23 @@ class WC_Payex_Checkout {
 		}
 
 		throw new Exception( 'Failed to activate plugin' );
+	}
+
+	/**
+	 * Get PSP Plugin path
+	 * @return bool|string
+	 */
+	protected static function get_psp_plugin() {
+		wp_cache_delete( 'plugins', 'plugins' );
+
+		$plugins = get_plugins();
+		foreach ( $plugins as $file => $plugin ) {
+			if ( strpos( $file, 'woocommerce-payex-psp.php' ) !== FALSE ) {
+				return $file;
+			}
+		}
+
+		return FALSE;
 	}
 
 	/**
