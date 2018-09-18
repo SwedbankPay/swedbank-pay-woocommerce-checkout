@@ -2,10 +2,11 @@ jQuery(function ($) {
     'use strict';
     $(document).ready(function () {
 
-        var wc_payex_onepage = {
+        window.wc_payex_onepage = {
             init: function() {
                 wc_payex_onepage.waitForLoading( 'payex.hostedView.consumer', function ( err ) {
-                    payex.hostedView.consumer( {
+                    $('#payex-consumer').show();
+                    window.payex.hostedView.consumer( {
                         container: 'payex-checkout',
                         onConsumerIdentified: function( data ) {
                             wc_payex_onepage.onConsumerIdentified ( data );
@@ -36,6 +37,7 @@ jQuery(function ($) {
                     }
 
                     wc_payex_onepage.loadJs( response.data.js_url, function () {
+                        $('#payex-paymentmenu').show();
                         // Load PayEx Checkout frame
                         window.payex.hostedView.paymentMenu( {
                             container: 'payex-checkout1',

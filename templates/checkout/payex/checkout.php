@@ -18,8 +18,16 @@ wc_print_notices();
     }
     ?>
     <input type="hidden" id="payex_customer_profile" value="<?php echo esc_attr( $consumer_profile ); ?>" />
-	<div id="payex-checkout"></div>
-    <div id="payex-checkout1"></div>
+
+    <div id="payex-consumer" style="display: none;">
+        <h2><?php _e('Your information', 'woocommerce-gateway-payex-psp'); ?></h2>
+        <div id="payex-checkout" class="bordered-div padded-div payment-panel-bg"></div>
+    </div>
+
+    <div id="payex-paymentmenu" style="display: none;">
+        <h2><?php _e('Payment method', 'woocommerce-gateway-payex-psp'); ?></h2>
+        <div id="payex-checkout1" class="bordered-div padded-div payment-panel-bg"></div>
+    </div>
 </form>
 
 
@@ -29,11 +37,11 @@ wc_print_notices();
         $(document).ready(function () {
             var consumer_profile = $('#payex_customer_profile').val();
             if ( consumer_profile.length > 0 ) {
-                wc_payex_onepage.onConsumerIdentified ( {
+                window.wc_payex_onepage.onConsumerIdentified ( {
                     consumerProfileRef: consumer_profile
                 } );
             } else {
-                wc_payex_onepage.init();
+                window.wc_payex_onepage.init();
             }
         });
     });
