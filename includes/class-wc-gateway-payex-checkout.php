@@ -344,9 +344,6 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Save PaymentOrder ID
 		update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
 
-		// @todo Save payment ID
-		//update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
-
 		// Get JS URl
 		$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
 
@@ -381,11 +378,24 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			return;
 		}
 
+		// Check payments list and extract Payment ID
+        $payment_order = $order->get_meta( '_payex_paymentorder_id', TRUE );
+		try {
+			$payments = $this->request( 'GET', $payment_order . '/payments' );
+			if ( isset( $payments['payments']['paymentList'][0]['id'] ) ) {
+				$payment_id = $payments['payments']['paymentList'][0]['id'];
+				$order->add_meta_data('_payex_payment_id', $payment_id);
+				$order->save_meta_data();
+            }
+		} catch ( \Exception $e ) {
+			// Ignore errors
+		}
+
 		// Update address
 		try {
 			$this->update_address( $order_id );
-        } catch (\Exception $e) {
-			wc_add_notice( $e->getMessage(), 'error' );
+        } catch ( \Exception $e ) {
+			// Ignore errors
         }
 
 		parent::payment_confirm();
