@@ -24,3 +24,8 @@
     padding-right: 15px;
     padding-top: 5px;
 }
+
+#payex-consumer h2,
+#payex-paymentmenu h2 {
+    margin-bottom: -10px;
+}
