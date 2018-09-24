@@ -8,6 +8,7 @@ jQuery(function ($) {
                     $('#payex-consumer').show();
                     window.payex.hostedView.consumer( {
                         container: 'payex-checkout',
+                        culture: WC_Gateway_PayEx_Checkout.culture,
                         onConsumerIdentified: function( data ) {
                             wc_payex_onepage.onConsumerIdentified ( data );
                         }

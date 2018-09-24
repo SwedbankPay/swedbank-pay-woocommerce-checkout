@@ -283,7 +283,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'currency' => $order->get_currency(),
 				'amount' => round(100 * $order->get_total()),
 				'vatAmount' => 0,
-				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $order->get_order_number() ),
+				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
 				'userAgent' => $_SERVER['HTTP_USER_AGENT'],
 				'language' => $this->culture,
 				'urls' => [
