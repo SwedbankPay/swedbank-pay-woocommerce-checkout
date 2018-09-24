@@ -1,139 +1,126 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
-"POT-Creation-Date: 2017-11-05 15:35+0600\n"
-"PO-Revision-Date: 2017-11-05 15:36+0600\n"
+"POT-Creation-Date: 2018-09-18 18:20+0600\n"
+"PO-Revision-Date: 2018-09-24 10:49+0200\n"
 "Last-Translator: aait <info@aait.se>\n"
 "Language-Team: \n"
 "Language: sv_SE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.7.1\n"
+"X-Generator: Poedit 2.1.1\n"
 "X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-SearchPath-0: ..\n"
 
-#: ../includes/class-wc-gateway-payex-checkout.php:49
-#: ../includes/class-wc-gateway-payex-checkout.php:137
-#: ../includes/class-wc-gateway-payex-checkout.php:143
+#: ../includes/class-wc-gateway-payex-checkout.php:67
+#: ../includes/class-wc-gateway-payex-checkout.php:147
+#: ../includes/class-wc-gateway-payex-checkout.php:153
 msgid "PayEx Checkout"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:128
+#: ../includes/class-wc-gateway-payex-checkout.php:138
 msgid "Enable/Disable"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:130
+#: ../includes/class-wc-gateway-payex-checkout.php:140
 msgid "Enable plugin"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:134
+#: ../includes/class-wc-gateway-payex-checkout.php:144
 msgid "Title"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:136
+#: ../includes/class-wc-gateway-payex-checkout.php:146
 msgid "This controls the title which the user sees during checkout."
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:140
+#: ../includes/class-wc-gateway-payex-checkout.php:150
 msgid "Description"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:142
+#: ../includes/class-wc-gateway-payex-checkout.php:152
 msgid "This controls the description which the user sees during checkout."
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:146
-#: ../includes/class-wc-gateway-payex-checkout.php:148
+#: ../includes/class-wc-gateway-payex-checkout.php:156
+#: ../includes/class-wc-gateway-payex-checkout.php:158
 msgid "Merchant Token"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:152
+#: ../includes/class-wc-gateway-payex-checkout.php:162
+#: ../includes/class-wc-gateway-payex-checkout.php:164
+msgid "Payee Id"
+msgstr ""
+
+#: ../includes/class-wc-gateway-payex-checkout.php:168
 msgid "Test Mode"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:154
+#: ../includes/class-wc-gateway-payex-checkout.php:170
 msgid "Enable PayEx Test Mode"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:158
+#: ../includes/class-wc-gateway-payex-checkout.php:174
 msgid "Debug"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:160
+#: ../includes/class-wc-gateway-payex-checkout.php:176
 msgid "Enable logging"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:164
+#: ../includes/class-wc-gateway-payex-checkout.php:180
 msgid "Language"
 msgstr "Språk"
 
-#: ../includes/class-wc-gateway-payex-checkout.php:171
+#: ../includes/class-wc-gateway-payex-checkout.php:187
 msgid "Language of pages displayed by PayEx during payment."
 msgstr "Språk sidor visas av Payex under betalning."
 
-#: ../includes/class-wc-gateway-payex-checkout.php:484
-msgid "Transaction failed."
-msgstr "Transaktionen misslyckades"
-
-#: ../includes/class-wc-gateway-payex-checkout.php:545
-#: ../includes/class-wc-gateway-payex-checkout.php:726
-msgid "Transaction captured."
+#: ../includes/class-wc-gateway-payex-checkout.php:191
+#: ../includes/class-wc-gateway-payex-checkout.php:193
+msgid "Use PayEx Checkout instead WooCommerce Checkout"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:581
-#: ../includes/class-wc-gateway-payex-checkout.php:843
+#: ../includes/class-wc-gateway-payex-checkout.php:197
+#: ../includes/class-wc-gateway-payex-checkout.php:199
+msgid "Terms & Conditions Url"
+msgstr ""
+
+#: ../includes/class-wc-gateway-payex-checkout.php:286
 #, php-format
-msgid "Refunded: %s. Reason: %s"
+msgid "Order #%s"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:699
-#: ../includes/class-wc-gateway-payex-checkout.php:755
-msgid "Wrong payment state"
+#: ../includes/class-wc-gateway-payex-checkout.php:490
+msgid "Failed to process payment"
+msgstr "Din betalning kunde inte behandlas"
+
+#: ../includes/class-wc-gateway-payex-checkout.php:515
+msgid "Checkout"
 msgstr ""
 
-#: ../includes/class-wc-gateway-payex-checkout.php:704
-msgid "Capture unavailable"
-msgstr ""
+#: ../templates/checkout/payex/checkout.php:23
+msgid "Your information"
+msgstr "Din information"
 
-#: ../includes/class-wc-gateway-payex-checkout.php:731
-msgid "Capture failed."
-msgstr ""
+#: ../templates/checkout/payex/checkout.php:28
+msgid "Payment method"
+msgstr "Betalmetod"
 
-#: ../includes/class-wc-gateway-payex-checkout.php:760
-msgid "Cancellation unavailable"
-msgstr ""
-
-#: ../includes/class-wc-gateway-payex-checkout.php:775
-msgid "Transaction cancelled."
-msgstr ""
-
-#: ../includes/class-wc-gateway-payex-checkout.php:779
-msgid "Cancel failed."
-msgstr ""
-
-#: ../includes/class-wc-gateway-payex-checkout.php:810
-msgid "Unable to perform refund. The transaction must be captured."
-msgstr ""
-
-#: ../includes/class-wc-gateway-payex-checkout.php:848
-msgid "Refund failed."
-msgstr ""
-
-#: ../templates/payex-checkout/cart-button.php:10
-msgid "Proceed to PayEx checkout"
-msgstr ""
-
-#: ../woocommerce-payex-checkout.php:72
+#: ../woocommerce-payex-checkout.php:71
 msgid "Required WooCommerce PayEx PSP Gateway plugin was automatically installed."
 msgstr ""
 
-#: ../woocommerce-payex-checkout.php:98
+#: ../woocommerce-payex-checkout.php:97
 msgid "Settings"
 msgstr ""
+
+#~ msgid "Transaction failed."
+#~ msgstr "Transaktionen misslyckades"
 
 #~ msgid "Discount"
 #~ msgstr "Rabatt"
@@ -185,9 +172,6 @@ msgstr ""
 
 #~ msgid "Financing Invoice"
 #~ msgstr "Faktura"
-
-#~ msgid "Please select payment method:"
-#~ msgstr "Välj betalsätt"
 
 #~ msgid "Social Security Number:"
 #~ msgstr "Personnummer:"
