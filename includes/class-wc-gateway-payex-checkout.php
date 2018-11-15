@@ -90,7 +90,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->terms_url         = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		if ( $this->testmode === 'yes' ) {
-			$this->backend_api_endpoint  = 'https://api.stage.payex.com';
+			$this->backend_api_endpoint  = 'https://api.externalintegration.payex.com';
 		}
 
 		// JS Scrips
