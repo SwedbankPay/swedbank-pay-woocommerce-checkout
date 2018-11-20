@@ -188,9 +188,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'default'     => $this->culture
 			),
 			'instant_checkout'    => array(
-				'title'   => __( 'Use PayEx Checkout instead WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Use PayEx Checkout instead WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
 				'default' => $this->instant_checkout
 			),
 			'terms_url'        => array(
