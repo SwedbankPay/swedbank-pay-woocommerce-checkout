@@ -455,6 +455,46 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	}
 
 	/**
+	 * Capture
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function capture_payment( $order, $amount = FALSE ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new Exception('Unable to get payment ID');
+		}
+
+		// Use Invoice capture
+		$result = $this->request( 'GET', $payment_id );
+		if ($result['payment']['instrument'] === 'Invoice') {
+			$gateways = WC()->payment_gateways()->payment_gateways();
+			if (!isset($gateways[ 'payex_psp_invoice' ])) {
+			    throw new Exception('Unable to get Invoice gateway');
+            }
+
+			/** @var WC_Gateway_Payex_Invoice $gateway */
+			$gateway = $gateways[ 'payex_psp_invoice' ];
+			$gateway->merchant_token = $this->merchant_token;
+			$gateway->payee_id = $this->payee_id;
+			$gateway->testmode = $this->testmode;
+
+			$gateway->capture_payment( $order, $amount );
+			return;
+        }
+
+		parent::capture_payment( $order, $amount );
+	}
+
+	/**
 	 * Ajax Action
 	 * @throws Exception
 	 */
