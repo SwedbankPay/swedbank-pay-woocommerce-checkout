@@ -116,7 +116,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Add SSN Checkout Field
 		add_action( 'woocommerce_before_checkout_billing_form', array( $this, 'before_checkout_billing_form' ) );
-		add_action( 'woocommerce_checkout_order_review', array( $this, 'woocommerce_checkout_payment' ), 15 );
+		add_action( 'woocommerce_checkout_order_review', array( $this, 'woocommerce_checkout_payment' ), 20 );
+        if ( $this->instant_checkout === 'yes' ) {
+            remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
+        }
 
 		add_action( 'wp_ajax_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
 		add_action( 'wp_ajax_nopriv_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
@@ -225,7 +228,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style.css', array(), FALSE, 'all' );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), FALSE, 'all' );
+			//wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), FALSE, 'all' );
         }
 
 		// Checkout scripts
@@ -627,6 +630,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	public function woocommerce_checkout_payment() {
 		?>
+        <!-- <button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="Place order" data-value="Place order">Place order</button> -->
         <div id="payex-checkout"></div>
 		<?php
     }
@@ -685,9 +689,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	    if ( is_user_logged_in() ) {
 		    $user_id = get_current_user_id();
 		    $stored = get_user_meta( $user_id, '_payex_consumer_profile', TRUE );
-		    //if ( empty( $stored ) ) {
-			    //update_user_meta( $user_id, '_payex_consumer_profile', $customer_reference );
-		    //}
+		    if ( empty( $stored ) ) {
+			    update_user_meta( $user_id, '_payex_consumer_profile', $customer_reference );
+		    }
 	    } else {
 	        WC()->session->set( 'payex_consumer_profile', $customer_reference );
         }
@@ -705,6 +709,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$data = array();
 		parse_str($_POST['data'], $data);
 		$_POST = $data;
+		unset( $_POST['terms-field'], $_POST['terms'] );
+
 		$_POST['payment_method'] = 'payex_checkout';
 
 		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
@@ -718,6 +724,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$data = array();
 		parse_str($_POST['data'], $data);
 		$_POST = $data;
+		unset( $_POST['terms-field'], $_POST['terms'] );
+
 		$_POST['payment_method'] = 'payex_checkout';
 		$_POST['is_update'] = '1';
 
