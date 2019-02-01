@@ -714,6 +714,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$_POST['payment_method'] = 'payex_checkout';
 
 		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
 
 		WC()->checkout()->process_checkout();
 	}
@@ -730,6 +731,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$_POST['is_update'] = '1';
 
 		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
+		$_POST['_wpnonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
 
 		/* $order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
 		if ( $order_id > 0 ) {
