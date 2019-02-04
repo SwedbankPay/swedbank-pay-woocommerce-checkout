@@ -599,7 +599,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
         }
 
-		if ( true || empty( $consumer_profile ) ) {
+		if ( empty( $consumer_profile ) ) {
 			// Initiate consumer session
 			$params = [
 				'operation'           => 'initiate-consumer-session',
