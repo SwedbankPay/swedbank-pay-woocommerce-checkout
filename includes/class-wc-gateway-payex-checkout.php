@@ -279,7 +279,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @param $order_id
 	 */
 	public function thankyou_page( $order_id ) {
-		//
+		WC()->session->__unset( 'payex_paymentorder_id' );
 	}
 
 	/**
@@ -362,7 +362,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		];
 
 		// Get Consumer Profile
-		$consumer_profile = get_post_meta( $order_id, '_payex_consumer_profile', true );
+		$consumer_profile = get_user_meta( $order->get_user_id(), '_payex_consumer_profile', true );
 		if ( ! empty( $consumer_profile ) ) {
 			$params['paymentorder']['payer'] = [
 				'consumerProfileRef' => $consumer_profile
