@@ -194,7 +194,7 @@ jQuery( function( $ ) {
         onTokenCreated: function( data ) {
             console.log( 'onTokenCreated', data );
 
-            wc_payex_checkout.form.append( "<input type='hidden' class='payex_customer_reference' name='payex_customer_reference' value='" + data.consumerProfileRef + "'/>" );
+            wc_payex_checkout.form.append( "<input type='hidden' class='payex_customer_reference' name='payex_customer_reference' value='" + data + "'/>" );
             //wc_payex_checkout.form.submit();
             wc_payex_checkout.onSubmit();
         },
@@ -368,7 +368,7 @@ jQuery( function( $ ) {
                 }
 
                 // Create checkout field
-                wc_payex_checkout.onTokenCreated( data );
+                wc_payex_checkout.onTokenCreated( data.consumerProfileRef );
             } );
         },
 
