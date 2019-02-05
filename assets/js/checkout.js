@@ -23,6 +23,7 @@ jQuery( function( $ ) {
 
             $( document.body ).on( 'checkout_error', this.resetCheckout );
             $( document.body ).on( 'updated_checkout', this.onUpdatedCheckout );
+            $( document.body ).on( 'blur', this.onUpdatedCheckout );
 
             if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
                 if ( $('#payex-consumer-profile').length > 0 ) {
@@ -46,7 +47,9 @@ jQuery( function( $ ) {
                                 wc_payex_checkout.onShippingDetailsAvailable( data );
                             },
                             onError: function ( data ) {
-                                wc_payex_checkout.onError( data );
+                                console.warn( data );
+                                alert( data.details );
+                                //wc_payex_checkout.onError( data.details );
                             }
                         } ).open();
                     });
@@ -92,6 +95,7 @@ jQuery( function( $ ) {
                 return false;
             }
 
+            $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
             wc_payex_checkout.form.addClass( 'processing' );
             wc_payex_checkout.block();
             wc_payex_checkout.updateOrder()
@@ -100,11 +104,24 @@ jQuery( function( $ ) {
                     wc_payex_checkout.unblock();
                 } )
                 .fail( function( jqXHR, textStatus ) {
-                    wc_checkout_form.submit_error( '<div class="woocommerce-error">' + textStatus + '</div>' );
+                    wc_payex_checkout.onError( textStatus );
                 } )
                 .done( function ( response) {
                     console.log( response );
                     if (response.result !== 'success') {
+                        // Reload page
+                        if ( true === result.reload ) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        // Trigger update in case we need a fresh nonce
+                        if ( true === result.refresh ) {
+                            $( document.body ).trigger( 'update_checkout' );
+                        }
+
+                        wc_payex_checkout.onError( response.messages );
+                        //wc_payex_checkout.form.submit();
                         return;
                     }
 
@@ -113,6 +130,7 @@ jQuery( function( $ ) {
 
                         // Load PayEx Checkout frame
                         if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
+                            $('#payment').hide();
                             wc_payex_checkout.initPaymentMenu('payex-checkout' );
                         }
                     } );
@@ -139,6 +157,7 @@ jQuery( function( $ ) {
                     return false;
                 }
 
+                $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
                 wc_payex_checkout.form.addClass( 'processing' );
                 wc_payex_checkout.block();
                 wc_payex_checkout.placeOrder()
@@ -147,12 +166,23 @@ jQuery( function( $ ) {
                         wc_payex_checkout.unblock();
                     } )
                     .fail( function( jqXHR, textStatus ) {
-                        wc_checkout_form.submit_error( '<div class="woocommerce-error">' + textStatus + '</div>' );
+                        wc_payex_checkout.onError( textStatus );
                     } )
                     .done( function ( response) {
                         console.log( response );
                         if (response.result !== 'success') {
-                            alert('Error');
+                            // Reload page
+                            if ( true === result.reload ) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            // Trigger update in case we need a fresh nonce
+                            if ( true === result.refresh ) {
+                                $( document.body ).trigger( 'update_checkout' );
+                            }
+
+                            wc_payex_checkout.onError( response.messages );
                             return;
                         }
 
@@ -161,6 +191,7 @@ jQuery( function( $ ) {
                             $('#payex-checkout iframe').remove();
 
                             if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
+                                $('#payment').hide();
                                 wc_payex_checkout.initPaymentMenu('payex-checkout' );
                             } else {
                                 $.featherlight('<div id="payex-paymentmenu">&nbsp;</div>', {
@@ -177,7 +208,7 @@ jQuery( function( $ ) {
                                 });
                             }
                         } );
-                } );
+                    } );
 
                 return false;
             }
@@ -188,7 +219,7 @@ jQuery( function( $ ) {
         onTokenCreated: function( data ) {
             console.log( 'onTokenCreated', data );
 
-            wc_payex_checkout.form.append( "<input type='hidden' class='payex_customer_reference' name='payex_customer_reference' value='" + data.consumerProfileRef + "'/>" );
+            wc_payex_checkout.form.append( "<input type='hidden' class='payex_customer_reference' name='payex_customer_reference' value='" + data + "'/>" );
             //wc_payex_checkout.form.submit();
             wc_payex_checkout.onSubmit();
         },
@@ -362,7 +393,7 @@ jQuery( function( $ ) {
                 }
 
                 // Create checkout field
-                wc_payex_checkout.onTokenCreated( data );
+                wc_payex_checkout.onTokenCreated( data.consumerProfileRef );
             } );
         },
 
@@ -396,7 +427,7 @@ jQuery( function( $ ) {
                             return;
                         }
 
-                        el.val(value);
+                        el.val(value).change();
 
                         if (key === 'country' || key === 'state') {
                             let el1 = $('#' + section + '_' + key);
@@ -418,8 +449,23 @@ jQuery( function( $ ) {
         },
 
         onError: function ( data ) {
-            console.warn( data );
-            alert( data.details );
+            //wc_payex_checkout.submit_error( '<div class="woocommerce-error">' + data + '</div>' );
+        },
+        submit_error: function( error_message ) {
+            $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
+            wc_payex_checkout.form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' );
+            wc_payex_checkout.form.removeClass( 'processing' ).unblock();
+            wc_payex_checkout.form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
+            wc_payex_checkout.scroll_to_notices();
+            $( document.body ).trigger( 'checkout_error' );
+        },
+        scroll_to_notices: function() {
+            let scrollElement = $( '.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout' );
+            if ( ! scrollElement.length ) {
+                scrollElement = $( '.form.checkout' );
+            }
+
+            $.scroll_to_notices( scrollElement );
         }
     };
 
