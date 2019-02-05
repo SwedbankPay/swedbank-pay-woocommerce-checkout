@@ -436,7 +436,7 @@ jQuery( function( $ ) {
                             } else if (typeof $.fn.chosen !== 'undefined') {
                                 // Chosen
                                 el1.val(value).trigger('chosen:updated');
-                                el1.chosen().change();
+                                //el1.chosen().change();
                             } else {
                                 el1.change();
                             }
