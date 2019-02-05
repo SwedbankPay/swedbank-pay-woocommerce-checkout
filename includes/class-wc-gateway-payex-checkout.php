@@ -702,8 +702,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( is_user_logged_in() ) {
 			$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
+			$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
 		} else {
 			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
+			$consumer_data = WC()->session->get( 'payex_checkin' );
 		}
 
 		if ( empty( $consumer_profile ) ) {
@@ -735,6 +737,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	            <strong>
 		            <?php _e( 'You\'re loggedin as payex customer.', 'woocommerce-gateway-payex-checkout' ); ?>
                 </strong>
+	            <?php if (isset($consumer_data['first_name'])): ?>
+                    <p>
+	                    <?php echo $consumer_data['first_name'] . ' ' . $consumer_data['last_name']; ?><br/>
+	                    <?php echo $consumer_data['postcode'] . ' ' . $consumer_data['city']; ?><br/>
+	                    <?php echo $consumer_data['email'] . ', ' . $consumer_data['phone']; ?><br/>
+                    </p>
+	            <?php endif; ?>
             </div>
 
             <div id="payex-consumer-profile" data-reference="<?php echo $consumer_profile; ?>"></div>
@@ -784,6 +793,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'phone'      => $result['msisdn'],
 			'email'      => $result['email'],
 		);
+
+		if ( is_user_logged_in() ) {
+			$user_id = get_current_user_id();
+			update_user_meta( $user_id, '_payex_consumer_address', $output );
+        }
 
 		WC()->session->set( 'payex_checkin', $output );
 		wp_send_json_success( $output );
