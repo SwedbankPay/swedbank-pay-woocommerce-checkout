@@ -568,6 +568,86 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	}
 
 	/**
+	 * Cancel
+	 *
+	 * @param WC_Order|int $order
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function cancel_payment( $order ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new Exception('Unable to get payment ID');
+		}
+
+		// Use Invoice cancel
+		$result = $this->request( 'GET', $payment_id );
+		if ($result['payment']['instrument'] === 'Invoice') {
+			$gateways = WC()->payment_gateways()->payment_gateways();
+			if (!isset($gateways[ 'payex_psp_invoice' ])) {
+				throw new Exception('Unable to get Invoice gateway');
+			}
+
+			/** @var WC_Gateway_Payex_Invoice $gateway */
+			$gateway = $gateways[ 'payex_psp_invoice' ];
+			$gateway->merchant_token = $this->merchant_token;
+			$gateway->payee_id = $this->payee_id;
+			$gateway->testmode = $this->testmode;
+
+			$gateway->cancel_payment( $order );
+			return;
+		}
+
+		parent::cancel_payment( $order );
+	}
+
+	/**
+	 * Refund
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 * @param string       $reason
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function refund_payment( $order, $amount = FALSE, $reason = '' ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new Exception('Unable to get payment ID');
+		}
+
+		// Use Invoice cancel
+		$result = $this->request( 'GET', $payment_id );
+		if ($result['payment']['instrument'] === 'Invoice') {
+			$gateways = WC()->payment_gateways()->payment_gateways();
+			if (!isset($gateways[ 'payex_psp_invoice' ])) {
+				throw new Exception('Unable to get Invoice gateway');
+			}
+
+			/** @var WC_Gateway_Payex_Invoice $gateway */
+			$gateway = $gateways[ 'payex_psp_invoice' ];
+			$gateway->merchant_token = $this->merchant_token;
+			$gateway->payee_id = $this->payee_id;
+			$gateway->testmode = $this->testmode;
+
+			$gateway->refund_payment( $order, $amount, $reason );
+			return;
+		}
+
+		parent::refund_payment( $order, $amount, $reason );
+	}
+
+	/**
 	 * Update Address
 	 *
 	 * @param $order_id
