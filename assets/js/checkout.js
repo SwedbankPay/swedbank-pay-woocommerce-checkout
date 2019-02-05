@@ -110,13 +110,13 @@ jQuery( function( $ ) {
                     console.log( response );
                     if (response.result !== 'success') {
                         // Reload page
-                        if ( true === result.reload ) {
+                        if ( true === response.result.reload ) {
                             window.location.reload();
                             return;
                         }
 
                         // Trigger update in case we need a fresh nonce
-                        if ( true === result.refresh ) {
+                        if ( true === response.result.refresh ) {
                             $( document.body ).trigger( 'update_checkout' );
                         }
 
@@ -172,13 +172,13 @@ jQuery( function( $ ) {
                         console.log( response );
                         if (response.result !== 'success') {
                             // Reload page
-                            if ( true === result.reload ) {
+                            if ( true === response.result.reload ) {
                                 window.location.reload();
                                 return;
                             }
 
                             // Trigger update in case we need a fresh nonce
-                            if ( true === result.refresh ) {
+                            if ( true === response.result.refresh ) {
                                 $( document.body ).trigger( 'update_checkout' );
                             }
 
