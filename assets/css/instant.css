@@ -1,11 +1,3 @@
-#payment .payment_methods label[for="payment_method_payex_checkout"] {
-    display: none !important;
-}
-
-.payment_method_payex_checkout {
-    display: none !important;
-}
-
-#payment {
+#payment .wc_payment_methods {
     display: none;
 }

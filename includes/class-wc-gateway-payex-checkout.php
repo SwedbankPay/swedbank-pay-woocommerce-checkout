@@ -118,7 +118,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		add_action( 'woocommerce_before_checkout_billing_form', array( $this, 'before_checkout_billing_form' ) );
 		add_action( 'woocommerce_checkout_order_review', array( $this, 'woocommerce_checkout_payment' ), 20 );
 		if ( $this->instant_checkout === 'yes' ) {
-			remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
+			//remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
 		}
 
 		add_action( 'wp_ajax_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
@@ -231,7 +231,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style.css', array(), false, 'all' );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			//wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), FALSE, 'all' );
+			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), FALSE, 'all' );
 		}
 
 		// Checkout scripts
@@ -301,8 +301,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				]
 			];
 
-			$payment_id = WC()->session->get( 'payex_paymentorder_id' );
-			//$payment_id = get_post_meta( $order_id, '_payex_paymentorder_id', true );
+			// Get Payment Order ID
+			$payment_id = get_post_meta( $order_id, '_payex_paymentorder_id', true );
+			if ( empty( $payment_id ) ) {
+				$payment_id = WC()->session->get( 'payex_paymentorder_id' );
+			}
+
 			if ( ! empty( $payment_id ) ) {
 				$result = $this->request( 'PATCH', $payment_id, $params );
 
@@ -330,7 +334,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'currency'    => $order->get_currency(),
 				'amount'      => round( 100 * $order->get_total() ),
 				'vatAmount'   => 0,
-				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
+				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_id() ),
 				'userAgent'   => $_SERVER['HTTP_USER_AGENT'],
 				'language'    => $this->culture,
 				'urls'        => [
@@ -362,7 +366,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		];
 
 		// Get Consumer Profile
-		$consumer_profile = get_user_meta( $order->get_user_id(), '_payex_consumer_profile', true );
+        $consumer_profile = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
+        if ( empty( $consumer_profile ) ) {
+            $consumer_profile = get_user_meta( $order->get_user_id(), '_payex_consumer_profile', true );
+        }
+
+        if ( empty( $consumer_profile ) ) {
+	        $consumer_profile = WC()->session->get( 'payex_consumer_profile' );
+        }
+
 		if ( ! empty( $consumer_profile ) ) {
 			$params['paymentorder']['payer'] = [
 				'consumerProfileRef' => $consumer_profile
@@ -481,18 +493,27 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$paymentorder_id = $data['paymentOrder']['id'];
 			$payment_id      = $data['payment']['id'];
 
-			// Check Payment ID
-			$order_id = $this->get_post_id_by_meta( '_payex_payment_id', $paymentorder_id );
+			// Get Order by Order Payment Id
+			$order_id = $this->get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
 			if ( empty( $order_id ) ) {
-				// Get Order by Order Payment Id
-				$order_id = $this->get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
-				if ( ! $order_id ) {
-					throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Order Id %s', $paymentorder_id ) );
+			    // Extract Order ID from description
+				$result = $this->request('GET', $paymentorder_id );
+				$description = $result['paymentOrder']['description'];
+
+				$matches = [];
+				preg_match( '/#(\d+)/iu', $description, $matches );
+				if ( ! empty( $matches[1] ) ) {
+					$order_id = $matches[1];
+					update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
 				}
 
-				// Save Payment ID
-				update_post_meta( $order_id, '_payex_payment_id', $payment_id );
+				if ( empty( $order_id ) ) {
+					throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Order Id %s', $paymentorder_id ) );
+				}
 			}
+
+			// Save Payment ID
+			update_post_meta( $order_id, '_payex_payment_id', $payment_id );
 
 			// Update address
 			$this->update_address( $order_id );
@@ -629,6 +650,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			<?php
 		} else {
 			?>
+            <h2><?php _e( 'Your information', 'woocommerce-gateway-payex-checkout' ); ?></h2>
+            <div id="payex-checkin">
+	            <strong>
+		            <?php _e( 'You\'re loggedin as payex customer.', 'woocommerce-gateway-payex-checkout' ); ?>
+                </strong>
+            </div>
+
             <div id="payex-consumer-profile" data-reference="<?php echo $consumer_profile; ?>"></div>
 			<?php
 		}
@@ -739,11 +767,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
 		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
 
-		/* $order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
+		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
 		if ( $order_id > 0 ) {
 		    $order = wc_get_order( $order_id );
-		    $order->update_status( 'pending' );
-        } */
+		    if ( $order->get_payment_method() === $this->id ) {
+		        // Mark order failed instead of cancelled
+		        if ( $order->has_status('cancelled') ) {
+		            $order->update_status( 'failed' );
+                }
+            }
+        }
 
 		WC()->checkout()->process_checkout();
 	}

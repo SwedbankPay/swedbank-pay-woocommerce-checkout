@@ -109,7 +109,19 @@ jQuery( function( $ ) {
                 .done( function ( response) {
                     console.log( response );
                     if (response.result !== 'success') {
+                        // Reload page
+                        if ( true === result.reload ) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        // Trigger update in case we need a fresh nonce
+                        if ( true === result.refresh ) {
+                            $( document.body ).trigger( 'update_checkout' );
+                        }
+
                         wc_payex_checkout.onError( response.messages );
+                        //wc_payex_checkout.form.submit();
                         return;
                     }
 
@@ -118,6 +130,7 @@ jQuery( function( $ ) {
 
                         // Load PayEx Checkout frame
                         if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
+                            $('#payment').hide();
                             wc_payex_checkout.initPaymentMenu('payex-checkout' );
                         }
                     } );
@@ -158,6 +171,17 @@ jQuery( function( $ ) {
                     .done( function ( response) {
                         console.log( response );
                         if (response.result !== 'success') {
+                            // Reload page
+                            if ( true === result.reload ) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            // Trigger update in case we need a fresh nonce
+                            if ( true === result.refresh ) {
+                                $( document.body ).trigger( 'update_checkout' );
+                            }
+
                             wc_payex_checkout.onError( response.messages );
                             return;
                         }
@@ -167,6 +191,7 @@ jQuery( function( $ ) {
                             $('#payex-checkout iframe').remove();
 
                             if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
+                                $('#payment').hide();
                                 wc_payex_checkout.initPaymentMenu('payex-checkout' );
                             } else {
                                 $.featherlight('<div id="payex-paymentmenu">&nbsp;</div>', {
@@ -183,7 +208,7 @@ jQuery( function( $ ) {
                                 });
                             }
                         } );
-                } );
+                    } );
 
                 return false;
             }
