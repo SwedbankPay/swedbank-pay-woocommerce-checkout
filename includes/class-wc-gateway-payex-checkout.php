@@ -766,6 +766,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// https://developer.payex.com/xwiki/wiki/developer/view/Main/ecommerce/technical-reference/consumers-resource/#HRetrieveConsumerShippingDetails
 		try {
 			// Check url
+			if (mb_substr($url, 0, 1, 'UTF-8') === '/') {
+				$url = $this->backend_api_endpoint . $url;
+			}
+
 			$host = parse_url( $url, PHP_URL_HOST );
 			if ( ! in_array( $host, array( 'api.payex.com', 'api.externalintegration.payex.com' ) ) ) {
 				throw new Exception( 'Access denied' );
