@@ -328,6 +328,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Get Order UUID
 		$order_uuid = mb_strimwidth( px_uuid( uniqid() ), 0, 30, '', 'UTF-8' );
 
+		// Check terms_url value
+		if ( parse_url( $this->terms_url, PHP_URL_SCHEME ) !== 'https' ) {
+			$this->terms_url = '';
+        }
+
 		$params = [
 			'paymentorder' => [
 				'operation'   => 'Purchase',
@@ -344,7 +349,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					'completeUrl'           => html_entity_decode( $this->get_return_url( $order ) ),
 					'cancelUrl'             => $order->get_cancel_order_url_raw(),
 					'callbackUrl'           => WC()->api_request_url( __CLASS__ ),
-					'termsAndConditionsUrl' => $this->terms_url
+					'termsOfServiceUrl'     => $this->terms_url
 				],
 				'payeeInfo'   => [
 					'payeeId'         => $this->payee_id,
