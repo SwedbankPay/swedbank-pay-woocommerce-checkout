@@ -354,7 +354,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'payeeInfo'   => [
 					'payeeId'         => $this->payee_id,
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
-					'payeeName'       => 'Merchant1',
+					'payeeName'       => get_bloginfo( 'name' ),
 					'productCategory' => 'A123'
 				],
 				'metadata'    => [
