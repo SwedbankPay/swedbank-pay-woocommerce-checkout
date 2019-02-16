@@ -137,6 +137,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		add_action( 'wp_ajax_nopriv_payex_update_order', array( $this, 'ajax_payex_update_order' ) );
 
 		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 1 );
+
+		if ( $this->instant_checkout === 'yes' ) {
+			add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
+		}
 	}
 
 	/**
@@ -909,6 +913,36 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		return $gateways;
+	}
+
+	/**
+	 * Lock checkout fields
+	 *
+	 * @param $fieldset
+	 * @return array
+	 */
+	public function lock_checkout_fields( $fieldset ) {
+		if ( $this->instant_checkout === 'yes' ) {
+			if ( is_user_logged_in() ) {
+				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
+				$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
+			} else {
+				$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
+				$consumer_data = WC()->session->get( 'payex_checkin' );
+			}
+
+			// @todo Fill form with these data
+			if ( empty ( $consumer_profile ) ) {
+				foreach ( $fieldset as $section => &$fields ) {
+					foreach ( $fields as $key => &$field ) {
+						$field['custom_attributes']['readonly'] = 'readonly';
+						$field['class'][] = 'payex-locked';
+					}
+				}
+            }
+		}
+
+	    return $fieldset;
 	}
 }
 

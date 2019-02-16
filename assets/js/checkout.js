@@ -427,6 +427,8 @@ jQuery( function( $ ) {
                             return;
                         }
 
+                        el.prop('readonly', false);
+                        el.removeClass('payex-locked');
                         el.val(value).change();
 
                         if (key === 'country' || key === 'state') {
