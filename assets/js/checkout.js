@@ -44,8 +44,11 @@ jQuery( function( $ ) {
                             onConsumerIdentified: function( data ) {
                                 wc_payex_checkout.onConsumerIdentified( data );
                             },
+                            onBillingDetailsAvailable: function( data ) {
+                                wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
+                            },
                             onShippingDetailsAvailable: function( data ) {
-                                wc_payex_checkout.onShippingDetailsAvailable( data );
+                                wc_payex_checkout.onAddressDetailsAvailable( 'shipping', data );
                             },
                             onError: function ( data ) {
                                 console.warn( data );
@@ -399,9 +402,8 @@ jQuery( function( $ ) {
                 wc_payex_checkout.onTokenCreated( data.consumerProfileRef );
             } );
         },
-
-        onShippingDetailsAvailable: function( data ) {
-            console.log( 'onShippingDetailsAvailable', data );
+        onAddressDetailsAvailable: function( type, data ) {
+            console.log( 'onAddressDetailsAvailable', type, data );
 
             return $.ajax( {
                 type: 'POST',
@@ -409,6 +411,7 @@ jQuery( function( $ ) {
                 data: {
                     action: 'payex_checkout_get_address',
                     nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    type: type,
                     url: data.url
                 },
                 dataType: 'json'
@@ -421,10 +424,10 @@ jQuery( function( $ ) {
                     return;
                 }
 
-                // Process Billing
+                // Process address
                 let data = response.data;
                 $.each(data, function (key, value) {
-                    ['billing', 'shipping'].forEach(function(section) {
+                    [type].forEach(function(section) {
                         let el = $('input[name="' + section + '_' + key + '"]');
                         if (el.length === 0) {
                             return;

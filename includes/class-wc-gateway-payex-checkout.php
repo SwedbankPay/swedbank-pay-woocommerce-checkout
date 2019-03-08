@@ -713,7 +713,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( is_user_logged_in() ) {
 			$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
-			$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
+			$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
+			if (empty($consumer_data)) {
+			    // Deprecated
+				$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
+            }
 		} else {
 			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
 			$consumer_data = WC()->session->get( 'payex_checkin' );
@@ -772,6 +776,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function ajax_payex_checkout_get_address() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
+		$type = isset( $_POST['type'] ) ? wc_clean( $_POST['type'] ) : '';
 		$url = isset( $_POST['url'] ) ? wc_clean( $_POST['url'] ) : '';
 
 		// https://developer.payex.com/xwiki/wiki/developer/view/Main/ecommerce/technical-reference/consumers-resource/#HRetrieveConsumerShippingDetails
@@ -792,18 +797,20 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			exit();
 		}
 
+		$address = $type === 'billing' ? $result['billingAddress'] : $result['shippingAddress'];
+
 		// Parse name field
 		$parser = new \FullNameParser();
-		$name   = $parser->parse_name( $result['shippingAddress']['addressee'] );
+		$name   = $parser->parse_name( $address['addressee'] );
 
 		$output = array(
 			'first_name' => $name['fname'],
 			'last_name'  => $name['lname'],
-			'country'    => $result['shippingAddress']['countryCode'],
-			'postcode'   => $result['shippingAddress']['zipCode'],
-			'address_1'  => $result['shippingAddress']['streetAddress'],
+			'country'    => $address['countryCode'],
+			'postcode'   => $address['zipCode'],
+			'address_1'  => $address['streetAddress'],
 			'address_2'  => '',
-			'city'       => $result['shippingAddress']['city'],
+			'city'       => $address['city'],
 			'state'      => '',
 			'phone'      => $result['msisdn'],
 			'email'      => $result['email'],
@@ -811,7 +818,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( is_user_logged_in() ) {
 			$user_id = get_current_user_id();
-			update_user_meta( $user_id, '_payex_consumer_address', $output );
+			update_user_meta( $user_id, '_payex_consumer_address_' . $type, $output );
         }
 
 		WC()->session->set( 'payex_checkin', $output );
@@ -925,10 +932,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		if ( $this->instant_checkout === 'yes' ) {
 			if ( is_user_logged_in() ) {
 				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
-				$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
 			} else {
 				$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-				$consumer_data = WC()->session->get( 'payex_checkin' );
 			}
 
 			// @todo Fill form with these data
