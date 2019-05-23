@@ -45,12 +45,6 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $instant_checkout = 'no';
 
 	/**
-	 * Terms URL
-	 * @var string
-	 */
-	public $terms_url = '';
-
-	/**
 	 * Backend Api Endpoint
 	 * @var string
 	 */
@@ -88,6 +82,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+
+		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
+		if ( ! filter_var($this->terms_url, FILTER_VALIDATE_URL) ) {
+			$this->terms_url = '';
+		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
+			$this->terms_url = '';
+		}
 
 		if ( $this->testmode === 'yes' ) {
 			$this->backend_api_endpoint = 'https://api.externalintegration.payex.com';
