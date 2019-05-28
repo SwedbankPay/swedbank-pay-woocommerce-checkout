@@ -1,0 +1,19 @@
+Version 2.1.0
+* Add "Change shipping information" button
+* Add Terms & Conditions Url option
+* Implemented Consumer Billing Details
+* Hide customer fields before checkin
+* Lock fields if payex consumer logged off
+* Use site name for payeeName
+* Prefilled address save
+* Fixed bug with customer reference
+* Fixed: Don't init customer if reference already exists
+* Fixed checkout problem on old version of woocommerce
+* Improved PayEx Checkout
+* Fixes for Invoice capture
+* Changed api endpoint urls
+* Translations update
+* Bugfixes
+
+Version 2.0.0
+* First public release

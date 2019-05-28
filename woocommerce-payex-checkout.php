@@ -5,7 +5,7 @@
  * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
  * Author: AAIT Team
  * Author URI: http://aait.se/
- * Version: 2.0.0
+ * Version: 2.1.0
  * Text Domain: woocommerce-gateway-payex-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
