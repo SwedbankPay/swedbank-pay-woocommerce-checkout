@@ -29,3 +29,11 @@
 #payex-paymentmenu h2 {
     margin-bottom: -10px;
 }
+
+.payex-locked {
+    opacity: .7;
+    pointer-events: none;
+    user-select : none;
+    -moz-user-select : none;
+    -webkit-user-select : none;
+}
