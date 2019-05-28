@@ -26,7 +26,7 @@ jQuery( function( $ ) {
             $( document.body ).on( 'blur', this.onUpdatedCheckout );
 
             if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
-                $('.woocommerce-billing-fields__field-wrapper, .woocommerce-shipping-fields').hide();
+                wc_payex_checkout.hideAddressFields();
                 if ( $('#payex-consumer-profile').length > 0 ) {
                     let reference = $('#payex-consumer-profile').data( 'reference' );
                     wc_payex_checkout.onTokenCreated( reference );
@@ -223,7 +223,8 @@ jQuery( function( $ ) {
         onTokenCreated: function( data ) {
             console.log( 'onTokenCreated', data );
 
-            $('.woocommerce-billing-fields__field-wrapper, .woocommerce-shipping-fields').show();
+            //wc_payex_checkout.showAddressFields();
+            $( '#change-shipping-info' ).show();
 
             wc_payex_checkout.form.append( "<input type='hidden' class='payex_customer_reference' name='payex_customer_reference' value='" + data + "'/>" );
             //wc_payex_checkout.form.submit();
@@ -379,6 +380,7 @@ jQuery( function( $ ) {
 
         onConsumerIdentified: function ( data ) {
             console.log( 'onConsumerIdentified', data );
+            $( '#change-shipping-info' ).show();
 
             return $.ajax( {
                 type: 'POST',
@@ -474,11 +476,22 @@ jQuery( function( $ ) {
             }
 
             $.scroll_to_notices( scrollElement );
+        },
+        hideAddressFields: function () {
+            $('.woocommerce-billing-fields__field-wrapper, .woocommerce-shipping-fields').hide();
+        },
+        showAddressFields: function () {
+            $('.woocommerce-billing-fields__field-wrapper, .woocommerce-shipping-fields').show();
         }
     };
 
     $(document).ready(function () {
         wc_payex_checkout.init( $( "form.checkout, form#order_review, form#add_payment_method" ) );
+
+        $( '#change-shipping-info' ).on( 'click', function () {
+            $( '#change-shipping-info' ).hide();
+            wc_payex_checkout.showAddressFields();
+        } );
     });
 });
 

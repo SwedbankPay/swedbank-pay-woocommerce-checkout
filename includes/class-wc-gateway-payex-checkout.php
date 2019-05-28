@@ -765,6 +765,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
             <div id="payex-consumer-profile" data-reference="<?php echo $consumer_profile; ?>"></div>
 			<?php
 		}
+
+		?>
+        <button id="change-shipping-info" type="button" class="button" style="display: none;">
+	        <?php _e( 'Change shipping information', 'woocommerce-gateway-payex-checkout' ); ?>
+        </button>
+        <?php
 	}
 
 	public function woocommerce_checkout_payment() {
