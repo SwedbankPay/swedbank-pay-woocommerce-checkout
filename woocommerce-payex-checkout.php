@@ -232,7 +232,7 @@ class WC_Payex_Checkout {
 
 		// Install plugin
 		// Get latest release from Github
-		$response = wp_remote_get( 'https://api.github.com/repos/PayEx/PayEx.Psp.WooCommerce/releases/latest', array(
+		$response = wp_remote_get( 'https://api.github.com/repos/PayEx/payex-woocommerce-payments/releases/latest', array(
 			'headers' => array( 'Accept' => 'application/vnd.github.v3+json' ),
 		) );
 		if ( is_wp_error( $response ) ) {
@@ -266,8 +266,8 @@ class WC_Payex_Checkout {
 		// Move plugin to plugins directory
 		$files = $wp_filesystem->dirlist( $tmpdir );
 		foreach ( $files as $name => $details ) {
-			if ( strpos( $name, 'PayEx.Psp.WooCommerce' ) !== FALSE ) {
-				$destination = WP_PLUGIN_DIR . '/PayEx.Psp.WooCommerce';
+			if ( strpos( $name, 'payex-woocommerce-payments' ) !== FALSE ) {
+				$destination = WP_PLUGIN_DIR . '/payex-woocommerce-payments';
 				// Remove destination directory if exists
 				if ( $wp_filesystem->exists( $destination ) ) {
 					$wp_filesystem->rmdir( $destination );
