@@ -345,7 +345,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'amount'      => round( 100 * $order->get_total() ),
 				'vatAmount'   => 0,
 				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_id() ),
-				'userAgent'   => $_SERVER['HTTP_USER_AGENT'],
+				'userAgent'   => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
 				'urls'        => [
 					'hostUrls'              => [
