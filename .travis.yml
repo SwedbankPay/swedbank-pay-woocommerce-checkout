@@ -30,8 +30,6 @@ matrix:
 
 install:
   - cd /tmp
-  - git clone https://github.com/PayEx/payex-woocommerce-payments
-  - git checkout tags/$PAYEX_VERSION
   - git clone https://github.com/woocommerce/woocommerce
   - cd woocommerce/
   - git checkout tags/$WOO_VERSION
@@ -40,7 +38,7 @@ install:
   - curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
   - php wp-cli.phar core config --dbname=woocommerce_test --dbuser=root --dbpass='' --dbhost=localhost --dbprefix=wp_
   - php wp-cli.phar core install --url="http://localhost:8080" --title="Example" --admin_user=admin --admin_password=password --admin_email=info@example.com --path=/tmp/wordpress --skip-email
-  - php wp-cli.phar plugin install https://github.com/PayEx/payex-woocommerce-payments/archive/$PAYEX_VERSION.zip --activate
+  - php wp-cli.phar plugin install https://github.com/PayEx/payex-woocommerce-payments/archive/master.zip --activate
   - cd $TRAVIS_BUILD_DIR
 
 before_script:
