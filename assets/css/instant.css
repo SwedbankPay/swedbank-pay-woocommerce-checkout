@@ -1,3 +1,7 @@
 #payment .wc_payment_methods {
     display: none;
 }
+
+.woocommerce-billing-fields h3 {
+    display: none;
+}

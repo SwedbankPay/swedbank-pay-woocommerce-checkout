@@ -776,6 +776,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function woocommerce_checkout_payment() {
 		?>
         <!-- <button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="Place order" data-value="Place order">Place order</button> -->
+        <h3><?php _e( 'Payment', 'woocommerce-gateway-payex-checkout' ); ?></h3>
         <div id="payex-checkout"></div>
 		<?php
 	}
