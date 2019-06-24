@@ -42,6 +42,7 @@ jQuery( function( $ ) {
                             container: 'payex-checkin',
                             culture: WC_Gateway_PayEx_Checkout.culture,
                             onConsumerIdentified: function( data ) {
+                                console.log( 'hostedView: onConsumerIdentified' );
                                 wc_payex_checkout.onConsumerIdentified( data );
                             },
                             onBillingDetailsAvailable: function( data ) {
@@ -406,6 +407,8 @@ jQuery( function( $ ) {
         },
         onAddressDetailsAvailable: function( type, data ) {
             console.log( 'onAddressDetailsAvailable', type, data );
+
+            $( '#change-shipping-info' ).show();
 
             return $.ajax( {
                 type: 'POST',
