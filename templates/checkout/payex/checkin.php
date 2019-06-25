@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
 	<div id="payex-consumer-profile" data-reference="<?php esc_html_e( $consumer_profile ); ?>"></div>
 <?php endif; ?>
 
-<br />
+<div style="clear: both;">&nbsp;</div>
 
 <button id="change-shipping-info" type="button" class="button" style="display: none;">
 	<?php esc_html_e( 'Change shipping information', 'woocommerce-gateway-payex-checkout' ); ?>
