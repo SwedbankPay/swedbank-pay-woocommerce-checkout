@@ -21,7 +21,7 @@ require_once $_tests_dir . '/includes/functions.php';
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
-	$_core_dir = getenv( 'WP_CORE_DIR ');
+	$_core_dir = getenv( 'WP_CORE_DIR ' );
 	if ( ! $_core_dir ) {
 		$_core_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress';
 	}
@@ -29,6 +29,7 @@ function _manually_load_plugin() {
 	require $_core_dir . '/wp-content/plugins/payex-woocommerce-payments/payex-woocommerce-payments.php';
 	require dirname( dirname( __FILE__ ) ) . '/payex-woocommerce-checkout.php';
 }
+
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WP testing environment.

@@ -45,8 +45,8 @@ class WC_Payex_Checkout {
 	 */
 	public function activate() {
 		// Required plugin: WooCommerce PayEx PSP Gateway
-		if ( class_exists( 'WC_Payex_Psp', FALSE ) ) {
-			return TRUE;
+		if ( class_exists( 'WC_Payex_Psp', false ) ) {
+			return true;
 		}
 
 		// Download and Install PSP package
@@ -76,7 +76,7 @@ class WC_Payex_Checkout {
 		} catch ( \Exception $e ) {
 			self::add_admin_notice( $e->getMessage(), 'error' );
 
-			return FALSE;
+			return false;
 		}
 
 		// Set Version
@@ -84,13 +84,13 @@ class WC_Payex_Checkout {
 			add_option( 'woocommerce_payex_checkout_version', '1.0.0' );
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	/**
 	 * Add relevant links to plugins page
 	 *
-	 * @param  array $links
+	 * @param array $links
 	 *
 	 * @return array
 	 */
@@ -108,7 +108,7 @@ class WC_Payex_Checkout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'woocommerce-gateway-payex-checkout', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( 'woocommerce-gateway-payex-checkout', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -116,7 +116,7 @@ class WC_Payex_Checkout {
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-		if ( ! class_exists( 'WC_Payex_Psp', FALSE ) ) {
+		if ( ! class_exists( 'WC_Payex_Psp', false ) ) {
 			return;
 		}
 
@@ -142,14 +142,14 @@ class WC_Payex_Checkout {
 					</p>
 				<?php endforeach; ?>
 			</div>
-			<?php
+		<?php
 		endforeach;
 
 		// Remove notices
 		delete_transient( 'wc-payex-checkout-notice' );
 
 		// Deactivate plugin
-		deactivate_plugins( array( __FILE__ ), TRUE );
+		deactivate_plugins( array( __FILE__ ), true );
 	}
 
 	/**
@@ -157,6 +157,7 @@ class WC_Payex_Checkout {
 	 *
 	 * @param string $message
 	 * @param string $type
+	 *
 	 * @return void
 	 */
 	public static function add_admin_notice( $message, $type = 'error' ) {
@@ -198,7 +199,7 @@ class WC_Payex_Checkout {
 				throw new Exception( $result->get_error_message() );
 			}
 
-			return TRUE;
+			return true;
 		}
 
 		throw new Exception( 'Failed to activate plugin' );
@@ -213,18 +214,18 @@ class WC_Payex_Checkout {
 
 		$plugins = get_plugins();
 		foreach ( $plugins as $file => $plugin ) {
-			if ( strpos( $file, 'payex-woocommerce-payments.php' ) !== FALSE ) {
+			if ( strpos( $file, 'payex-woocommerce-payments.php' ) !== false ) {
 				return $file;
 			}
 		}
 
-		return FALSE;
+		return false;
 	}
 
 	/**
 	 * Install PSP Plugin
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	protected static function install_psp_plugin() {
 		WP_Filesystem();
@@ -241,7 +242,7 @@ class WC_Payex_Checkout {
 			throw new Exception( $response->get_error_message() );
 		}
 
-		$release = json_decode( $response['body'], TRUE );
+		$release = json_decode( $response['body'], true );
 		if ( ! isset( $release['zipball_url'] ) ) {
 			throw new Exception( 'Failed to get latest release of PayEx WooCommerce payments plugin' );
 		}
@@ -268,7 +269,7 @@ class WC_Payex_Checkout {
 		// Move plugin to plugins directory
 		$files = $wp_filesystem->dirlist( $tmpdir );
 		foreach ( $files as $name => $details ) {
-			if ( strpos( $name, 'payex-woocommerce-payments' ) !== FALSE ) {
+			if ( strpos( $name, 'payex-woocommerce-payments' ) !== false ) {
 				$destination = WP_PLUGIN_DIR . '/payex-woocommerce-payments';
 				// Remove destination directory if exists
 				if ( $wp_filesystem->exists( $destination ) ) {
@@ -286,6 +287,7 @@ class WC_Payex_Checkout {
 
 				// Remove temp directory
 				$wp_filesystem->rmdir( $tmpdir );
+
 				return;
 			}
 		}

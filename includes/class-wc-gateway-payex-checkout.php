@@ -84,7 +84,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
-		if ( ! filter_var($this->terms_url, FILTER_VALIDATE_URL) ) {
+		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
 			$this->terms_url = '';
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
@@ -236,7 +236,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style.css', array(), false, 'all' );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), FALSE, 'all' );
+			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), false, 'all' );
 		}
 
 		// Checkout scripts
@@ -336,7 +336,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Check terms_url value
 		if ( parse_url( $this->terms_url, PHP_URL_SCHEME ) !== 'https' ) {
 			$this->terms_url = '';
-        }
+		}
 
 		$params = [
 			'paymentorder' => [
@@ -345,16 +345,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'amount'      => round( 100 * $order->get_total() ),
 				'vatAmount'   => 0,
 				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_id() ),
-				'userAgent'   => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
+				'userAgent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
 				'urls'        => [
-					'hostUrls'              => [
+					'hostUrls'          => [
 						get_bloginfo( 'url' )
 					],
-					'completeUrl'           => html_entity_decode( $this->get_return_url( $order ) ),
-					'cancelUrl'             => $order->get_cancel_order_url_raw(),
-					'callbackUrl'           => WC()->api_request_url( __CLASS__ ),
-					'termsOfServiceUrl'     => $this->terms_url
+					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
+					'cancelUrl'         => $order->get_cancel_order_url_raw(),
+					'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
+					'termsOfServiceUrl' => $this->terms_url
 				],
 				'payeeInfo'   => [
 					'payeeId'         => $this->payee_id,
@@ -376,14 +376,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		];
 
 		// Get Consumer Profile
-        $consumer_profile = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
-        if ( empty( $consumer_profile ) ) {
-            $consumer_profile = get_user_meta( $order->get_user_id(), '_payex_consumer_profile', true );
-        }
+		$consumer_profile = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
+		if ( empty( $consumer_profile ) ) {
+			$consumer_profile = get_user_meta( $order->get_user_id(), '_payex_consumer_profile', true );
+		}
 
-        if ( empty( $consumer_profile ) ) {
-	        $consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-        }
+		if ( empty( $consumer_profile ) ) {
+			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
+		}
 
 		if ( ! empty( $consumer_profile ) ) {
 			$params['paymentorder']['payer'] = [
@@ -395,8 +395,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$result = $this->request( 'POST', '/psp/paymentorders', $params );
 		} catch ( Exception $e ) {
 			if ( ( strpos( $e->getMessage(), 'is not active' ) !== false ) ||
-                 ( strpos( $e->getMessage(), 'Unable to verify consumerProfileRef' ) !== false ) )
-			{
+			     ( strpos( $e->getMessage(), 'Unable to verify consumerProfileRef' ) !== false ) ) {
 				// Reference *** is not active, unable to complete
 				delete_user_meta( $order->get_user_id(), '_payex_consumer_profile' );
 
@@ -477,8 +476,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	/**
 	 * IPN Callback
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function return_handler() {
 		$raw_body = file_get_contents( 'php://input' );
@@ -508,8 +507,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			// Get Order by Order Payment Id
 			$order_id = $this->get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
 			if ( empty( $order_id ) ) {
-			    // Extract Order ID from description
-				$result = $this->request('GET', $paymentorder_id );
+				// Extract Order ID from description
+				$result      = $this->request( 'GET', $paymentorder_id );
 				$description = $result['paymentOrder']['description'];
 
 				$matches = [];
@@ -544,8 +543,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @param WC_Order|int $order
 	 * @param bool $amount
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function capture_payment( $order, $amount = false ) {
 		if ( is_int( $order ) ) {
@@ -584,34 +583,35 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 *
 	 * @param WC_Order|int $order
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function cancel_payment( $order ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
 
-		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
-			throw new Exception('Unable to get payment ID');
+			throw new Exception( 'Unable to get payment ID' );
 		}
 
 		// Use Invoice cancel
 		$result = $this->request( 'GET', $payment_id );
-		if ($result['payment']['instrument'] === 'Invoice') {
+		if ( $result['payment']['instrument'] === 'Invoice' ) {
 			$gateways = WC()->payment_gateways()->payment_gateways();
-			if (!isset($gateways[ 'payex_psp_invoice' ])) {
-				throw new Exception('Unable to get Invoice gateway');
+			if ( ! isset( $gateways['payex_psp_invoice'] ) ) {
+				throw new Exception( 'Unable to get Invoice gateway' );
 			}
 
 			/** @var WC_Gateway_Payex_Invoice $gateway */
-			$gateway = $gateways[ 'payex_psp_invoice' ];
+			$gateway                 = $gateways['payex_psp_invoice'];
 			$gateway->merchant_token = $this->merchant_token;
-			$gateway->payee_id = $this->payee_id;
-			$gateway->testmode = $this->testmode;
+			$gateway->payee_id       = $this->payee_id;
+			$gateway->testmode       = $this->testmode;
 
 			$gateway->cancel_payment( $order );
+
 			return;
 		}
 
@@ -622,37 +622,38 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * Refund
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool         $amount
-	 * @param string       $reason
+	 * @param bool $amount
+	 * @param string $reason
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
-	public function refund_payment( $order, $amount = FALSE, $reason = '' ) {
+	public function refund_payment( $order, $amount = false, $reason = '' ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
 
-		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
-			throw new Exception('Unable to get payment ID');
+			throw new Exception( 'Unable to get payment ID' );
 		}
 
 		// Use Invoice cancel
 		$result = $this->request( 'GET', $payment_id );
-		if ($result['payment']['instrument'] === 'Invoice') {
+		if ( $result['payment']['instrument'] === 'Invoice' ) {
 			$gateways = WC()->payment_gateways()->payment_gateways();
-			if (!isset($gateways[ 'payex_psp_invoice' ])) {
-				throw new Exception('Unable to get Invoice gateway');
+			if ( ! isset( $gateways['payex_psp_invoice'] ) ) {
+				throw new Exception( 'Unable to get Invoice gateway' );
 			}
 
 			/** @var WC_Gateway_Payex_Invoice $gateway */
-			$gateway = $gateways[ 'payex_psp_invoice' ];
+			$gateway                 = $gateways['payex_psp_invoice'];
 			$gateway->merchant_token = $this->merchant_token;
-			$gateway->payee_id = $this->payee_id;
-			$gateway->testmode = $this->testmode;
+			$gateway->payee_id       = $this->payee_id;
+			$gateway->testmode       = $this->testmode;
 
 			$gateway->refund_payment( $order, $amount, $reason );
+
 			return;
 		}
 
@@ -714,14 +715,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( is_user_logged_in() ) {
 			$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
-			$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
-			if (empty($consumer_data)) {
-			    // Deprecated
+			$consumer_data    = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
+			if ( empty( $consumer_data ) ) {
+				// Deprecated
 				$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
-            }
+			}
 		} else {
 			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-			$consumer_data = WC()->session->get( 'payex_checkin' );
+			$consumer_data    = WC()->session->get( 'payex_checkin' );
 		}
 
 		$js_url = null;
@@ -757,14 +758,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	/**
 	 * Render Payment Methods HTML.
-     *
-     * @return void
+	 *
+	 * @return void
 	 */
 	public function woocommerce_checkout_payment() {
 		wc_get_template(
 			'checkout/payex/payment.php',
-			array(
-				//'checkout' => WC()->checkout()
+			array(//'checkout' => WC()->checkout()
 			),
 			'',
 			dirname( __FILE__ ) . '/../templates/'
@@ -773,19 +773,19 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	/**
 	 * Ajax: Retrieve Address
-     *
-     * @return void
+	 *
+	 * @return void
 	 */
 	public function ajax_payex_checkout_get_address() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
 		$type = isset( $_POST['type'] ) ? wc_clean( $_POST['type'] ) : '';
-		$url = isset( $_POST['url'] ) ? wc_clean( $_POST['url'] ) : '';
+		$url  = isset( $_POST['url'] ) ? wc_clean( $_POST['url'] ) : '';
 
 		// https://developer.payex.com/xwiki/wiki/developer/view/Main/ecommerce/technical-reference/consumers-resource/#HRetrieveConsumerShippingDetails
 		try {
 			// Check url
-			if (mb_substr($url, 0, 1, 'UTF-8') === '/') {
+			if ( mb_substr( $url, 0, 1, 'UTF-8' ) === '/' ) {
 				$url = $this->backend_api_endpoint . $url;
 			}
 
@@ -822,7 +822,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		if ( is_user_logged_in() ) {
 			$user_id = get_current_user_id();
 			update_user_meta( $user_id, '_payex_consumer_address_' . $type, $output );
-        }
+		}
 
 		WC()->session->set( 'payex_checkin', $output );
 		wp_send_json_success( $output );
@@ -830,8 +830,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	/**
 	 * Ajax: Retrieve Consumer Profile Reference
-     *
-     * @return void
+	 *
+	 * @return void
 	 */
 	public function ajax_payex_checkout_customer_profile() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
@@ -859,7 +859,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	/**
 	 * Ajax: Place Order.
-     *
+	 *
 	 * @throws Exception
 	 */
 	public function ajax_payex_place_order() {
@@ -879,8 +879,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	}
 
 	/**
-     * Ajax: Update Order's data.
-     *
+	 * Ajax: Update Order's data.
+	 *
 	 * @throws Exception
 	 */
 	public function ajax_payex_update_order() {
@@ -899,14 +899,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
 		if ( $order_id > 0 ) {
-		    $order = wc_get_order( $order_id );
-		    if ( $order->get_payment_method() === $this->id ) {
-		        // Mark order failed instead of cancelled
-		        if ( $order->has_status('cancelled') ) {
-		            $order->update_status( 'failed' );
-                }
-            }
-        }
+			$order = wc_get_order( $order_id );
+			if ( $order->get_payment_method() === $this->id ) {
+				// Mark order failed instead of cancelled
+				if ( $order->has_status( 'cancelled' ) ) {
+					$order->update_status( 'failed' );
+				}
+			}
+		}
 
 		WC()->checkout()->process_checkout();
 	}
@@ -940,6 +940,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * Lock checkout fields
 	 *
 	 * @param $fieldset
+	 *
 	 * @return array
 	 */
 	public function lock_checkout_fields( $fieldset ) {
@@ -955,24 +956,24 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				foreach ( $fieldset as $section => &$fields ) {
 					foreach ( $fields as $key => &$field ) {
 						$field['custom_attributes']['readonly'] = 'readonly';
-						$field['class'][] = 'payex-locked';
+						$field['class'][]                       = 'payex-locked';
 					}
 				}
-            }
+			}
 		}
 
-	    return $fieldset;
+		return $fieldset;
 	}
 
 	/**
-     * Checkout initialization
-     *
+	 * Checkout initialization
+	 *
 	 * @param WC_Checkout $checkout
 	 */
 	public function checkout_init( $checkout ) {
 		remove_action( 'woocommerce_checkout_billing', array( $checkout, 'checkout_form_billing' ), 10 );
 		remove_action( 'woocommerce_checkout_shipping', array( $checkout, 'checkout_form_shipping' ), 10 );
-    }
+	}
 
 	/**
 	 * Billing form
@@ -986,7 +987,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'',
 			dirname( __FILE__ ) . '/../templates/'
 		);
-    }
+	}
 
 	/**
 	 * Shipping Info
@@ -997,6 +998,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 	/**
 	 * Override Standard Checkout template
+	 *
 	 * @param $located
 	 * @param $template_name
 	 * @param $args

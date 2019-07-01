@@ -20,9 +20,9 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 		$this->wc = WC();
 
 		// Init PayEx Payments plugin
-		$this->gateway           = new WC_Gateway_Payex_Checkout();
-		$this->gateway->enabled  = 'yes';
-		$this->gateway->testmode = 'yes';
+		$this->gateway              = new WC_Gateway_Payex_Checkout();
+		$this->gateway->enabled     = 'yes';
+		$this->gateway->testmode    = 'yes';
 		$this->gateway->description = 'Test';
 
 		// Add PayEx to PM List
@@ -36,14 +36,13 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 	 *
 	 * @return mixed
 	 */
-	public function payment_gateways($gateways) {
-		$payment_gateways[$this->gateway->id] = $this->gateway;
+	public function payment_gateways( $gateways ) {
+		$payment_gateways[ $this->gateway->id ] = $this->gateway;
 
 		return $gateways;
 	}
 
-	public function test_payment_gateway()
-	{
+	public function test_payment_gateway() {
 		/** @var WC_Payment_Gateways $gateways */
 		$gateways = $this->wc->payment_gateways();
 		$this->assertInstanceOf( WC_Payment_Gateways::class, new $gateways );
@@ -54,21 +53,19 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 		$this->assertArrayHasKey( 'payex_checkout', $gateways );
 	}
 
-	public function test_order()
-	{
+	public function test_order() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency('SEK');
+		$order->set_currency( 'SEK' );
 		$order->save();
 
 		$this->assertEquals( $this->gateway->id, $order->get_payment_method() );
 	}
 
-	public function test_process_payment()
-	{
+	public function test_process_payment() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency('SEK');
+		$order->set_currency( 'SEK' );
 		$order->save();
 
 		$result = $this->gateway->process_payment( $order->get_id() );
@@ -76,23 +73,21 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 		$this->assertFalse( $result );
 	}
 
-	public function test_payment_confirm()
-	{
+	public function test_payment_confirm() {
 		/** @var WC_Order $order */
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency('SEK');
+		$order->set_currency( 'SEK' );
 		$order->update_meta_data( '_payex_payment_id', '/invalid/payment/id' );
 		$order->save();
 
 		$_GET['key'] = $order->get_order_key();
-		$result = $this->gateway->payment_confirm();
+		$result      = $this->gateway->payment_confirm();
 
-		$this->assertNull($result);
+		$this->assertNull( $result );
 	}
 
-	public function test_can_capture()
-	{
+	public function test_can_capture() {
 		/** @var WC_Order $order */
 		$order = WC_Helper_Order::create_order();
 		$order->update_meta_data( '_payex_payment_state', 'Authorized' );
@@ -102,8 +97,7 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 		$this->assertTrue( $result );
 	}
 
-	public function test_can_cancel()
-	{
+	public function test_can_cancel() {
 		/** @var WC_Order $order */
 		$order = WC_Helper_Order::create_order();
 		$order->update_meta_data( '_payex_payment_state', 'Captured' );
@@ -116,8 +110,7 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 	/**
 	 * @expectedException Exception
 	 */
-	public function test_can_refund()
-	{
+	public function test_can_refund() {
 		/** @var WC_Order $order */
 		$order = WC_Helper_Order::create_order();
 		$order->update_meta_data( '_payex_payment_id', '/invalid/payment/id' );
@@ -130,8 +123,7 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 	/**
 	 * @expectedException Exception
 	 */
-	public function test_capture_payment()
-	{
+	public function test_capture_payment() {
 		$order = WC_Helper_Order::create_order();
 		$this->gateway->capture_payment( $order );
 	}
@@ -139,8 +131,7 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 	/**
 	 * @expectedException Exception
 	 */
-	public function test_cancel_payment()
-	{
+	public function test_cancel_payment() {
 		$order = WC_Helper_Order::create_order();
 		$this->gateway->cancel_payment( $order );
 	}
@@ -148,8 +139,7 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 	/**
 	 * @expectedException Exception
 	 */
-	public function test_refund_payment()
-	{
+	public function test_refund_payment() {
 		$order = WC_Helper_Order::create_order();
 		$this->gateway->refund_payment( $order );
 	}
