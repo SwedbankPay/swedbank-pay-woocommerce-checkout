@@ -70,7 +70,7 @@ class WC_Payex_Checkout {
 
 				WC_Admin_Notices::add_custom_notice(
 					'wc-payex-checkout-notice',
-					__( 'Required WooCommerce PayEx PSP Gateway plugin was automatically installed.', 'woocommerce-gateway-payex-checkout' )
+					__( 'Required PayEx WooCommerce payments plugin was automatically installed.', 'woocommerce-gateway-payex-checkout' )
 				);
 			}
 		} catch ( \Exception $e ) {
@@ -213,7 +213,7 @@ class WC_Payex_Checkout {
 
 		$plugins = get_plugins();
 		foreach ( $plugins as $file => $plugin ) {
-			if ( strpos( $file, 'woocommerce-payex-psp.php' ) !== FALSE ) {
+			if ( strpos( $file, 'payex-woocommerce-payments.php' ) !== FALSE ) {
 				return $file;
 			}
 		}
@@ -243,7 +243,7 @@ class WC_Payex_Checkout {
 
 		$release = json_decode( $response['body'], TRUE );
 		if ( ! isset( $release['zipball_url'] ) ) {
-			throw new Exception( 'Failed to get latest release of WooCommerce PayEx PSP Gateway plugin' );
+			throw new Exception( 'Failed to get latest release of PayEx WooCommerce payments plugin' );
 		}
 
 		// Download package
@@ -293,7 +293,7 @@ class WC_Payex_Checkout {
 		// Remove temp directory
 		$wp_filesystem->rmdir( $tmpdir );
 
-		throw new Exception( 'Failed to install WooCommerce PayEx PSP Gateway plugin' );
+		throw new Exception( 'Failed to install PayEx WooCommerce payments plugin' );
 	}
 }
 
