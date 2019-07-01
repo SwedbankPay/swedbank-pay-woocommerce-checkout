@@ -42,6 +42,7 @@ jQuery( function( $ ) {
                             container: 'payex-checkin',
                             culture: WC_Gateway_PayEx_Checkout.culture,
                             onConsumerIdentified: function( data ) {
+                                console.log( 'hostedView: onConsumerIdentified' );
                                 wc_payex_checkout.onConsumerIdentified( data );
                             },
                             onBillingDetailsAvailable: function( data ) {
@@ -130,12 +131,12 @@ jQuery( function( $ ) {
                     }
 
                     wc_payex_checkout.loadJs( response['js_url'], function () {
-                        $('#payex-checkout iframe').remove();
+                        $('#payment-payex-checkout iframe').remove();
 
                         // Load PayEx Checkout frame
                         if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
                             $('#payment').hide();
-                            wc_payex_checkout.initPaymentMenu('payex-checkout' );
+                            wc_payex_checkout.initPaymentMenu('payment-payex-checkout' );
                         }
                     } );
                 } );
@@ -192,11 +193,11 @@ jQuery( function( $ ) {
 
                         // Load PayEx Checkout frame
                         wc_payex_checkout.loadJs( response['js_url'], function () {
-                            $('#payex-checkout iframe').remove();
+                            $('#payment-payex-checkout iframe').remove();
 
                             if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
                                 $('#payment').hide();
-                                wc_payex_checkout.initPaymentMenu('payex-checkout' );
+                                wc_payex_checkout.initPaymentMenu('payment-payex-checkout' );
                             } else {
                                 $.featherlight('<div id="payex-paymentmenu">&nbsp;</div>', {
                                     variant: 'featherlight-payex',
@@ -406,6 +407,8 @@ jQuery( function( $ ) {
         },
         onAddressDetailsAvailable: function( type, data ) {
             console.log( 'onAddressDetailsAvailable', type, data );
+
+            $( '#change-shipping-info' ).show();
 
             return $.ajax( {
                 type: 'POST',

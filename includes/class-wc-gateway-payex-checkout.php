@@ -116,11 +116,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
 
 		// Add SSN Checkout Field
+		add_action( 'woocommerce_checkout_init', array( $this, 'checkout_init' ), 10, 1 );
+		add_action( 'woocommerce_checkout_billing', array( $this, 'checkout_form_billing' ) );
 		add_action( 'woocommerce_before_checkout_billing_form', array( $this, 'before_checkout_billing_form' ) );
 		add_action( 'woocommerce_checkout_order_review', array( $this, 'woocommerce_checkout_payment' ), 20 );
-		if ( $this->instant_checkout === 'yes' ) {
-			//remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
-		}
+		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
 
 		add_action( 'wp_ajax_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
 		add_action( 'wp_ajax_nopriv_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
@@ -724,6 +724,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$consumer_data = WC()->session->get( 'payex_checkin' );
 		}
 
+		$js_url = null;
+
 		if ( empty( $consumer_profile ) ) {
 			// Initiate consumer session
 			$params = [
@@ -738,49 +740,42 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			}
 
 			$js_url = self::get_operation( $result['operations'], 'view-consumer-identification' );
-
-			?>
-            <script id="payex-hostedview-script" src="<?php echo $js_url; ?>"></script>
-            <h2><?php _e( 'Your information', 'woocommerce-gateway-payex-checkout' ); ?></h2>
-            <div id="payex-checkin">
-
-            </div>
-			<?php
-		} else {
-			?>
-            <h2><?php _e( 'Your information', 'woocommerce-gateway-payex-checkout' ); ?></h2>
-            <div id="payex-checkin">
-	            <strong>
-		            <?php _e( 'You\'re loggedin as payex customer.', 'woocommerce-gateway-payex-checkout' ); ?>
-                </strong>
-	            <?php if (isset($consumer_data['first_name'])): ?>
-                    <p>
-	                    <?php echo $consumer_data['first_name'] . ' ' . $consumer_data['last_name']; ?><br/>
-	                    <?php echo $consumer_data['postcode'] . ' ' . $consumer_data['city']; ?><br/>
-	                    <?php echo $consumer_data['email'] . ', ' . $consumer_data['phone']; ?><br/>
-                    </p>
-	            <?php endif; ?>
-            </div>
-
-            <div id="payex-consumer-profile" data-reference="<?php echo $consumer_profile; ?>"></div>
-			<?php
 		}
 
-		?>
-        <button id="change-shipping-info" type="button" class="button" style="display: none;">
-	        <?php _e( 'Change shipping information', 'woocommerce-gateway-payex-checkout' ); ?>
-        </button>
-        <?php
+		// Checkin Form
+		wc_get_template(
+			'checkout/payex/checkin.php',
+			array(
+				'js_url'           => $js_url,
+				'consumer_data'    => $consumer_data,
+				'consumer_profile' => $consumer_profile
+			),
+			'',
+			dirname( __FILE__ ) . '/../templates/'
+		);
 	}
 
+	/**
+	 * Render Payment Methods HTML.
+     *
+     * @return void
+	 */
 	public function woocommerce_checkout_payment() {
-		?>
-        <!-- <button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="Place order" data-value="Place order">Place order</button> -->
-        <h3><?php _e( 'Payment', 'woocommerce-gateway-payex-checkout' ); ?></h3>
-        <div id="payex-checkout"></div>
-		<?php
+		wc_get_template(
+			'checkout/payex/payment.php',
+			array(
+				//'checkout' => WC()->checkout()
+			),
+			'',
+			dirname( __FILE__ ) . '/../templates/'
+		);
 	}
 
+	/**
+	 * Ajax: Retrieve Address
+     *
+     * @return void
+	 */
 	public function ajax_payex_checkout_get_address() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
@@ -833,6 +828,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		wp_send_json_success( $output );
 	}
 
+	/**
+	 * Ajax: Retrieve Consumer Profile Reference
+     *
+     * @return void
+	 */
 	public function ajax_payex_checkout_customer_profile() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
@@ -858,7 +858,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	}
 
 	/**
-	 * Ajax Action
+	 * Ajax: Place Order.
+     *
 	 * @throws Exception
 	 */
 	public function ajax_payex_place_order() {
@@ -877,6 +878,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		WC()->checkout()->process_checkout();
 	}
 
+	/**
+     * Ajax: Update Order's data.
+     *
+	 * @throws Exception
+	 */
 	public function ajax_payex_update_order() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
@@ -917,7 +923,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			return $gateways;
 		}
 
-		if ( $this->instant_checkout !== 'yes' ) {
+		if ( $this->enabled === 'no' || $this->instant_checkout !== 'yes' ) {
 			return $gateways;
 		}
 
@@ -937,7 +943,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @return array
 	 */
 	public function lock_checkout_fields( $fieldset ) {
-		if ( $this->instant_checkout === 'yes' ) {
+		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
 			if ( is_user_logged_in() ) {
 				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
 			} else {
@@ -956,6 +962,63 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 	    return $fieldset;
+	}
+
+	/**
+     * Checkout initialization
+     *
+	 * @param WC_Checkout $checkout
+	 */
+	public function checkout_init( $checkout ) {
+		remove_action( 'woocommerce_checkout_billing', array( $checkout, 'checkout_form_billing' ), 10 );
+		remove_action( 'woocommerce_checkout_shipping', array( $checkout, 'checkout_form_shipping' ), 10 );
+    }
+
+	/**
+	 * Billing form
+	 */
+	public function checkout_form_billing() {
+		wc_get_template(
+			'checkout/payex/form-billing.php',
+			array(
+				'checkout' => WC()->checkout()
+			),
+			'',
+			dirname( __FILE__ ) . '/../templates/'
+		);
+    }
+
+	/**
+	 * Shipping Info
+	 */
+	public function checkout_form_shipping() {
+		wc_get_template( 'checkout/form-shipping.php', array( 'checkout' => WC()->checkout() ) );
+	}
+
+	/**
+	 * Override Standard Checkout template
+	 * @param $located
+	 * @param $template_name
+	 * @param $args
+	 * @param $template_path
+	 * @param $default_path
+	 *
+	 * @return string
+	 */
+	public function override_template( $located, $template_name, $args, $template_path, $default_path ) {
+		if ( $this->enabled !== 'yes' || $this->instant_checkout !== 'yes' ) {
+			return $located;
+		}
+
+		if ( strpos( $located, 'checkout/form-checkout.php' ) !== false ) {
+			$located = wc_locate_template(
+				'checkout/payex/form-checkout.php',
+				$template_path,
+				dirname( __FILE__ ) . '/../templates/'
+			);
+		}
+
+		return $located;
 	}
 }
 
