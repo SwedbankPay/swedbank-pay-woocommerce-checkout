@@ -1,0 +1,12 @@
+{
+    "name": "payex/woocommerce-checkout",
+    "description": "PayEx Checkout for WooCommerce",
+    "homepage": "https://github.com/PayEx/payex-woocommerce-checkout",
+    "type": "wordpress-plugin",
+    "license": "Apache-2.0",
+    "prefer-stable": true,
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.6"
+    }
+}
