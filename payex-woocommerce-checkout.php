@@ -7,7 +7,7 @@
  * Author URI: http://payex.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 2.1.0
+ * Version: 2.1.1
  * Text Domain: woocommerce-gateway-payex-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
