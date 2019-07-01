@@ -3,15 +3,15 @@
  * Plugin Name: PayEx Checkout WooCommerce payments
  * Plugin URI: http://payex.com/
  * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
- * Author: AAIT Team
- * Author URI: http://aait.se/
+ * Author: PayEx
+ * Author URI: http://payex.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 2.1.0
  * Text Domain: woocommerce-gateway-payex-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 3.4.5
+ * WC tested up to: 3.6.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
