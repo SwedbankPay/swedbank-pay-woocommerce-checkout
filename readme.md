@@ -1,9 +1,9 @@
 # PayEx WooCommerce Checkout
 
-This plugin provides the PayEx Payment Gateway for WooCommerce.
+This plugin provides the PayEx Checkout for WooCommerce.
 
 * Contributors: payex
-* Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, payex, payment gateway
+* Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, payex, payment gateway, woocommerce
 * Requires at least: 4.7
 * Tested up to: 5.2
 * Requires PHP: 5.6
@@ -13,20 +13,18 @@ This plugin provides the PayEx Payment Gateway for WooCommerce.
 ## Description
 
 PayEx Payments Gateway for WooCommerce. Payment gateway allows to accept payments through:
-
 * Credit and debit cards (Visa, Mastercard, Visa Electron, Maestro etc).
+* Bank Debit
 * Invoice
-* Mobilepay
 * Swish
 * Vipps
 
 
 ## Installation
 
-For complete installation details, please read the [installation guide](installation-guide.md). TL;DR:
+### Minimum Requirements
 
-1. Download and unzip the latest release zip file.
-2. If you use the WordPress plugin uploader to install this plugin skip to step 4.
-3. Upload the entire plugin directory to your /wp-content/plugins/ directory.
-4. Activate the plugin through the 'Plugins' menu in WordPress Administration.
-5. Go WooCommerce Settings --> Payment Gateways and configure your PayEx settings.
+* PHP 5.6 or greater is recommended
+* WooCommerce 3 or greater is recommended
+
+Visit the [Installation guide](https://github.com/PayEx/payex-woocommerce-checkout/blob/master/installation-guide.md) for a detailed information.

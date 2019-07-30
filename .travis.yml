@@ -4,11 +4,11 @@ dist: trusty
 language: php
 
 php:
-  - 5.6
-  - 7.0
+  #- 5.6
+  #- 7.0
   - 7.1
-  - 7.2
-  - hhvm
+  #- 7.2
+  #- hhvm
 
 env:
   - PAYEX_VERSION="master" WOO_VERSION="3.6.1" WP_VERSION=latest
@@ -53,4 +53,9 @@ script:
   - |
     phpunit
     WP_MULTISITE=1 phpunit
-
+deploy:
+  provider: script
+  script: curl -u "travis:${app_token}" -d "release=${TRAVIS_TAG:1}" "http://magento7.aait.nu/scripts/payex-woocommerce-checkout/deploy.php"
+  on:
+    tags: true
+    all_branches: true
