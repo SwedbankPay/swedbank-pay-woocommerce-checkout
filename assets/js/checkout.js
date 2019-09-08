@@ -26,6 +26,7 @@ jQuery( function( $ ) {
             $( document.body ).on( 'blur', this.onUpdatedCheckout );
 
             if ( WC_Gateway_PayEx_Checkout.instant_checkout ) {
+                console.log( 'Initialization of Instant Checkout...' );
                 wc_payex_checkout.hideAddressFields();
                 if ( $('#payex-consumer-profile').length > 0 ) {
                     let reference = $('#payex-consumer-profile').data( 'reference' );
@@ -92,7 +93,7 @@ jQuery( function( $ ) {
         },
 
         onReady: function() {
-            console.log('Ready');
+            console.log( 'Ready' );
         },
 
         onUpdatedCheckout: function() {
@@ -100,6 +101,11 @@ jQuery( function( $ ) {
                 return false;
             }
 
+            if ( ! WC_Gateway_PayEx_Checkout.instant_checkout ) {
+                return false;
+            }
+
+            console.log( 'onUpdatedCheckout' );
             $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
             wc_payex_checkout.form.addClass( 'processing' );
             wc_payex_checkout.block();
@@ -109,6 +115,7 @@ jQuery( function( $ ) {
                     wc_payex_checkout.unblock();
                 } )
                 .fail( function( jqXHR, textStatus ) {
+                    console.log( 'updateOrder error:' + textStatus );
                     wc_payex_checkout.onError( textStatus );
                 } )
                 .done( function ( response) {
@@ -130,6 +137,10 @@ jQuery( function( $ ) {
                         return;
                     }
 
+                    // @todo Refresh
+                    //wc_payex_checkout.refreshPaymentMenu();
+
+                    // Load PayEx Checkout frame
                     wc_payex_checkout.loadJs( response['js_url'], function () {
                         $('#payment-payex-checkout iframe').remove();
 
@@ -156,7 +167,7 @@ jQuery( function( $ ) {
                     return false;
                 }
 
-                console.log('onSubmit');
+                console.log( 'onSubmit' );
 
                 if ( wc_payex_checkout.form.is( '.processing' ) ) {
                     return false;
@@ -306,6 +317,7 @@ jQuery( function( $ ) {
          * @param callback
          */
         loadJs: function ( js, callback ) {
+            console.log( 'Loading of ' + js );
             // Creates a new script tag
             let script = document.createElement( 'script' );
 
@@ -313,7 +325,10 @@ jQuery( function( $ ) {
             script.setAttribute( 'src', js );
             script.setAttribute( 'type', 'text/javascript' );
             script.setAttribute( 'async', '' );
-            script.addEventListener( 'load', callback, false );
+            script.addEventListener( 'load', function () {
+                console.log( 'Loaded: ' + js );
+                callback();
+            }, false );
 
             // Gets document head element
             let oHead = document.getElementsByTagName( 'head' )[0];
@@ -326,6 +341,7 @@ jQuery( function( $ ) {
         },
 
         initPaymentMenu: function ( id ) {
+            console.log( 'initPaymentMenu' );
             // Load PayEx Checkout frame
             window.payex.hostedView.paymentMenu( {
                 container: id,
@@ -349,7 +365,16 @@ jQuery( function( $ ) {
             } ).open();
         },
 
+        /**
+         * Refresh
+         */
+        refreshPaymentMenu: function() {
+            console.log( 'refreshPaymentMenu' );
+            window.payex.hostedView.paymentMenu.refresh();
+        },
+
         placeOrder: function () {
+            console.log( 'placeOrder' );
             let fields = $('.woocommerce-checkout').serialize();
 
             return $.ajax( {
@@ -365,6 +390,7 @@ jQuery( function( $ ) {
         },
 
         updateOrder: function () {
+            console.log( 'updateOrder' );
             let fields = $('.woocommerce-checkout').serialize();
 
             return $.ajax( {
@@ -462,6 +488,7 @@ jQuery( function( $ ) {
         },
 
         onError: function ( data ) {
+            console.log( 'onError', data );
             //wc_payex_checkout.submit_error( '<div class="woocommerce-error">' + data + '</div>' );
         },
         submit_error: function( error_message ) {
