@@ -1,39 +1,32 @@
 .featherlight-payex .featherlight-content {
-    width: 50%;
-}
+  width: 50%; }
 
 @media (max-width: 767px) {
-    .featherlight-payex .featherlight-content {
-        width: 100%;
-        width: -moz-available;
-        width: -webkit-fill-available;
-        width: fill-available;
-    }
-}
+  .featherlight-payex .featherlight-content {
+    width: 100%;
+    width: -moz-available;
+    width: -webkit-fill-available;
+    width: fill-available; } }
 
 .bordered-div {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    padding-bottom: 20px;
-}
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  padding-bottom: 20px; }
 
 .padded-div {
-    padding-left: 15px;
-    padding-right: 15px;
-    padding-top: 5px;
-}
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 5px; }
 
 #payex-consumer h2,
 #payex-paymentmenu h2 {
-    margin-bottom: -10px;
-}
+  margin-bottom: -10px; }
 
 .payex-locked {
-    opacity: .7;
-    pointer-events: none;
-    user-select : none;
-    -moz-user-select : none;
-    -webkit-user-select : none;
-}
+  opacity: .7;
+  pointer-events: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none; }
