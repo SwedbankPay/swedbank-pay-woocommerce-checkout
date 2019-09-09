@@ -51,6 +51,30 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $backend_api_endpoint = 'https://api.payex.com';
 
 	/**
+	 * Reject Credit Cards
+	 * @var string
+	 */
+	public $reject_credit_cards = 'no';
+
+	/**
+	 * Reject Debit Cards
+	 * @var string
+	 */
+	public $reject_debit_cards = 'no';
+
+	/**
+	 * Reject Consumer Cards
+	 * @var string
+	 */
+	public $reject_consumer_cards = 'no';
+
+	/**
+	 * Reject Corporate Cards
+	 * @var string
+	 */
+	public $reject_corporate_cards = 'no';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -397,8 +421,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					'payeeId'         => $this->payee_id,
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
 					'payeeName'       => get_bloginfo( 'name' ),
-					'productCategory' => 'A123',
-					'orderReference' => $order->get_id()
+					'orderReference'  => $order->get_id()
 				],
 				'payer'       => [
 					'firstName' => $order->get_billing_first_name(),
