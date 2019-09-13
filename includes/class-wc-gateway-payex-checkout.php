@@ -1137,7 +1137,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			}
 
 			$item[] = [
-				'reference'    => $order_item->get_product()->get_sku(),
+				// The field Reference must match the regular expression '[\\w-]*'
+				'reference'    => str_replace( ' ', '-', $order_item->get_product()->get_sku() ),
 				'name'         => $order_item->get_name(),
 				'type'         => 'PRODUCT',
 				'class'        => 'ProductGroup1',
