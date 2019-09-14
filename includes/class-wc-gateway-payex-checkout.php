@@ -51,6 +51,30 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $backend_api_endpoint = 'https://api.payex.com';
 
 	/**
+	 * Reject Credit Cards
+	 * @var string
+	 */
+	public $reject_credit_cards = 'no';
+
+	/**
+	 * Reject Debit Cards
+	 * @var string
+	 */
+	public $reject_debit_cards = 'no';
+
+	/**
+	 * Reject Consumer Cards
+	 * @var string
+	 */
+	public $reject_consumer_cards = 'no';
+
+	/**
+	 * Reject Corporate Cards
+	 * @var string
+	 */
+	public $reject_corporate_cards = 'no';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -82,6 +106,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+
+		// Reject Cards
+		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
+		$this->reject_debit_cards     = isset( $this->settings['reject_debit_cards'] ) ? $this->settings['reject_debit_cards'] : $this->reject_debit_cards;
+		$this->reject_consumer_cards  = isset( $this->settings['reject_consumer_cards'] ) ? $this->settings['reject_consumer_cards'] : $this->reject_consumer_cards;
+		$this->reject_corporate_cards = isset( $this->settings['reject_corporate_cards'] ) ? $this->settings['reject_corporate_cards'] : $this->reject_corporate_cards;
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
@@ -215,6 +245,30 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
 				'default'     => get_site_url()
 			),
+			'reject_credit_cards' => array(
+				'title'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_credit_cards
+			),
+			'reject_debit_cards' => array(
+				'title'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_debit_cards
+			),
+			'reject_consumer_cards' => array(
+				'title'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_consumer_cards
+			),
+			'reject_corporate_cards' => array(
+				'title'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_corporate_cards
+			),
 		);
 	}
 
@@ -233,16 +287,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 		wp_enqueue_script( 'featherlight', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.js', array( 'jquery' ), '1.7.13', true );
 		wp_enqueue_style( 'featherlight-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.css', array(), '1.7.13', 'all' );
-		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style.css', array(), false, 'all' );
+		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style' . $suffix . '.css', array(), false, 'all' );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant.css', array(), false, 'all' );
+			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant' . $suffix . '.css', array(), false, 'all' );
 		}
 
 		// Checkout scripts
-		// @todo Add suffix
 		if ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() ) {
-			wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout.js', array(
+			wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
 				'jquery',
 				'wc-checkout',
 				'featherlight'
@@ -297,12 +350,17 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function process_payment( $order_id ) {
 		$order = wc_get_order( $order_id );
 
+		// Order Info
+		$info = $this->get_order_info( $order );
+
 		if ( isset( $_POST['is_update'] ) ) {
 			$params = [
 				'paymentorder' => [
 					'operation' => 'UpdateOrder',
-					'amount'    => (int) round( $order->get_total() * 100 ),
+					'amount'    => round( $order->get_total() * 100 ),
 					'vatAmount' => 0,
+					//'vatAmount' => round( $info['vat_amount'] * 100 ),
+					//'orderItems' => $this->get_checkout_order_items( $order )
 				]
 			];
 
@@ -343,10 +401,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'operation'   => 'Purchase',
 				'currency'    => $order->get_currency(),
 				'amount'      => round( 100 * $order->get_total() ),
-				'vatAmount'   => 0,
-				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_id() ),
+				'vatAmount'   => round( $info['vat_amount'] * 100 ),
+				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
 				'userAgent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
+				'generateRecurrenceToken' => false,
+				'disablePaymentMenu' => false,
 				'urls'        => [
 					'hostUrls'          => [
 						get_bloginfo( 'url' )
@@ -360,16 +420,45 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					'payeeId'         => $this->payee_id,
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
 					'payeeName'       => get_bloginfo( 'name' ),
-					'productCategory' => 'A123'
+					'orderReference'  => $order->get_id()
 				],
+				'payer'       => [
+					'firstName' => $order->get_billing_first_name(),
+					'lastName' => $order->get_billing_last_name(),
+					'email' => $order->get_billing_email(),
+					'msisdn' => $order->get_billing_phone(),
+					'homePhoneNumber' => $order->get_billing_phone(),
+					'workPhoneNumber' => $order->get_billing_phone(),
+					'shippingAddress' => [
+						'firstName' => $order->get_shipping_first_name(),
+						'lastName' => $order->get_shipping_last_name(),
+						'email' => $order->get_billing_email(),
+						'msisdn' => $order->get_billing_phone(),
+						'streetAddress' => implode(', ', [$order->get_shipping_address_1(), $order->get_shipping_address_2()]),
+						'coAddress' => '',
+						'city' => $order->get_shipping_city(),
+						'zipCode' => $order->get_shipping_postcode(),
+						'countryCode' => $order->get_shipping_country()
+					],
+					'billingAddress' => [
+						'firstName' => $order->get_billing_first_name(),
+						'lastName' => $order->get_billing_last_name(),
+						'email' => $order->get_billing_email(),
+						'msisdn' => $order->get_billing_phone(),
+						'streetAddress' => implode(', ', [$order->get_billing_address_1(), $order->get_billing_address_2()]),
+						'coAddress' => '',
+						'city' => $order->get_billing_city(),
+						'zipCode' => $order->get_billing_postcode(),
+						'countryCode' => $order->get_billing_country()
+					],
+				],
+				'orderItems' => $this->get_checkout_order_items( $order ),
 				'metadata'    => [
 					'order_id' => $order_id
 				],
 				'items'       => [
 					[
-						'creditCard' => [
-							'no3DSecure' => false
-						]
+						'creditCard' => $this->get_card_options()
 					]
 				]
 			]
@@ -387,7 +476,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( ! empty( $consumer_profile ) ) {
 			$params['paymentorder']['payer'] = [
-				'consumerProfileRef' => $consumer_profile
+				'consumerProfileRef' => $consumer_profile // @todo Deprecated
 			];
 		}
 
@@ -505,22 +594,19 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$payment_id      = $data['payment']['id'];
 
 			// Get Order by Order Payment Id
-			$order_id = $this->get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
-			if ( empty( $order_id ) ) {
-				// Extract Order ID from description
-				$result      = $this->request( 'GET', $paymentorder_id );
-				$description = $result['paymentOrder']['description'];
+			$order_id = px_get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
 
-				$matches = [];
-				preg_match( '/#(\d+)/iu', $description, $matches );
-				if ( ! empty( $matches[1] ) ) {
-					$order_id = $matches[1];
-					update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
-				}
+			// Get Order ID from payeeInfo if is not exist
+			if ( empty( $order_id ) ) {
+				$result      = $this->request( 'GET', $paymentorder_id . '/payeeInfo' );
+				$order_id    = $result['payeeInfo']['orderReference'];
 
 				if ( empty( $order_id ) ) {
 					throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Order Id %s', $paymentorder_id ) );
 				}
+
+				// Save Order Payment Id
+				update_post_meta( $order_id, '_payex_paymentorder_id', $paymentorder_id );
 			}
 
 			// Save Payment ID
@@ -731,7 +817,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			// Initiate consumer session
 			$params = [
 				'operation'           => 'initiate-consumer-session',
-				'consumerCountryCode' => 'SE',
+				'consumerCountryCode' => 'SE', // @todo Allow choose country
 			];
 
 			try {
@@ -762,13 +848,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @return void
 	 */
 	public function woocommerce_checkout_payment() {
-		wc_get_template(
-			'checkout/payex/payment.php',
-			array(//'checkout' => WC()->checkout()
-			),
-			'',
-			dirname( __FILE__ ) . '/../templates/'
-		);
+		if ( $this->instant_checkout === 'yes' ) {
+			wc_get_template(
+				'checkout/payex/payment.php',
+				array(
+					//'checkout' => WC()->checkout()
+				),
+				'',
+				dirname( __FILE__ ) . '/../templates/'
+			);
+		}
 	}
 
 	/**
@@ -1021,6 +1110,115 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		return $located;
+	}
+
+	/**
+	 * Get Order Lines
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 */
+	protected function get_checkout_order_items( $order ) {
+		$item = [];
+
+		foreach ( $order->get_items() as $order_item ) {
+			/** @var WC_Order_Item_Product $order_item */
+			$price        = $order->get_line_subtotal( $order_item, false, false );
+			$priceWithTax = $order->get_line_subtotal( $order_item, true, false );
+			$tax          = $priceWithTax - $price;
+			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+			$qty          = $order_item->get_quantity();
+
+			if ( $image = wp_get_attachment_image_src( $order_item->get_product()->get_image_id(), 'full' ) ) {
+				$image = $image[0];
+			} else {
+				$image = wc_placeholder_img_src( 'full' );
+			}
+
+			$item[] = [
+				// The field Reference must match the regular expression '[\\w-]*'
+				'reference'    => str_replace( ' ', '-', $order_item->get_product()->get_sku() ),
+				'name'         => $order_item->get_name(),
+				'type'         => 'PRODUCT',
+				'class'        => 'ProductGroup1',
+				'itemUrl'      => $order_item->get_product()->get_permalink(),
+				'imageUrl'     => $image,
+				'description'  => $order_item->get_name(),
+				'quantity'     => $qty,
+				'quantityUnit' => 'pcs',
+				'unitPrice'    => round( $price / $qty * 100 ),
+				'vatPercent'   => round( $taxPercent * 100 ),
+				'amount'       => round( $priceWithTax * 100 ),
+				'vatAmount'    => round( $tax * 100 )
+			];
+		}
+
+		// Add Shipping Line
+		if ( (float) $order->get_shipping_total() > 0 ) {
+			$shipping        = $order->get_shipping_total();
+			$tax             = $order->get_shipping_tax();
+			$shippingWithTax = $shipping + $tax;
+			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
+
+			$item[] = [
+				'reference' => 'shipping',
+				'name' => $order->get_shipping_method(),
+				'type' => 'SHIPPING_FEE',
+				'class' => 'ProductGroup1',
+				'quantity' => 1,
+				'quantityUnit' => 'pcs',
+				'unitPrice' => round( $shipping * 100 ),
+				'vatPercent' => round( $taxPercent * 100 ),
+				'amount' => round( $shippingWithTax * 100 ),
+				'vatAmount' => round( $tax * 100 )
+			];
+		}
+
+		// Add fee lines
+		foreach ( $order->get_fees() as $order_fee ) {
+			/** @var WC_Order_Item_Fee $order_fee */
+			$fee        = $order_fee->get_total();
+			$tax        = $order_fee->get_total_tax();
+			$feeWithTax = $fee + $tax;
+			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
+
+			$item[] = [
+				'reference' => 'fee',
+				'name' => $order_fee->get_name(),
+				'type' => 'OTHER',
+				'class' => 'ProductGroup1',
+				'quantity' => 1,
+				'quantityUnit' => 'pcs',
+				'unitPrice' => round( $fee * 100 ),
+				'vatPercent' => round( $taxPercent * 100 ),
+				'amount' => round( $feeWithTax * 100 ),
+				'vatAmount' => round( $tax * 100 )
+			];
+		}
+
+		// Add discount line
+		if ( $order->get_total_discount( false ) > 0 ) {
+			$discount        = $order->get_total_discount( true );
+			$discountWithTax = $order->get_total_discount( false );
+			$tax             = $discountWithTax - $discount;
+			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+
+			$item[] = [
+				'reference' => 'discount',
+				'name' => __( 'Discount', 'payex-woocommerce-payments' ),
+				'type' => 'DISCOUNT',
+				'class' => 'ProductGroup1',
+				'quantity' => 1,
+				'quantityUnit' => 'pcs',
+				'unitPrice' => round( - 100 * $discount ),
+				'vatPercent' => round( 100 * $taxPercent ),
+				'amount' => round( - 100 * $discountWithTax ),
+				'vatAmount' => round( - 100 * $tax )
+			];
+		}
+
+		return $item;
 	}
 }
 

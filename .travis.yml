@@ -11,7 +11,7 @@ php:
   #- hhvm
 
 env:
-  - PAYEX_VERSION="master" WOO_VERSION="3.6.1" WP_VERSION=latest
+  - PAYEX_VERSION="master" WOO_VERSION="3.6.5" WP_VERSION=latest
 
 notifications:
   email:
