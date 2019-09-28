@@ -83,7 +83,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->id           = 'payex_checkout';
 		$this->has_fields   = true;
 		$this->method_title = __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' );
-		$this->icon         = apply_filters( 'woocommerce_payex_payment_icon', plugins_url( '/assets/images/payex.gif', dirname( __FILE__ ) ) );
+		//$this->icon         = apply_filters( 'woocommerce_payex_checkout_icon', plugins_url( '/assets/images/payex.gif', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
 			'refunds',
