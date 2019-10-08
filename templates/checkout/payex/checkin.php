@@ -14,7 +14,8 @@ defined( 'ABSPATH' ) || exit;
 <h3>1. <?php esc_html_e( 'Your information', 'woocommerce-gateway-payex-checkout' ); ?></h3>
 <div id="payex-checkin">
 	<div class="consumer-info">
-		<?php if ($consumer_data): ?>
+		<?php if ($consumer_data && $consumer_profile): ?>
+            <div id="payex-consumer-profile" data-reference="<?php esc_html_e( $consumer_profile ); ?>"></div>
 			<strong>
 				<?php esc_html_e( 'You\'re logged in as payex customer.', 'woocommerce-gateway-payex-checkout' ); ?>
 			</strong>
@@ -27,12 +28,8 @@ defined( 'ABSPATH' ) || exit;
 	</div>
 </div>
 
-<?php if ($consumer_profile): ?>
-	<div id="payex-consumer-profile" data-reference="<?php esc_html_e( $consumer_profile ); ?>"></div>
-<?php endif; ?>
-
 <div style="clear: both;">&nbsp;</div>
 
-<button id="change-shipping-info" type="button" class="button" style="display: none;">
+<!-- <button id="change-shipping-info" type="button" class="button" style="display: none;">
 	<?php esc_html_e( 'Change shipping information', 'woocommerce-gateway-payex-checkout' ); ?>
-</button>
+</button> -->
