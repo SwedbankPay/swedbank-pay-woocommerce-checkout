@@ -217,7 +217,7 @@ jQuery( function( $ ) {
                         return;
                     }
 
-                    // @todo Refresh
+                    // Refresh Payment Menu
                     wc_payex_checkout.refreshPaymentMenu();
 
                     // Load PayEx Checkout frame
