@@ -6,6 +6,7 @@ jQuery( function( $ ) {
      * Object to handle PayEx checkout payment forms.
      */
     window.wc_payex_checkout = {
+        js_url: null,
         xhr: false,
 
         /**
@@ -218,6 +219,7 @@ jQuery( function( $ ) {
                     }
 
                     // Refresh Payment Menu
+                    wc_payex_checkout.js_url = response['js_url'];
                     wc_payex_checkout.refreshPaymentMenu();
 
                     // Load PayEx Checkout frame
@@ -275,7 +277,8 @@ jQuery( function( $ ) {
                         }
 
                         // Load PayEx Checkout frame
-                        wc_payex_checkout.initPaymentJS( response['js_url'] );
+                        wc_payex_checkout.js_url = response['js_url'];
+                        wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url );
                     } );
 
                 return false;
@@ -468,7 +471,12 @@ jQuery( function( $ ) {
          */
         refreshPaymentMenu: function() {
             console.log( 'refreshPaymentMenu' );
-            this.paymentMenu.refresh();
+            if ( typeof this.paymentMenu !== 'undefined' ) {
+                this.paymentMenu.refresh();
+            } else {
+                console.warn( 'refreshPaymentMenu: refresh workaround' );
+                wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+            }
         },
 
         /**

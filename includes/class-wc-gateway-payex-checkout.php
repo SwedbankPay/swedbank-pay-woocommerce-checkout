@@ -213,13 +213,6 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			//add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
 			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
 		}
-
-		//add_filter( 'payex_checkout_paymentmenu_style', array( $this, 'payex_checkout_paymentmenu_style' ), 10, 1 );
-		//add_filter( 'payex_checkout_checkin_style', array( $this, 'payex_checkout_checkin_style' ), 10, 1 );
-	}
-
-	public function payex_checkout_paymentmenu_style( $styles ) {
-		//
 	}
 
 	/**
@@ -292,6 +285,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'type'    => 'checkbox',
 				'label'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
 				'default' => $this->instant_checkout
+			),
+			'checkin' => array(
+				'title'   => __( 'Enable Checkin on PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Checkin on PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'default' => $this->checkin
 			),
 			'terms_url'        => array(
 				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
