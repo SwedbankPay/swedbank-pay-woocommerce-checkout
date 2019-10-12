@@ -120,7 +120,6 @@ class WC_Payex_Checkout {
 			return;
 		}
 
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-payex-product-class.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-checkout.php' );
 	}
 

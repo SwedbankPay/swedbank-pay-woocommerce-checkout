@@ -322,26 +322,6 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'label'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
 				'default' => $this->reject_corporate_cards
 			),
-			'custom_styles' => array(
-				'title'   => __( 'Enable Custom Styles', 'payex-woocommerce-payments' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Enable Custom Styles', 'payex-woocommerce-payments' ),
-				'default' => $this->custom_styles
-			),
-			'checkInStyle' => array(
-				'title'   => __( 'Style of CheckIn', 'payex-woocommerce-payments' ),
-				'type'    => 'textarea',
-				'label'   => __( 'Style of CheckIn', 'payex-woocommerce-payments' ),
-				'default' => file_get_contents( __DIR__ . '/../assets/json/style.json' ),
-				'css' => 'height: 270px;'
-			),
-			'paymentMenuStyle' => array(
-				'title'   => __( 'Style of PaymentMenu', 'payex-woocommerce-payments' ),
-				'type'    => 'textarea',
-				'label'   => __( 'Style of PaymentMenu', 'payex-woocommerce-payments' ),
-				'default' => file_get_contents( __DIR__ . '/../assets/json/style.json' ),
-				'css' => 'height: 270px;'
-			),
 		);
 	}
 
@@ -395,10 +375,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'checkInStyle'     => null,
 			);
 
-			// Add styles
-			if ( $this->custom_styles === 'yes' ) {
-				$translation_array['paymentMenuStyle'] = apply_filters( 'payex_checkout_paymentmenu_style', $this->paymentMenuStyle );
-				$translation_array['checkInStyle'] = apply_filters( 'payex_checkout_checkin_style', $this->checkInStyle );
+			// Add PM styles
+			if ( $styles = apply_filters( 'payex_checkout_paymentmenu_style', $this->paymentMenuStyle ) ) {
+				$translation_array['paymentMenuStyle'] = $styles;
+			}
+
+			// Add CheckIn Styles
+			if ( $styles = apply_filters( 'payex_checkout_checkin_style', $this->checkInStyle ) ) {
+				$translation_array['checkInStyle'] = $styles;
 			}
 
 			wp_localize_script( 'wc-gateway-payex-checkout', 'WC_Gateway_PayEx_Checkout', $translation_array );
@@ -1390,7 +1374,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			}
 
 			// Get Product Class
-			$product_class = get_post_meta( $order_item->get_product()->get_id(), '_payex_product_class', true );
+			$product_class = get_post_meta( $order_item->get_product()->get_id(), '_sb_product_class', true );
 			if ( empty( $product_class ) ) {
 				$product_class = 'ProductGroup1';
 			}

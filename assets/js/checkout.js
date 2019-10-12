@@ -522,6 +522,12 @@ jQuery( function( $ ) {
                 dataType: 'json'
             } ).done( function ( response) {
                 if (response.hasOwnProperty('result') && response.result === 'failure') {
+                    if (response.messages.indexOf('Order update is not available.') > -1) {
+                        // Force reload
+                        console.warn( 'refreshPaymentMenu: refresh workaround. Force reload.' );
+                        wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+                    }
+
                     wc_payex_checkout.logError('payex-update-order', response);
                 }
             } );
