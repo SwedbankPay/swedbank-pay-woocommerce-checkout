@@ -62,38 +62,47 @@ jQuery( function( $ ) {
                 wc_payex_checkout.initCheckout( reference );
             } else {
                 // Initiate checkin
-                if ( typeof payex === 'undefined') {
+
+                wc_payex_checkout.initCheckIn();
+            }
+        },
+
+        /**
+         * Initialize CheckIn
+         */
+        initCheckIn: function() {
+            if ( typeof payex === 'undefined') {
+                return;
+            }
+
+            wc_payex_checkout.waitForLoading('payex.hostedView.consumer', function ( err ) {
+                if ( err ) {
+                    console.warn( err );
                     return;
                 }
 
-                wc_payex_checkout.waitForLoading('payex.hostedView.consumer', function ( err ) {
-                    if ( err ) {
-                        console.warn( err );
-                        return;
+                // Init PayEx hostedView
+                window.payex.hostedView.consumer( {
+                    container: 'payex-checkin',
+                    culture: WC_Gateway_PayEx_Checkout.culture,
+                    style: WC_Gateway_PayEx_Checkout.checkInStyle ? JSON.parse( WC_Gateway_PayEx_Checkout.checkInStyle ) : null,
+                    onConsumerIdentified: function( data ) {
+                        console.log( 'hostedView: onConsumerIdentified' );
+                        wc_payex_checkout.onConsumerIdentified( data );
+                    },
+                    onBillingDetailsAvailable: function( data ) {
+                        wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
+                    },
+                    onShippingDetailsAvailable: function( data ) {
+                        wc_payex_checkout.onAddressDetailsAvailable( 'shipping', data );
+                    },
+                    onError: function ( data ) {
+                        wc_payex_checkout.logError( 'payex-checkin', data );
+                        alert( data.details );
+                        //wc_payex_checkout.onError( data.details );
                     }
-
-                    // Init PayEx hostedView
-                    window.payex.hostedView.consumer( {
-                        container: 'payex-checkin',
-                        culture: WC_Gateway_PayEx_Checkout.culture,
-                        onConsumerIdentified: function( data ) {
-                            console.log( 'hostedView: onConsumerIdentified' );
-                            wc_payex_checkout.onConsumerIdentified( data );
-                        },
-                        onBillingDetailsAvailable: function( data ) {
-                            wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
-                        },
-                        onShippingDetailsAvailable: function( data ) {
-                            wc_payex_checkout.onAddressDetailsAvailable( 'shipping', data );
-                        },
-                        onError: function ( data ) {
-                            wc_payex_checkout.logError( 'payex-checkin', data );
-                            alert( data.details );
-                            //wc_payex_checkout.onError( data.details );
-                        }
-                    } ).open();
-                });
-            }
+                } ).open();
+            });
         },
 
         initCheckout: function( reference ) {
@@ -421,6 +430,7 @@ jQuery( function( $ ) {
             this.paymentMenu = window.payex.hostedView.paymentMenu( {
                 container: id,
                 culture: WC_Gateway_PayEx_Checkout.culture,
+                style: WC_Gateway_PayEx_Checkout.paymentMenuStyle ? JSON.parse( WC_Gateway_PayEx_Checkout.paymentMenuStyle ) : null,
                 onPaymentMenuInstrumentSelected: function ( data ) {
                     console.log( 'onPaymentMenuInstrumentSelected' );
                     console.log( data );

@@ -1,0 +1,59 @@
+{
+  "fontFace": [
+    {
+      "fontFamily": "VolvoNovum",
+      "src": "url(https://ecom.dev.payex.com/externalresourcehost/content/fonts/Volvo_VolvoNovumRegular.woff) format('woff')",
+      "fontWeight": "600",
+      "fontStyle": "normal"
+    }
+  ],
+  "menuCard": {
+    "boxShadow": "0 2px 0 #cccccc",
+    "border": "1px solid #b5b5b5",
+    "color": "black",
+    "font": "bold 20px VolvoNovum, Arial, Verdana, Helvetica, sans-serif",
+    "selected": {
+      "highlightColor": "#1977D2"
+    }
+  },
+  "body": {
+    "font": "16px VolvoNovum, Arial, Verdana, Helvetica, sans-serif"
+  },
+  "instrumentCard": {
+    "font": "16px VolvoNovum, Arial, Verdana, Helvetica, sans-serif",
+    "color": "#767676",
+    "border": "1px solid #ccc",
+    "padding": "16px",
+    "selected": {
+      "border": "1px solid #1877d0"
+    }
+  },
+  "label": {
+    "font": "16px VolvoNovum, Arial, Verdana, Helvetica, sans-serif",
+    "color": "#767676"
+  },
+  "input": {
+    "border": "1px solid #ccc",
+    "color": "#767676",
+    "focus": {
+      "border": "1px solid #1877d0"
+    }
+  },
+  "button": {
+    "backgroundColor": "#1977D2",
+    "font": "bold 18px/1em VolvoNovum, Arial, Verdana, Helvetica, sans-serif"
+  },
+  "secondaryButton": {
+    "backgroundColor": "#grey",
+    "font": "bold 18px/1em VolvoNovum, Arial, Verdana, Helvetica, sans-serif"
+  },
+  "infoBox": {
+    "backgroundColor": "#F5F5F5",
+    "font": "16px VolvoNovum, Arial, Verdana, Helvetica, sans-serif",
+    "color": "#767676"
+  },
+  "link": {
+    "font": "16px VolvoNovum, Arial, Verdana, Helvetica, sans-serif",
+    "color": "#1877d0"
+  }
+}

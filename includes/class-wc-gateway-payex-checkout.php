@@ -81,6 +81,24 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $reject_corporate_cards = 'no';
 
 	/**
+	 * Custom styles
+	 * @var string
+	 */
+	public $custom_styles = 'no';
+
+	/**
+	 * Styles of Checkin
+	 * @var string
+	 */
+	public $checkInStyle = '';
+
+	/**
+	 * Styles of PaymentMenu
+	 * @var string
+	 */
+	public $paymentMenuStyle = '';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -119,6 +137,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->reject_debit_cards     = isset( $this->settings['reject_debit_cards'] ) ? $this->settings['reject_debit_cards'] : $this->reject_debit_cards;
 		$this->reject_consumer_cards  = isset( $this->settings['reject_consumer_cards'] ) ? $this->settings['reject_consumer_cards'] : $this->reject_consumer_cards;
 		$this->reject_corporate_cards = isset( $this->settings['reject_corporate_cards'] ) ? $this->settings['reject_corporate_cards'] : $this->reject_corporate_cards;
+
+		// Styles
+		$this->custom_styles    = isset( $this->settings['custom_styles'] ) ? $this->settings['custom_styles'] : $this->custom_styles;
+		$this->checkInStyle     = isset( $this->settings['checkInStyle'] ) ? $this->settings['checkInStyle'] : $this->checkInStyle;
+		$this->paymentMenuStyle = isset( $this->settings['paymentMenuStyle'] ) ? $this->settings['paymentMenuStyle'] : $this->paymentMenuStyle;
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
@@ -180,9 +203,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 1 );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
+			//add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
 			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
 		}
+
+		//add_filter( 'payex_checkout_paymentmenu_style', array( $this, 'payex_checkout_paymentmenu_style' ), 10, 1 );
+		//add_filter( 'payex_checkout_checkin_style', array( $this, 'payex_checkout_checkin_style' ), 10, 1 );
+	}
+
+	public function payex_checkout_paymentmenu_style( $styles ) {
+		//
 	}
 
 	/**
@@ -280,6 +310,26 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'label'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
 				'default' => $this->reject_corporate_cards
 			),
+			'custom_styles' => array(
+				'title'   => __( 'Enable Custom Styles', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Custom Styles', 'payex-woocommerce-payments' ),
+				'default' => $this->custom_styles
+			),
+			'checkInStyle' => array(
+				'title'   => __( 'Style of CheckIn', 'payex-woocommerce-payments' ),
+				'type'    => 'textarea',
+				'label'   => __( 'Style of CheckIn', 'payex-woocommerce-payments' ),
+				'default' => file_get_contents( __DIR__ . '/../assets/json/style.json' ),
+				'css' => 'height: 270px;'
+			),
+			'paymentMenuStyle' => array(
+				'title'   => __( 'Style of PaymentMenu', 'payex-woocommerce-payments' ),
+				'type'    => 'textarea',
+				'label'   => __( 'Style of PaymentMenu', 'payex-woocommerce-payments' ),
+				'default' => file_get_contents( __DIR__ . '/../assets/json/style.json' ),
+				'css' => 'height: 270px;'
+			),
 		);
 	}
 
@@ -329,7 +379,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'checkin'          => ( $this->checkin === 'yes' ),
 				'nonce'            => wp_create_nonce( 'payex_checkout' ),
 				'ajax_url'         => admin_url( 'admin-ajax.php' ),
+				'paymentMenuStyle' => null,
+				'checkInStyle'     => null,
 			);
+
+			// Add styles
+			if ( $this->custom_styles === 'yes' ) {
+				$translation_array['paymentMenuStyle'] = apply_filters( 'payex_checkout_paymentmenu_style', $this->paymentMenuStyle );
+				$translation_array['checkInStyle'] = apply_filters( 'payex_checkout_checkin_style', $this->checkInStyle );
+			}
+
 			wp_localize_script( 'wc-gateway-payex-checkout', 'WC_Gateway_PayEx_Checkout', $translation_array );
 
 			// Enqueued script with localized data.
