@@ -568,7 +568,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 						'countryCode' => $order->get_billing_country()
 					],
 				],
-				//'orderItems' => $this->get_checkout_order_items( $order ),
+				'orderItems' => $this->get_checkout_order_items( $order ),
 				'metadata'    => [
 					'order_id' => $order_id
 				],
@@ -1390,12 +1390,18 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				$image = wc_placeholder_img_src( 'full' );
 			}
 
+			// Get Product Class
+			$product_class = get_post_meta( $order_item->get_product()->get_id(), '_payex_product_class', true );
+			if ( empty( $product_class ) ) {
+				$product_class = 'ProductGroup1';
+			}
+
 			$item[] = [
 				// The field Reference must match the regular expression '[\\w-]*'
 				'reference'    => str_replace( ' ', '-', $order_item->get_product()->get_sku() ),
 				'name'         => $order_item->get_name(),
 				'type'         => 'PRODUCT',
-				'class'        => 'ProductGroup1',
+				'class'        => $product_class,
 				'itemUrl'      => $order_item->get_product()->get_permalink(),
 				'imageUrl'     => $image,
 				'description'  => $order_item->get_name(),
