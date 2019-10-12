@@ -21,6 +21,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $payee_id = '';
 
 	/**
+	 * Subsite
+	 * @var string
+	 */
+	public $subsite = '';
+
+	/**
 	 * Test Mode
 	 * @var string
 	 */
@@ -125,6 +131,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->description      = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 		$this->merchant_token   = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
 		$this->payee_id         = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite          = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
@@ -250,6 +257,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'type'        => 'text',
 				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
 				'default'     => $this->payee_id
+			),
+			'subsite'         => array(
+				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->subsite
 			),
 			'testmode'         => array(
 				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-checkout' ),
@@ -566,6 +579,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				]
 			]
 		];
+
+		// Add subsite
+		if ( ! empty( $this->subsite ) ) {
+			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
+		}
 
 		// Get Consumer Profile
 		$consumer_profile = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
