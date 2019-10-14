@@ -210,7 +210,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 1 );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			//add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
+			add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
 			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
 		}
 	}
@@ -1379,10 +1379,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				$product_class = 'ProductGroup1';
 			}
 
+			$productName = trim( $order_item->get_name() );
+
 			$item[] = [
 				// The field Reference must match the regular expression '[\\w-]*'
 				'reference'    => str_replace( ' ', '-', $order_item->get_product()->get_sku() ),
-				'name'         => $order_item->get_name(),
+				'name'         => ! empty( $productName ) ? $productName : '-',
 				'type'         => 'PRODUCT',
 				'class'        => $product_class,
 				'itemUrl'      => $order_item->get_product()->get_permalink(),
@@ -1403,10 +1405,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$tax             = $order->get_shipping_tax();
 			$shippingWithTax = $shipping + $tax;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
+			$shippingMethod = trim( $order->get_shipping_method() );
 
 			$item[] = [
 				'reference' => 'shipping',
-				'name' => $order->get_shipping_method(),
+				'name' => ! empty( $shippingMethod ) ? $shippingMethod : __( 'Shipping', 'woocommerce' ),
 				'type' => 'SHIPPING_FEE',
 				'class' => 'ProductGroup1',
 				'quantity' => 1,

@@ -52,7 +52,7 @@ jQuery( function( $ ) {
          	//$( document.body ).bind( 'init_checkout', this.init_checkout );
 
             if ( wc_payex_checkout.isCheckinEnabled() ) {
-                //wc_payex_checkout.hideAddressFields();
+                wc_payex_checkout.hideAddressFields();
             }
 
             // Use saved consumerProfileRef
@@ -475,7 +475,7 @@ jQuery( function( $ ) {
                 this.paymentMenu.refresh();
             } else {
                 console.warn( 'refreshPaymentMenu: refresh workaround' );
-                wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+                //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
             }
         },
 
@@ -525,7 +525,7 @@ jQuery( function( $ ) {
                     if (response.messages.indexOf('Order update is not available.') > -1) {
                         // Force reload
                         console.warn( 'refreshPaymentMenu: refresh workaround. Force reload.' );
-                        wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+                        //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
                     }
 
                     wc_payex_checkout.logError('payex-update-order', response);
