@@ -396,7 +396,7 @@ jQuery( function( $ ) {
                 }
 
                 $( '#payment-payex-checkout iframe' ).remove();
-                delete window.payex.hostedView;
+                //delete window.payex.hostedView;
             }
 
             // Destroy JS
