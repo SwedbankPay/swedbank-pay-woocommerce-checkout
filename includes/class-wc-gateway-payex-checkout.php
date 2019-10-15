@@ -597,8 +597,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		try {
 			$result = $this->request( 'POST', '/psp/paymentorders', $params );
 		} catch ( Exception $e ) {
-			if ( ( strpos( $this->response_body, 'is not active' ) !== false ) ||
-			     ( strpos( $this->response_body, 'Unable to verify consumerProfileRef' ) !== false ) ) {
+			// @todo Check by last response
+			if ( ( strpos( $e->getMessage(), 'is not active' ) !== false ) ||
+			     ( strpos( $e->getMessage(), 'Unable to verify consumerProfileRef' ) !== false ) ) {
 				// Reference *** is not active, unable to complete
 				$_POST['payex_customer_reference'] = null;
 				delete_user_meta( $order->get_user_id(), '_payex_consumer_profile' );

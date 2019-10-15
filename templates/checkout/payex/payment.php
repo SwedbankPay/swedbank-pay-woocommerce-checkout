@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 <?php if ($js_url): ?>
 	<script>
         window.onload = function () {
-            wc_payex_checkout.initPaymentJS( '<?php echo $js_url; ?>' );
+            //wc_payex_checkout.initPaymentJS( '<?php echo $js_url; ?>' );
         }
     </script>
 <?php endif; ?>
