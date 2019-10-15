@@ -49,8 +49,6 @@ jQuery( function( $ ) {
         initInstantCheckout: function () {
             console.log( 'Initialization of Instant Checkout...' );
 
-         	//$( document.body ).bind( 'init_checkout', this.init_checkout );
-
             if ( wc_payex_checkout.isCheckinEnabled() ) {
                 wc_payex_checkout.hideAddressFields();
             }
@@ -221,9 +219,6 @@ jQuery( function( $ ) {
                     // Refresh Payment Menu
                     wc_payex_checkout.js_url = response['js_url'];
                     wc_payex_checkout.refreshPaymentMenu();
-
-                    // Load PayEx Checkout frame
-                    //wc_payex_checkout.initPaymentJS( response['js_url'] )
                 } );
         },
 
@@ -394,6 +389,20 @@ jQuery( function( $ ) {
                 callback = function () {};
             }
 
+            // Destroy
+            if ( window.hasOwnProperty( 'payex' ) && window.payex.hasOwnProperty( 'hostedView' ) ) {
+                if ( typeof window.payex.hostedView.paymentMenu !== 'undefined' ) {
+                    window.payex.hostedView.paymentMenu().close();
+                }
+
+                $( '#payment-payex-checkout iframe' ).remove();
+                delete window.payex.hostedView;
+            }
+
+            // Destroy JS
+            $( "script[src*='px.paymentmenu.client']" ).remove();
+
+            // Load JS
             wc_payex_checkout.loadJs( url, function () {
                 $( '#payment-payex-checkout iframe' ).remove();
 
@@ -471,12 +480,15 @@ jQuery( function( $ ) {
          */
         refreshPaymentMenu: function() {
             console.log( 'refreshPaymentMenu' );
-            if ( typeof this.paymentMenu !== 'undefined' ) {
-                this.paymentMenu.refresh();
-            } else {
-                console.warn( 'refreshPaymentMenu: refresh workaround' );
+            //if ( typeof this.paymentMenu !== 'undefined' ) {
+                //this.paymentMenu.refresh();
+            //} else {
+                //console.warn( 'refreshPaymentMenu: refresh workaround' );
                 //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
-            }
+            //}
+
+            // @todo Use this.paymentMenu.refresh(); instead of that
+            wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
         },
 
         /**

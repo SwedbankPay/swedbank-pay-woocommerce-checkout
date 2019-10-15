@@ -487,6 +487,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			);
 		}
 
+		// @todo Use is_update instead of that
+		if ( isset( $_POST['is_update_backward_compat'] ) ) {
+			$order->calculate_totals( true );
+
+			// Delete Payment Order ID
+			delete_post_meta( $order_id, '_payex_paymentorder_id' );
+		}
+
 		// Get Order UUID
 		$order_uuid = mb_strimwidth( px_uuid( uniqid() ), 0, 30, '', 'UTF-8' );
 
@@ -1188,28 +1196,84 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function ajax_payex_update_order() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
+		// Get Order
+		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
+		if ( $order_id === 0 ) {
+			wp_send_json(  array(
+				'result'   => 'failure',
+				'messages' => 'Order is not exists',
+			) );
+
+			return;
+		}
+
+		// Get Order
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json(  array(
+				'result'   => 'failure',
+				'messages' => 'Order is not exists',
+			) );
+
+			return;
+		}
+
+		// Mark order failed instead of cancelled
+		if ( $order->get_payment_method() === $this->id && $order->has_status( 'cancelled' ) ) {
+			$order->update_status( 'failed' );
+		}
+
+		// Prepare $_POST data
 		$data = array();
 		parse_str( $_POST['data'], $data );
 		$_POST = $data;
 		unset( $_POST['terms-field'], $_POST['terms'] );
 
-		$_POST['payment_method'] = 'payex_checkout';
-		$_POST['is_update']      = '1';
+		$_POST['payment_method']                 = $this->id;
+		$_POST['is_update_backward_compat']      = '1';
 
-		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
-		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
+		// Update Checkout
+		// @see WC_AJAX::update_order_review()
+		if ( ! empty( $_POST['shipping_method'] ) && ! is_array( $_POST['shipping_method'] ) ) {
+			$shipping = $_POST['shipping_method'];
+			$_POST['shipping_method'] = array( $shipping );
+		}
 
-		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
-		if ( $order_id > 0 ) {
-			$order = wc_get_order( $order_id );
-			if ( $order->get_payment_method() === $this->id ) {
-				// Mark order failed instead of cancelled
-				if ( $order->has_status( 'cancelled' ) ) {
-					$order->update_status( 'failed' );
-				}
+		$chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
+		if ( isset( $_POST['shipping_method'] ) && is_array( $_POST['shipping_method'] ) ) {
+			foreach ( $_POST['shipping_method'] as $i => $value ) {
+				$chosen_shipping_methods[ $i ] = wc_clean( $value );
 			}
 		}
 
+		WC()->session->set( 'chosen_shipping_methods', $chosen_shipping_methods );
+		WC()->session->set( 'chosen_payment_method', $this->id );
+
+		// Update address data
+		foreach ($_POST as $key => $value) {
+			if ( ( strpos( $key, 'billing_' ) !== false ) || ( strpos( $key, 'shipping_' ) !== false ) ) {
+				if ( is_callable( array( $order, "set_{$key}" ) ) ) {
+					$order->{"set_{$key}"}( $value );
+				}
+
+				WC()->customer->set_props( array(
+					$key => $value
+				) );
+			}
+		}
+
+		// Recalculate cart
+		WC()->customer->set_calculated_shipping( true );
+		WC()->customer->save();
+		WC()->cart->calculate_totals();
+
+		// Recalculate order
+		$order->calculate_totals( true );
+		$order->save();
+
+		// Process checkout
+		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
+		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
 		WC()->checkout()->process_checkout();
 	}
 
