@@ -1433,9 +1433,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$qty          = $order_item->get_quantity();
 
 			if ( $image = wp_get_attachment_image_src( $order_item->get_product()->get_image_id(), 'full' ) ) {
-				$image = $image[0];
+				$image = array_shift( $image );
 			} else {
 				$image = wc_placeholder_img_src( 'full' );
+			}
+
+			if ( ! self::path_is_absolute( $image ) &&
+			     mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
+			) {
+				$image = wp_guess_url() . $image;
 			}
 
 			// Get Product Class
@@ -1444,11 +1450,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				$product_class = 'ProductGroup1';
 			}
 
+			$productReference = trim( str_replace( ' ', '-', $order_item->get_product()->get_sku() ) );
 			$productName = trim( $order_item->get_name() );
 
 			$item[] = [
 				// The field Reference must match the regular expression '[\\w-]*'
-				'reference'    => str_replace( ' ', '-', $order_item->get_product()->get_sku() ),
+				'reference'    => ! empty( $productReference ) ? $productReference : wp_generate_password(),
 				'name'         => ! empty( $productName ) ? $productName : '-',
 				'type'         => 'PRODUCT',
 				'class'        => $product_class,
@@ -1530,6 +1537,23 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		return $item;
+	}
+
+	/**
+	 * Check path is absolute
+	 *
+	 * @param string $file
+	 *
+	 * @return bool
+	 */
+	public static function path_is_absolute($file) {
+		return strspn($file, '/\\', 0, 1)
+		       || (\strlen($file) > 3 && ctype_alpha($file[0])
+		           && ':' === $file[1]
+		           && strspn($file, '/\\', 2, 1)
+		       )
+		       || null !== parse_url($file, PHP_URL_SCHEME)
+			;
 	}
 }
 

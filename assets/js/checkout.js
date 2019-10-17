@@ -7,6 +7,8 @@ jQuery( function( $ ) {
      */
     window.wc_payex_checkout = {
         js_url: null,
+        paymentMenu: null,
+        isPaymentMenuLoaded: false,
         xhr: false,
 
         /**
@@ -434,15 +436,26 @@ jQuery( function( $ ) {
          * Payment Javascript must be loaded.
          *
          * @param id
+         * @param callback
          */
-        initPaymentMenu: function ( id ) {
+        initPaymentMenu: function ( id, callback ) {
             console.log( 'initPaymentMenu' );
+
+            if ( typeof callback === 'undefined' ) {
+                callback = function () {};
+            }
 
             // Load PayEx Checkout frame
             this.paymentMenu = window.payex.hostedView.paymentMenu( {
                 container: id,
                 culture: WC_Gateway_PayEx_Checkout.culture,
                 style: WC_Gateway_PayEx_Checkout.paymentMenuStyle ? JSON.parse( WC_Gateway_PayEx_Checkout.paymentMenuStyle ) : null,
+                onApplicationConfigured: function( data ) {
+                    console.log( 'onApplicationConfigured' );
+                    console.log( data );
+                    wc_payex_checkout.isPaymentMenuLoaded = true;
+                    callback( null );
+                },
                 onPaymentMenuInstrumentSelected: function ( data ) {
                     console.log( 'onPaymentMenuInstrumentSelected' );
                     console.log( data );
@@ -469,6 +482,7 @@ jQuery( function( $ ) {
                 },
                 onError: function ( data ) {
                     wc_payex_checkout.logError( 'payment-menu-error', data );
+                    callback( data );
                 }
             } );
 
