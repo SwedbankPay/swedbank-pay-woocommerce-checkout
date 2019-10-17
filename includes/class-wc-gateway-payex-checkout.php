@@ -527,7 +527,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					'payeeId'         => $this->payee_id,
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
 					'payeeName'       => get_bloginfo( 'name' ),
-					'orderReference'  => $order->get_id()
+					'orderReference'  => $order->get_order_number()
 				],
 				'payer'       => [
 					'firstName' => $order->get_billing_first_name(),
