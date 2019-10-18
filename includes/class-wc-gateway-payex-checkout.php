@@ -1438,7 +1438,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				$image = wc_placeholder_img_src( 'full' );
 			}
 
-			if ( ! self::path_is_absolute( $image ) &&
+			if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
 			     mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
 			) {
 				$image = wp_guess_url() . $image;
@@ -1537,23 +1537,6 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		return $item;
-	}
-
-	/**
-	 * Check path is absolute
-	 *
-	 * @param string $file
-	 *
-	 * @return bool
-	 */
-	public static function path_is_absolute($file) {
-		return strspn($file, '/\\', 0, 1)
-		       || (\strlen($file) > 3 && ctype_alpha($file[0])
-		           && ':' === $file[1]
-		           && strspn($file, '/\\', 2, 1)
-		       )
-		       || null !== parse_url($file, PHP_URL_SCHEME)
-			;
 	}
 }
 
