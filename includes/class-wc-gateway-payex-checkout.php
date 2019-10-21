@@ -198,6 +198,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'ajax_payex_checkout_customer_profile'
 		) );
 
+		add_action( 'wp_ajax_sb_checkin', array( $this, 'ajax_sb_checkin' ) );
+		add_action( 'wp_ajax_nopriv_sb_checkin', array( $this, 'ajax_sb_checkin' ) );
+
 		add_action( 'wp_ajax_payex_place_order', array( $this, 'ajax_payex_place_order' ) );
 		add_action( 'wp_ajax_nopriv_payex_place_order', array( $this, 'ajax_payex_place_order' ) );
 
@@ -1006,7 +1009,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			// Initiate consumer session
 			$params = [
 				'operation'           => 'initiate-consumer-session',
-				'consumerCountryCode' => 'SE', // @todo Allow choose country
+				'consumerCountryCode' => apply_filters( 'sb_checkin_default_country', 'SE' ),
 			];
 
 			try {
@@ -1022,6 +1025,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		wc_get_template(
 			'checkout/payex/checkin.php',
 			array(
+				'selected_country' => apply_filters( 'sb_checkin_default_country', 'SE' ),
 				'js_url'           => $js_url,
 				'consumer_data'    => $consumer_data,
 				'consumer_profile' => $consumer_profile
@@ -1107,6 +1111,29 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		WC()->session->set( 'payex_checkin', $output );
 		wp_send_json_success( $output );
+	}
+
+	/**
+	 * Ajax: CheckIn
+	 */
+	public function ajax_sb_checkin() {
+		check_ajax_referer( 'payex_checkout', 'nonce' );
+
+		$country = isset( $_POST['country'] ) ? wc_clean( $_POST['country'] ) : '';
+
+		// Initiate consumer session
+		$params = [
+			'operation'           => 'initiate-consumer-session',
+			'consumerCountryCode' => $country,
+		];
+
+		try {
+			$result = $this->request( 'POST', '/psp/consumers', $params );
+			$js_url = self::get_operation( $result['operations'], 'view-consumer-identification' );
+			wp_send_json_success( $js_url );
+		} catch ( Exception $e ) {
+			wp_send_json_error( $e->getMessage() );
+		}
 	}
 
 	/**

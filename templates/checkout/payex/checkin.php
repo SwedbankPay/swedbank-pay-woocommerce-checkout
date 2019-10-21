@@ -2,6 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/** @var string $selected_country */
 /** @var array $consumer_data */
 /** @var string $consumer_profile */
 /** @var string $js_url */
@@ -12,6 +13,19 @@ defined( 'ABSPATH' ) || exit;
 <?php endif; ?>
 
 <h3>1. <?php esc_html_e( 'Your information', 'woocommerce-gateway-payex-checkout' ); ?></h3>
+<label for="checkin_country">
+    <?php _e( 'Choose your country', 'woocommerce-gateway-payex-checkout' ); ?>
+	<select id="checkin_country" name="checkin_country" class="select">
+		<option <?php echo $selected_country === 'SE' ? 'selected' : '' ?> value="SE">
+            <?php _e('Sweden','woocommerce'); ?>
+        </option>
+		<option <?php echo $selected_country === 'NO' ? 'selected' : '' ?> value="NO">
+            <?php _e('Norway','woocommerce'); ?>
+        </option>
+	</select>
+</label>
+<div style="clear: both;">&nbsp;</div>
+
 <div id="payex-checkin">
 	<div class="consumer-info">
 		<?php if ($consumer_data && $consumer_profile): ?>

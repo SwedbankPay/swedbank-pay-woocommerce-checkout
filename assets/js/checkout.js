@@ -39,6 +39,10 @@ jQuery( function( $ ) {
                 wc_payex_checkout.showAddressFields();
             } );
 
+            $( document.body ).on( 'change', '#checkin_country', function () {
+                wc_payex_checkout.loadCheckIn( $(this).val() );
+            } );
+
             // Initialize Instant Checkout
             if ( wc_payex_checkout.isInstantCheckout() ) {
                 wc_payex_checkout.initInstantCheckout();
@@ -66,6 +70,44 @@ jQuery( function( $ ) {
 
                 wc_payex_checkout.initCheckIn();
             }
+        },
+
+        /**
+         * Load CheckIn
+         * @param country
+         * @returns {*}
+         */
+        loadCheckIn: function( country ) {
+            return $.ajax( {
+                type: 'POST',
+                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                data: {
+                    action: 'sb_checkin',
+                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    country: country
+                },
+                dataType: 'json'
+            } ).done( function ( data ) {
+                if ( ! data.success ) {
+                    wc_payex_checkout.logError( 'payex-checkin-loader', data );
+                    alert( data.details );
+                    return;
+                }
+
+                // Destroy
+                if ( window.hasOwnProperty( 'payex' ) && window.payex.hasOwnProperty( 'hostedView' ) ) {
+                    if ( typeof window.payex.hostedView.consumer !== 'undefined' ) {
+                        window.payex.hostedView.consumer().close();
+                    }
+                }
+
+                // Destroy JS
+                $( "script[src*='px.consumer.client']" ).remove();
+                $( '#payex-checkin iframe' ).remove();
+                wc_payex_checkout.loadJs( data.data, function () {
+                    wc_payex_checkout.initCheckIn();
+                } );
+            } );
         },
 
         /**
