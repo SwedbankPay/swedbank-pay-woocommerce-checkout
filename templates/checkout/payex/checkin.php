@@ -44,6 +44,3 @@ defined( 'ABSPATH' ) || exit;
 
 <div style="clear: both;">&nbsp;</div>
 
-<!-- <button id="change-shipping-info" type="button" class="button" style="display: none;">
-	<?php esc_html_e( 'Change shipping information', 'woocommerce-gateway-payex-checkout' ); ?>
-</button> -->
