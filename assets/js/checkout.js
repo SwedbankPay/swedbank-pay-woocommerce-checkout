@@ -142,7 +142,7 @@ jQuery( function( $ ) {
                     onError: function ( data ) {
                         wc_payex_checkout.logError( 'payex-checkin', data );
                         alert( data.details );
-                        //wc_payex_checkout.onError( data.details );
+                        wc_payex_checkout.onError( data.details );
                     }
                 } ).open();
             });
@@ -567,6 +567,7 @@ jQuery( function( $ ) {
             } ).done( function ( response) {
                 if (response.hasOwnProperty('result') && response.result === 'failure') {
                     wc_payex_checkout.logError('payex-place-order', response);
+                    wc_payex_checkout.onError( response.messages );
                 }
             } );
         },
@@ -593,10 +594,12 @@ jQuery( function( $ ) {
                     if (response.messages.indexOf('Order update is not available.') > -1) {
                         // Force reload
                         console.warn( 'refreshPaymentMenu: refresh workaround. Force reload.' );
-                        //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+                        wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url );
+                        return;
                     }
 
                     wc_payex_checkout.logError('payex-update-order', response);
+                    wc_payex_checkout.onError( response.messages );
                 }
             } );
         },
@@ -730,7 +733,7 @@ jQuery( function( $ ) {
 
         onError: function ( data ) {
             console.log( 'onError', data );
-            //wc_payex_checkout.submit_error( '<div class="woocommerce-error">' + data + '</div>' );
+            wc_payex_checkout.submit_error( '<div class="woocommerce-error">' + data + '</div>' );
         },
         submit_error: function( error_message ) {
             $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
