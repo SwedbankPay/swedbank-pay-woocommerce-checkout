@@ -57,6 +57,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $checkin = 'yes';
 
 	/**
+	 * Checkin Country
+	 * @var string
+	 */
+	public $checkin_country = 'SE';
+
+	/**
 	 * Backend Api Endpoint
 	 * @var string
 	 */
@@ -137,6 +143,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
+		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// Reject Cards
@@ -294,6 +301,17 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable Checkin on PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
 				'default' => $this->checkin
+			),
+			'checkin_country'  => array(
+				'title'       => __( 'Checkin country', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'select',
+				'options'     => array(
+					'SE'     => __( 'Sweden', 'woocommerce' ),
+					'NO'     => __( 'Norway', 'woocommerce' ),
+					'SELECT' => __( 'Customer can choose', 'woocommerce-gateway-payex-checkout' ),
+				),
+				'description' => __( 'Checkin country', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->checkin_country
 			),
 			'terms_url'        => array(
 				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
@@ -1009,7 +1027,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			// Initiate consumer session
 			$params = [
 				'operation'           => 'initiate-consumer-session',
-				'consumerCountryCode' => apply_filters( 'sb_checkin_default_country', 'SE' ),
+				'consumerCountryCode' => $this->checkin_country,
 			];
 
 			try {
@@ -1025,6 +1043,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		wc_get_template(
 			'checkout/payex/checkin.php',
 			array(
+				'checkin_country'  => $this->checkin_country,
 				'selected_country' => apply_filters( 'sb_checkin_default_country', 'SE' ),
 				'js_url'           => $js_url,
 				'consumer_data'    => $consumer_data,
