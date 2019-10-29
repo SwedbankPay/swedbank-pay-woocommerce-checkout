@@ -221,6 +221,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( $this->instant_checkout === 'yes' ) {
 			add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
+			add_filter( 'woocommerce_checkout_get_value', array( $this, 'checkout_get_value' ), 10, 2 );
 			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
 		}
 	}
@@ -1383,15 +1384,54 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function lock_checkout_fields( $fieldset ) {
 		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
 			if ( is_user_logged_in() ) {
-				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
+				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
 			} else {
-				$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
+				$consumer_profile = WC()->session->get( 'payex_checkin' );
 			}
 
-			// @todo Fill form with these data
-			if ( empty ( $consumer_profile ) ) {
+			// Fill form with these data
+			if ( ! empty ( $consumer_profile ) ) {
 				foreach ( $fieldset as $section => &$fields ) {
 					foreach ( $fields as $key => &$field ) {
+						switch ( $field['id'] ) {
+							case 'billing_first_name':
+							case 'shipping_first_name':
+								$field['default'] = $consumer_profile['first_name'];
+								break;
+							case 'billing_last_name':
+							case 'shipping_last_name':
+								$field['default'] = $consumer_profile['last_name'];
+								break;
+							case 'billing_country':
+							case 'shipping_country':
+								$field['default'] = $consumer_profile['country'];
+								break;
+							case 'billing_address_1':
+							case 'shipping_address_1':
+								$field['default'] = $consumer_profile['address_1'];
+								break;
+							case 'billing_address_2':
+							case 'shipping_address_2':
+								$field['default'] = $consumer_profile['address_2'];
+								break;
+							case 'billing_postcode':
+							case 'shipping_postcode':
+								$field['default'] = $consumer_profile['postcode'];
+								break;
+							case 'billing_city':
+							case 'shipping_city':
+								$field['default'] = $consumer_profile['city'];
+								break;
+							case 'billing_state':
+							case 'shipping_state':
+								$field['default'] = $consumer_profile['state'];
+								break;
+							case 'billing_phone':
+							case 'shipping_phone':
+								$field['default'] = $consumer_profile['phone'];
+								break;
+						}
+
 						$field['custom_attributes']['readonly'] = 'readonly';
 						$field['class'][]                       = 'payex-locked';
 					}
@@ -1400,6 +1440,68 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		return $fieldset;
+	}
+
+	/**
+	 * Fill checkout fields
+	 *
+	 * @param mixed $value
+	 * @param mixed $input
+	 *
+	 * @return mixed
+	 */
+	public function checkout_get_value( $value, $input ) {
+		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
+			if ( is_user_logged_in() ) {
+				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
+			} else {
+				$consumer_profile = WC()->session->get( 'payex_checkin' );
+			}
+
+			// Fill form with these data
+			if ( ! empty ( $consumer_profile ) ) {
+				switch ( $input ) {
+					case 'billing_first_name':
+					case 'shipping_first_name':
+						$value = $consumer_profile['first_name'];
+						break;
+					case 'billing_last_name':
+					case 'shipping_last_name':
+						$value = $consumer_profile['last_name'];
+						break;
+					case 'billing_country':
+					case 'shipping_country':
+						$value = $consumer_profile['country'];
+						break;
+					case 'billing_address_1':
+					case 'shipping_address_1':
+						$value = $consumer_profile['address_1'];
+						break;
+					case 'billing_address_2':
+					case 'shipping_address_2':
+						$value = $consumer_profile['address_2'];
+						break;
+					case 'billing_postcode':
+					case 'shipping_postcode':
+						$value = $consumer_profile['postcode'];
+						break;
+					case 'billing_city':
+					case 'shipping_city':
+						$value = $consumer_profile['city'];
+						break;
+					case 'billing_state':
+					case 'shipping_state':
+						$value = $consumer_profile['state'];
+						break;
+					case 'billing_phone':
+					case 'shipping_phone':
+						$value = $consumer_profile['phone'];
+						break;
+				}
+			}
+		}
+
+		return $value;
 	}
 
 	/**
