@@ -619,22 +619,35 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		try {
 			$result = $this->request( 'POST', '/psp/paymentorders', $params );
 		} catch ( Exception $e ) {
-			// @todo Check by last response
-			if ( ( strpos( $e->getMessage(), 'is not active' ) !== false ) ||
-			     ( strpos( $e->getMessage(), 'Unable to verify consumerProfileRef' ) !== false ) ) {
+			// Check last response
+			if ( ( strpos( $this->response_body, 'is not active' ) !== false ) ||
+			     ( strpos( $this->response_body, 'Unable to verify consumerProfileRef' ) !== false )
+			) {
 				// Reference *** is not active, unable to complete
+				// Remove the inactive customer reference
 				$_POST['payex_customer_reference'] = null;
 				delete_user_meta( $order->get_user_id(), '_payex_consumer_profile' );
+				delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
+				delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
 				WC()->session->__unset( 'payex_consumer_profile' );
-
+				WC()->session->__unset( 'payex_checkin_billing' );
+				WC()->session->__unset( 'payex_checkin_shipping' );
 				$this->log( sprintf( 'It seem consumerProfileRef "%s" is invalid and was removed. Gateway returned error: %s', $consumer_profile, $e->getMessage() ) );
+
+				// Reload checkout
+				if ( $this->instant_checkout === 'yes' ) {
+					wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ), 'error' );
+
+					return array(
+						'result'   => 'failure',
+						'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ),
+						'reload'   => true,
+					);
+				}
 
 				// Try again
 				return $this->process_payment( $order_id );
-			} else {
-				wc_add_notice( $e->getMessage(), 'error' );
 			}
-
 
 			wc_add_notice( $e->getMessage(), 'error' );
 
@@ -1019,7 +1032,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			}
 		} else {
 			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-			$consumer_data    = WC()->session->get( 'payex_checkin' );
+			$consumer_data    = WC()->session->get( 'payex_checkin_billing' );
 		}
 
 		// Initiate consumer session to obtain consumerProfileRef after checkin
@@ -1127,9 +1140,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		if ( is_user_logged_in() ) {
 			$user_id = get_current_user_id();
 			update_user_meta( $user_id, '_payex_consumer_address_' . $type, $output );
+		} else {
+			WC()->session->set( 'payex_checkin_' . $type, $output );
 		}
 
-		WC()->session->set( 'payex_checkin', $output );
 		wp_send_json_success( $output );
 	}
 
@@ -1173,42 +1187,85 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Store Customer Profile
 		if ( is_user_logged_in() ) {
+			// Save customer reference
 			$user_id = get_current_user_id();
-			$profile  = get_user_meta( $user_id, '_payex_consumer_profile', true );
-			if ( empty( $profile ) ) {
-				update_user_meta( $user_id, '_payex_consumer_profile', $customer_reference );
-			}
+			update_user_meta( $user_id, '_payex_consumer_profile', $customer_reference );
 
 			// Fill consumer data
-			$consumer_data = get_user_meta( $user_id, '_payex_consumer_address_billing', true );
-			if ( empty( $consumer_data ) ) {
-				$consumer_data = array(
+			$billing = get_user_meta( $user_id, '_payex_consumer_address_billing', true );
+			if ( empty( $billing ) ) {
+				$billing = array(
 					'first_name' => WC()->customer->get_billing_first_name(),
 					'last_name'  => WC()->customer->get_billing_last_name(),
 					'postcode'   => WC()->customer->get_billing_postcode(),
 					'city'       => WC()->customer->get_billing_city(),
 					'email'      => WC()->customer->get_billing_email(),
 					'phone'      => WC()->customer->get_billing_phone(),
+					'country'    => WC()->customer->get_billing_country(),
+					'state'      => WC()->customer->get_billing_state(),
+					'address_1'  => WC()->customer->get_billing_address_1(),
+					'address_2'  => WC()->customer->get_billing_address_2(),
 				);
 
-				update_user_meta( $user_id, '_payex_consumer_address_billing', $consumer_data );
+				update_user_meta( $user_id, '_payex_consumer_address_billing', $billing );
+			}
+
+			$shipping = get_user_meta( $user_id, '_payex_consumer_address_shipping', true );
+			if ( empty( $shipping ) ) {
+				$shipping = array(
+					'first_name' => WC()->customer->get_shipping_first_name(),
+					'last_name'  => WC()->customer->get_shipping_last_name(),
+					'postcode'   => WC()->customer->get_shipping_postcode(),
+					'city'       => WC()->customer->get_shipping_city(),
+					'email'      => WC()->customer->get_billing_email(),
+					'phone'      => WC()->customer->get_billing_phone(),
+					'country'    => WC()->customer->get_shipping_country(),
+					'state'      => WC()->customer->get_shipping_state(),
+					'address_1'  => WC()->customer->get_shipping_address_1(),
+					'address_2'  => WC()->customer->get_shipping_address_2(),
+				);
+
+				update_user_meta( $user_id, '_payex_consumer_address_shipping', $shipping );
 			}
 		} else {
+			// Save customer reference
 			WC()->session->set( 'payex_consumer_profile', $customer_reference );
 
 			// Fill consumer data
-			$consumer_data = WC()->session->get( 'payex_checkin' );
-			if ( empty( $consumer_data ) ) {
-				$consumer_data = array(
+			$billing = WC()->session->get( 'payex_checkin_billing' );
+			if ( empty( $billing ) ) {
+				$billing = array(
 					'first_name' => WC()->customer->get_billing_first_name(),
 					'last_name'  => WC()->customer->get_billing_last_name(),
 					'postcode'   => WC()->customer->get_billing_postcode(),
 					'city'       => WC()->customer->get_billing_city(),
 					'email'      => WC()->customer->get_billing_email(),
 					'phone'      => WC()->customer->get_billing_phone(),
+					'country'    => WC()->customer->get_billing_country(),
+					'state'      => WC()->customer->get_billing_state(),
+					'address_1'  => WC()->customer->get_billing_address_1(),
+					'address_2'  => WC()->customer->get_billing_address_2(),
 				);
 
-				WC()->session->set( 'payex_checkin', $consumer_data );
+				WC()->session->set( 'payex_checkin_billing', $billing );
+			}
+
+			$shipping = WC()->session->get( 'payex_checkin_shipping' );
+			if ( empty( $shipping ) ) {
+				$shipping = array(
+					'first_name' => WC()->customer->get_shipping_first_name(),
+					'last_name'  => WC()->customer->get_shipping_last_name(),
+					'postcode'   => WC()->customer->get_shipping_postcode(),
+					'city'       => WC()->customer->get_shipping_city(),
+					'email'      => WC()->customer->get_billing_email(),
+					'phone'      => WC()->customer->get_billing_phone(),
+					'country'    => WC()->customer->get_shipping_country(),
+					'state'      => WC()->customer->get_shipping_state(),
+					'address_1'  => WC()->customer->get_shipping_address_1(),
+					'address_2'  => WC()->customer->get_shipping_address_2(),
+				);
+
+				WC()->session->set( 'payex_checkin_shipping', $shipping );
 			}
 		}
 
@@ -1383,58 +1440,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 */
 	public function lock_checkout_fields( $fieldset ) {
 		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
-			if ( is_user_logged_in() ) {
-				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
-			} else {
-				$consumer_profile = WC()->session->get( 'payex_checkin' );
-			}
-
 			// Fill form with these data
-			if ( ! empty ( $consumer_profile ) ) {
-				foreach ( $fieldset as $section => &$fields ) {
-					foreach ( $fields as $key => &$field ) {
-						switch ( $field['id'] ) {
-							case 'billing_first_name':
-							case 'shipping_first_name':
-								$field['default'] = $consumer_profile['first_name'];
-								break;
-							case 'billing_last_name':
-							case 'shipping_last_name':
-								$field['default'] = $consumer_profile['last_name'];
-								break;
-							case 'billing_country':
-							case 'shipping_country':
-								$field['default'] = $consumer_profile['country'];
-								break;
-							case 'billing_address_1':
-							case 'shipping_address_1':
-								$field['default'] = $consumer_profile['address_1'];
-								break;
-							case 'billing_address_2':
-							case 'shipping_address_2':
-								$field['default'] = $consumer_profile['address_2'];
-								break;
-							case 'billing_postcode':
-							case 'shipping_postcode':
-								$field['default'] = $consumer_profile['postcode'];
-								break;
-							case 'billing_city':
-							case 'shipping_city':
-								$field['default'] = $consumer_profile['city'];
-								break;
-							case 'billing_state':
-							case 'shipping_state':
-								$field['default'] = $consumer_profile['state'];
-								break;
-							case 'billing_phone':
-							case 'shipping_phone':
-								$field['default'] = $consumer_profile['phone'];
-								break;
-						}
+			foreach ( $fieldset as $section => &$fields ) {
+				foreach ( $fields as $key => &$field ) {
+					$field['default'] = $this->checkout_get_value( null, $key );
 
-						$field['custom_attributes']['readonly'] = 'readonly';
-						$field['class'][]                       = 'payex-locked';
-					}
+					$field['custom_attributes']['readonly'] = 'readonly';
+					$field['class'][]                       = 'payex-locked';
 				}
 			}
 		}
@@ -1453,51 +1465,87 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function checkout_get_value( $value, $input ) {
 		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
 			if ( is_user_logged_in() ) {
-				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
+				$billing = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
+				$shipping = get_user_meta( get_current_user_id(), '_payex_consumer_address_shipping', true );
 			} else {
-				$consumer_profile = WC()->session->get( 'payex_checkin' );
+				$billing = WC()->session->get( 'payex_checkin_billing' );
+				$shipping = WC()->session->get( 'payex_checkin_shipping' );
 			}
 
+			// Add default data
+			$default = array(
+				'first_name' => WC()->customer->get_billing_first_name(),
+				'last_name'  => WC()->customer->get_billing_last_name(),
+				'postcode'   => WC()->customer->get_billing_postcode(),
+				'city'       => WC()->customer->get_billing_city(),
+				'email'      => WC()->customer->get_billing_email(),
+				'phone'      => WC()->customer->get_billing_phone(),
+				'country'    => WC()->customer->get_billing_country(),
+				'state'      => WC()->customer->get_billing_state(),
+				'address_1'  => WC()->customer->get_billing_address_1(),
+				'address_2'  => WC()->customer->get_billing_address_2(),
+			);
+			$billing = array_merge( $default, is_array( $billing ) ? $billing : array() );
+			$shipping = array_merge( $default, is_array( $shipping ) ? $shipping : array() );
+
 			// Fill form with these data
-			if ( ! empty ( $consumer_profile ) ) {
-				switch ( $input ) {
-					case 'billing_first_name':
-					case 'shipping_first_name':
-						$value = $consumer_profile['first_name'];
-						break;
-					case 'billing_last_name':
-					case 'shipping_last_name':
-						$value = $consumer_profile['last_name'];
-						break;
-					case 'billing_country':
-					case 'shipping_country':
-						$value = $consumer_profile['country'];
-						break;
-					case 'billing_address_1':
-					case 'shipping_address_1':
-						$value = $consumer_profile['address_1'];
-						break;
-					case 'billing_address_2':
-					case 'shipping_address_2':
-						$value = $consumer_profile['address_2'];
-						break;
-					case 'billing_postcode':
-					case 'shipping_postcode':
-						$value = $consumer_profile['postcode'];
-						break;
-					case 'billing_city':
-					case 'shipping_city':
-						$value = $consumer_profile['city'];
-						break;
-					case 'billing_state':
-					case 'shipping_state':
-						$value = $consumer_profile['state'];
-						break;
-					case 'billing_phone':
-					case 'shipping_phone':
-						$value = $consumer_profile['phone'];
-						break;
-				}
+			switch ( $input ) {
+				case 'billing_first_name':
+					$value = $billing['first_name'];
+					break;
+				case 'billing_last_name':
+					$value = $billing['last_name'];
+					break;
+				case 'billing_country':
+					$value = $billing['country'];
+					break;
+				case 'billing_address_1':
+					$value = $billing['address_1'];
+					break;
+				case 'billing_address_2':
+					$value = $billing['address_2'];
+					break;
+				case 'billing_postcode':
+					$value = $billing['postcode'];
+					break;
+				case 'billing_city':
+					$value = $billing['city'];
+					break;
+				case 'billing_state':
+					$value = $billing['state'];
+					break;
+				case 'billing_phone':
+					$value = $billing['phone'];
+					break;
+				case 'shipping_first_name':
+					$value = $shipping['first_name'];
+					break;
+				case 'shipping_last_name':
+					$value = $shipping['last_name'];
+					break;
+				case 'shipping_country':
+					$value = $shipping['country'];
+					break;
+				case 'shipping_address_1':
+					$value = $shipping['address_1'];
+					break;
+				case 'shipping_address_2':
+					$value = $shipping['address_2'];
+					break;
+				case 'shipping_postcode':
+					$value = $shipping['postcode'];
+					break;
+				case 'shipping_city':
+					$value = $shipping['city'];
+					break;
+				case 'shipping_state':
+					$value = $shipping['state'];
+					break;
+				case 'shipping_phone':
+					$value = $shipping['phone'];
+					break;
+				default:
+					// no default
 			}
 		}
 

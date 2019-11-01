@@ -245,7 +245,7 @@ jQuery( function( $ ) {
 
                     if (response.result !== 'success') {
                         // Reload page
-                        if ( true === response.result.reload ) {
+                        if ( response.hasOwnProperty('reload') && true === response.reload ) {
                             window.location.reload();
                             return;
                         }
@@ -301,7 +301,7 @@ jQuery( function( $ ) {
                         console.log( response );
                         if ( response.result !== 'success' ) {
                             // Reload page
-                            if ( true === response.result.reload ) {
+                            if ( response.hasOwnProperty('reload') && true === response.reload ) {
                                 window.location.reload();
                                 return;
                             }
@@ -565,6 +565,12 @@ jQuery( function( $ ) {
                 },
                 dataType: 'json'
             } ).done( function ( response) {
+                // Reload page
+                if ( response.hasOwnProperty('reload') && true === response.reload ) {
+                    window.location.reload();
+                    return;
+         		}
+
                 if (response.hasOwnProperty('result') && response.result === 'failure') {
                     wc_payex_checkout.logError('payex-place-order', response);
                     wc_payex_checkout.onError( response.messages );
@@ -597,6 +603,12 @@ jQuery( function( $ ) {
                         wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url );
                         return;
                     }
+
+                    // Reload page
+                    if ( response.hasOwnProperty('reload') && true === response.reload ) {
+                        window.location.reload();
+                        return;
+             		}
 
                     wc_payex_checkout.logError('payex-update-order', response);
                     wc_payex_checkout.onError( response.messages );
