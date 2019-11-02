@@ -133,6 +133,13 @@ jQuery( function( $ ) {
                         console.log( 'hostedView: onConsumerIdentified' );
                         wc_payex_checkout.onConsumerIdentified( data );
                     },
+                    onNewConsumer: function( data ) {
+                        console.log( 'hostedView: onNewConsumer' );
+                        wc_payex_checkout.onConsumerIdentified( data );
+                    },
+                    onConsumerRemoved: function( data ) {
+                        console.log( 'hostedView: onConsumerRemoved' );
+                    },
                     onBillingDetailsAvailable: function( data ) {
                         wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
                     },
