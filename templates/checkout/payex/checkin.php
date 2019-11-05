@@ -33,14 +33,14 @@ defined( 'ABSPATH' ) || exit;
 	<div class="consumer-info">
 		<?php if ($consumer_data && $consumer_profile): ?>
             <div id="payex-consumer-profile" data-reference="<?php esc_html_e( $consumer_profile ); ?>"></div>
-			<strong>
+			<!-- <strong>
 				<?php esc_html_e( 'You\'re logged in as payex customer.', 'woocommerce-gateway-payex-checkout' ); ?>
 			</strong>
 			<p>
 				<?php esc_html_e( $consumer_data['first_name'] . ' ' . $consumer_data['last_name'] ); ?><br/>
 				<?php esc_html_e( $consumer_data['postcode'] . ' ' . $consumer_data['city'] ); ?><br/>
 				<?php esc_html_e( $consumer_data['email'] . ', ' . $consumer_data['phone'] ); ?><br/>
-			</p>
+			</p> -->
 		<?php endif; ?>
 	</div>
 </div>

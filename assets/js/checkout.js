@@ -64,7 +64,8 @@ jQuery( function( $ ) {
             if ( consumerProfileElm.length > 0 ) {
                 let reference = consumerProfileElm.data( 'reference' );
                 console.log( 'Initiate consumerProfileRef', reference );
-                wc_payex_checkout.initCheckout( reference );
+                //wc_payex_checkout.initCheckout( reference );
+                wc_payex_checkout.initCheckIn();
             } else {
                 // Initiate checkin
 

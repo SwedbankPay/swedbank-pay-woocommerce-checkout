@@ -625,12 +625,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				// Reference *** is not active, unable to complete
 				// Remove the inactive customer reference
 				$_POST['payex_customer_reference'] = null;
-				delete_user_meta( $order->get_user_id(), '_payex_consumer_profile' );
-				delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
-				delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
-				WC()->session->__unset( 'payex_consumer_profile' );
-				WC()->session->__unset( 'payex_checkin_billing' );
-				WC()->session->__unset( 'payex_checkin_shipping' );
+				$this->drop_consumer_profile( $order->get_user_id() );
+
+				// Remove saved address
+				//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
+				//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
+				//WC()->session->__unset( 'payex_checkin_billing' );
+				//WC()->session->__unset( 'payex_checkin_shipping' );
 				$this->log( sprintf( 'It seem consumerProfileRef "%s" is invalid and was removed. Gateway returned error: %s', $reference, $e->getMessage() ) );
 
 				// Reload checkout
@@ -1022,7 +1023,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$profile = $this->get_consumer_profile( get_current_user_id() );
 
 		// Initiate consumer session to obtain consumerProfileRef after checkin
-		$js_url = null;
+		$js_url = $profile['url'];
 		if ( empty( $profile['reference'] ) ) {
 			// Initiate consumer session
 			$params = [
@@ -1038,6 +1039,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				$profile['billing'] = null;
 			}
 		}
+
+		WC()->session->set( 'consumer_js_url', $js_url );
 
 		// Checkin Form
 		wc_get_template(
@@ -1167,7 +1170,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		// Store Customer Profile
-		$this->update_consumer_profile( get_current_user_id(),  $customer_reference );
+		$url = WC()->session->get( 'consumer_js_url' );
+		$this->update_consumer_profile( get_current_user_id(),  $customer_reference, $url );
 
 		wp_send_json_success();
 	}
@@ -1640,6 +1644,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		if ( $user_id > 0 ) {
 			$expiration = get_user_meta( $user_id, '_payex_profile_expiration', true );
 			$reference  = get_user_meta( $user_id, '_payex_consumer_profile', true );
+			$url        = get_user_meta( $user_id, '_payex_consumer_url', true );
 
 			// Get saved the consumer address
 			$billing  = get_user_meta( $user_id, '_payex_consumer_address_billing', true );
@@ -1647,6 +1652,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		} else {
 			$expiration = WC()->session->get( 'payex_consumer_profile_expiration' );
 			$reference  = WC()->session->get( 'payex_consumer_profile' );
+			$url        = WC()->session->get( 'payex_consumer_url' );
 
 			// Get saved the consumer address
 			$billing  = WC()->session->get( 'payex_checkin_billing' );
@@ -1654,20 +1660,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		// Check if expired
-		if ( ( absint( $expiration ) > 0 && time() >= $expiration ) ||
+		if ( ( absint( $expiration ) > 0 && time() >= $expiration ) || // Expired
 		     ( ! empty( $reference ) && empty( $expiration ) ) // Deprecate saved reference without expiration
 		) {
 			// Remove expired data
-			if ( $user_id > 0 ) {
-				delete_user_meta( $user_id, '_payex_profile_expiration' );
-				delete_user_meta( $user_id, '_payex_consumer_profile' );
-			} else {
-				WC()->session->__unset( 'payex_consumer_profile_expiration' );
-				WC()->session->__unset( 'payex_consumer_profile' );
-			}
+			$this->drop_consumer_profile( $user_id );
 
 			$expiration = null;
 			$reference = null;
+			$url       = null;
 		}
 
 		// Fill the consumer address
@@ -1724,6 +1725,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Return result
 		return [
 			'reference' => $reference,
+			'url'       => $url,
 			'billing'   => $billing,
 			'shipping'  => $shipping
 		];
@@ -1734,14 +1736,34 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 *
 	 * @param $user_id
 	 * @param $reference
+	 * @param $url
 	 */
-	protected function update_consumer_profile( $user_id, $reference ) {
+	protected function update_consumer_profile( $user_id, $reference, $url = null ) {
 		if ( $user_id > 0 ) {
 			update_user_meta( $user_id, '_payex_profile_expiration', strtotime( '+48 hours' ) );
 			update_user_meta( $user_id, '_payex_consumer_profile', $reference );
+			update_user_meta( $user_id, '_payex_consumer_url', $url );
 		} else {
 			WC()->session->set( 'payex_consumer_profile_expiration', strtotime( '+48 hours' ) );
 			WC()->session->set( 'payex_consumer_profile', $reference );
+			WC()->session->set( 'payex_consumer_url', $url );
+		}
+	}
+
+	/**
+	 * Drop Consumer Profile
+	 *
+	 * @param $user_id
+	 */
+	protected function drop_consumer_profile( $user_id ) {
+		if ( $user_id > 0 ) {
+			delete_user_meta( $user_id, '_payex_profile_expiration' );
+			delete_user_meta( $user_id, '_payex_consumer_profile' );
+			delete_user_meta( $user_id, '_payex_consumer_url' );
+		} else {
+			WC()->session->__unset( 'payex_consumer_profile_expiration' );
+			WC()->session->__unset( 'payex_consumer_profile' );
+			WC()->session->__unset( 'payex_consumer_url' );
 		}
 	}
 
