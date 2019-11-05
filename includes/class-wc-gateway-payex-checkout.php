@@ -388,13 +388,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 			// Localize the script with new data
 			$translation_array = array(
-				'culture'          => $this->culture,
-				'instant_checkout' => ( $this->instant_checkout === 'yes' ),
-				'checkin'          => ( $this->checkin === 'yes' ),
-				'nonce'            => wp_create_nonce( 'payex_checkout' ),
-				'ajax_url'         => admin_url( 'admin-ajax.php' ),
-				'paymentMenuStyle' => null,
-				'checkInStyle'     => null,
+				'culture'                      => $this->culture,
+				'instant_checkout'             => ( $this->instant_checkout === 'yes' ),
+				'needs_shipping_address'       => WC()->cart->needs_shipping(),
+				'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
+				'checkin'                      => ( $this->checkin === 'yes' ),
+				'nonce'                        => wp_create_nonce( 'payex_checkout' ),
+				'ajax_url'                     => admin_url( 'admin-ajax.php' ),
+				'paymentMenuStyle'             => null,
+				'checkInStyle'                 => null,
 			);
 
 			// Add PM styles
@@ -1102,7 +1104,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			exit();
 		}
 
-		$address = $type === 'billing' ? $result['billingAddress'] : $result['shippingAddress'];
+		$address = isset( $result['billingAddress'] ) ? $result['billingAddress'] : $result['shippingAddress'];
 
 		// Parse name field
 		$parser = new \FullNameParser();
@@ -1114,7 +1116,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'country'    => $address['countryCode'],
 			'postcode'   => $address['zipCode'],
 			'address_1'  => $address['streetAddress'],
-			'address_2'  => '',
+			'address_2'  => ! empty ( $address['coAddress'] ) ? 'c/o ' . $address['coAddress'] : '',
 			'city'       => $address['city'],
 			'state'      => '',
 			'phone'      => $result['msisdn'],

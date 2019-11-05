@@ -144,6 +144,12 @@ jQuery( function( $ ) {
                         wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
+                        if ( WC_Gateway_PayEx_Checkout.needs_shipping_address ||
+                            WC_Gateway_PayEx_Checkout.ship_to_billing_address_only
+                        ) {
+                            wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
+                        }
+
                         wc_payex_checkout.onAddressDetailsAvailable( 'shipping', data );
                     },
                     onError: function ( data ) {
@@ -666,6 +672,7 @@ jQuery( function( $ ) {
 
             $( '#change-shipping-info' ).show();
 
+            wc_payex_checkout.block();
             return $.ajax( {
                 type: 'POST',
                 url: WC_Gateway_PayEx_Checkout.ajax_url,
@@ -677,7 +684,7 @@ jQuery( function( $ ) {
                 },
                 dataType: 'json'
             } ).always( function ( response ) {
-                //
+                wc_payex_checkout.unblock();
             } ).done( function ( response) {
                 console.log(response);
                 if (!response.success) {
