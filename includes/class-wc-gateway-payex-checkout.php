@@ -1661,7 +1661,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Check if expired
 		if ( ( absint( $expiration ) > 0 && time() >= $expiration ) || // Expired
-		     ( ! empty( $reference ) && empty( $expiration ) ) // Deprecate saved reference without expiration
+		     ( ! empty( $reference ) && empty( $expiration ) ) || // Deprecate saved reference without expiration
+		     ( ! empty( $reference ) && empty( $url ) ) // Deprecate saved reference without url
 		) {
 			// Remove expired data
 			$this->drop_consumer_profile( $user_id );
