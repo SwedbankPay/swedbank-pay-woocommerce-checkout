@@ -550,15 +550,15 @@ jQuery( function( $ ) {
          */
         refreshPaymentMenu: function() {
             console.log( 'refreshPaymentMenu' );
-            //if ( typeof this.paymentMenu !== 'undefined' ) {
-                //this.paymentMenu.refresh();
-            //} else {
-                //console.warn( 'refreshPaymentMenu: refresh workaround' );
+            if ( typeof this.paymentMenu !== 'undefined' && typeof this.paymentMenu.refresh === 'function' ) {
+                this.paymentMenu.refresh();
+            } else {
+                console.warn( 'refreshPaymentMenu: refresh workaround' );
                 //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
-            //}
+            }
 
             // @todo Use this.paymentMenu.refresh(); instead of that
-            wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+            //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
         },
 
         /**

@@ -491,9 +491,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'paymentorder' => [
 					'operation' => 'UpdateOrder',
 					'amount'    => round( $order->get_total() * 100 ),
-					'vatAmount' => 0,
-					//'vatAmount' => round( $info['vat_amount'] * 100 ),
-					//'orderItems' => $this->get_checkout_order_items( $order )
+					'vatAmount' => round( $info['vat_amount'] * 100 ),
+					'orderItems' => $this->get_checkout_order_items( $order )
 				]
 			];
 
@@ -1238,8 +1237,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$_POST = $data;
 		unset( $_POST['terms-field'], $_POST['terms'] );
 
-		$_POST['payment_method']                 = $this->id;
-		$_POST['is_update_backward_compat']      = '1';
+		$_POST['payment_method'] = $this->id;
+		$_POST['is_update']      = '1';
+		//$_POST['is_update_backward_compat']      = '1';
 
 		// Update Checkout
 		// @see WC_AJAX::update_order_review()
