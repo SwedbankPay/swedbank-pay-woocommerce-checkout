@@ -236,48 +236,8 @@ jQuery( function( $ ) {
                 return false;
             }
 
-            if ( wc_payex_checkout.xhr ) {
-                wc_payex_checkout.xhr.abort();
-            }
-
             $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-            wc_payex_checkout.form.addClass( 'processing' );
-            wc_payex_checkout.block();
-
-            wc_payex_checkout.xhr = wc_payex_checkout.updateOrder()
-                .always( function ( response ) {
-                    wc_payex_checkout.form.removeClass( 'processing' );
-                    wc_payex_checkout.unblock();
-                } )
-                .fail( function( jqXHR, textStatus ) {
-                    console.log( 'updateOrder error:' + textStatus );
-                    wc_payex_checkout.onError( textStatus );
-                } )
-                .done( function ( response) {
-                    console.log( response );
-                    this.xhr = false;
-
-                    if (response.result !== 'success') {
-                        // Reload page
-                        if ( response.hasOwnProperty('reload') && true === response.reload ) {
-                            window.location.reload();
-                            return;
-                        }
-
-                        // Trigger update in case we need a fresh nonce
-                        if ( true === response.result.refresh ) {
-                            $( document.body ).trigger( 'update_checkout' );
-                        }
-
-                        wc_payex_checkout.onError( response.messages );
-                        //wc_payex_checkout.form.submit();
-                        return;
-                    }
-
-                    // Refresh Payment Menu
-                    wc_payex_checkout.js_url = response['js_url'];
-                    wc_payex_checkout.refreshPaymentMenu();
-                } );
+            wc_payex_checkout.updateOrder();
         },
 
         onSubmit: function( e ) {
@@ -414,7 +374,6 @@ jQuery( function( $ ) {
          * @param callback
          */
         loadJs: function ( js, callback ) {
-            console.log( 'Loading of ' + js );
             // Creates a new script tag
             let script = document.createElement( 'script' );
 
@@ -423,7 +382,6 @@ jQuery( function( $ ) {
             script.setAttribute( 'type', 'text/javascript' );
             script.setAttribute( 'async', '' );
             script.addEventListener( 'load', function () {
-                console.log( 'Loaded: ' + js );
                 callback();
             }, false );
 
@@ -466,8 +424,8 @@ jQuery( function( $ ) {
 
                 // Load PayEx Checkout frame
                 if ( wc_payex_checkout.isInstantCheckout() ) {
-                    $('#payment').hide();
-                    wc_payex_checkout.initPaymentMenu('payment-payex-checkout' );
+                    $( '#payment' ).hide();
+                    wc_payex_checkout.initPaymentMenu( 'payment-payex-checkout' );
                 } else {
                     $.featherlight( '<div id="payex-paymentmenu">&nbsp;</div>', {
                         variant: 'featherlight-payex',
@@ -475,7 +433,7 @@ jQuery( function( $ ) {
                         closeOnClick: false,
                         closeOnEsc: false,
                         afterOpen: function () {
-                            wc_payex_checkout.initPaymentMenu('payex-paymentmenu' );
+                            wc_payex_checkout.initPaymentMenu( 'payex-paymentmenu' );
                         },
                         afterClose: function () {
                             wc_payex_checkout.form.removeClass( 'processing' ).unblock();
@@ -550,15 +508,16 @@ jQuery( function( $ ) {
          */
         refreshPaymentMenu: function() {
             console.log( 'refreshPaymentMenu' );
-            if ( typeof this.paymentMenu !== 'undefined' && typeof this.paymentMenu.refresh === 'function' ) {
+            if ( typeof this.paymentMenu !== 'undefined' &&
+                this.paymentMenu &&
+                this.paymentMenu.hasOwnProperty( 'refresh' ) &&
+                typeof this.paymentMenu.refresh === 'function' )
+            {
                 this.paymentMenu.refresh();
             } else {
                 console.warn( 'refreshPaymentMenu: refresh workaround' );
                 //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
             }
-
-            // @todo Use this.paymentMenu.refresh(); instead of that
-            //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
         },
 
         /**
@@ -578,15 +537,15 @@ jQuery( function( $ ) {
                     data: fields
                 },
                 dataType: 'json'
-            } ).done( function ( response) {
+            } ).done( function ( response ) {
                 // Reload page
                 if ( response.hasOwnProperty('reload') && true === response.reload ) {
                     window.location.reload();
                     return;
          		}
 
-                if (response.hasOwnProperty('result') && response.result === 'failure') {
-                    wc_payex_checkout.logError('payex-place-order', response);
+                if ( response.hasOwnProperty('result') && response.result === 'failure' ) {
+                    wc_payex_checkout.logError( 'payex-place-order', response );
                     wc_payex_checkout.onError( response.messages );
                 }
             } );
@@ -594,13 +553,27 @@ jQuery( function( $ ) {
 
         /**
          * Update Order
+         * @param compatibility
          * @return {JQueryPromise<any>}
          */
-        updateOrder: function () {
+        updateOrder: function ( compatibility ) {
             console.log( 'updateOrder' );
             let fields = $('.woocommerce-checkout').serialize();
 
-            return $.ajax( {
+            if ( typeof compatibility === 'undefined' ) {
+                compatibility = false;
+            }
+
+            fields += '&compatibility=' + compatibility;
+
+            wc_payex_checkout.form.addClass( 'processing' );
+            wc_payex_checkout.block();
+
+            if ( wc_payex_checkout.xhr ) {
+                wc_payex_checkout.xhr.abort();
+            }
+
+            wc_payex_checkout.xhr = $.ajax( {
                 type: 'POST',
                 url: WC_Gateway_PayEx_Checkout.ajax_url,
                 data: {
@@ -609,25 +582,59 @@ jQuery( function( $ ) {
                     data: fields
                 },
                 dataType: 'json'
-            } ).done( function ( response) {
-                if (response.hasOwnProperty('result') && response.result === 'failure') {
-                    if (response.messages.indexOf('Order update is not available.') > -1) {
-                        // Force reload
-                        console.warn( 'refreshPaymentMenu: refresh workaround. Force reload.' );
-                        wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url );
+            } )
+                .always( function ( response ) {
+                    wc_payex_checkout.xhr = false;
+                    wc_payex_checkout.form.removeClass( 'processing' );
+                    wc_payex_checkout.unblock();
+                } )
+                .fail( function( jqXHR, textStatus ) {
+                    console.log( 'updateOrder error:' + textStatus );
+                    wc_payex_checkout.onError( textStatus );
+                } )
+                .done( function ( response) {
+                    console.log( response );
+
+                    if ( response.hasOwnProperty('result') && response.result === 'success' ) {
+                        // Refresh Payment Menu
+                        wc_payex_checkout.js_url = response['js_url'];
+                        wc_payex_checkout.refreshPaymentMenu();
+
                         return;
+                    }
+
+                    if ( response.hasOwnProperty('result') && response.result === 'failure' ) {
+                        // SwedenBank Payment returns error that Order update is not available
+                        if ( response.messages.indexOf( 'Order update is not available.' ) > -1 && ! compatibility ) {
+                            // Force reload
+                            console.warn( 'refreshPaymentMenu: refresh workaround. Force reload.' );
+                            wc_payex_checkout.updateOrder( true ).done( function ( response ) {
+                                if ( response.hasOwnProperty('js_url') ) {
+                                    wc_payex_checkout.initPaymentJS( response.js_url );
+                                }
+                            } );
+
+                            return;
+                        }
                     }
 
                     // Reload page
                     if ( response.hasOwnProperty('reload') && true === response.reload ) {
                         window.location.reload();
-                        return;
-             		}
 
-                    wc_payex_checkout.logError('payex-update-order', response);
+                        return;
+                    }
+
+                    // Trigger update in case we need a fresh nonce
+                    if ( true === response.result.refresh ) {
+                        $( document.body ).trigger( 'update_checkout' );
+                    }
+
+                    wc_payex_checkout.logError( 'payex-update-order', response );
                     wc_payex_checkout.onError( response.messages );
-                }
-            } );
+                } );
+
+                return  wc_payex_checkout.xhr;
         },
 
         /**
@@ -733,7 +740,7 @@ jQuery( function( $ ) {
          */
         onPaymentMenuInstrumentSelected: function ( name, instrument ) {
             console.log( 'onPaymentMenuInstrumentSelected', name, instrument );
-            // @todo
+            $( document.body ).trigger( 'sb_payment_menu_instrument_selected', [name, instrument] );
         },
 
         /**

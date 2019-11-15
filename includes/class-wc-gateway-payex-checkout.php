@@ -510,7 +510,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			);
 		}
 
-		// @todo Use is_update instead of that
+		// Mode that workaround "Order update is not available"
 		if ( isset( $_POST['is_update_backward_compat'] ) ) {
 			$order->calculate_totals( true );
 
@@ -1238,8 +1238,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		unset( $_POST['terms-field'], $_POST['terms'] );
 
 		$_POST['payment_method'] = $this->id;
-		$_POST['is_update']      = '1';
-		//$_POST['is_update_backward_compat']      = '1';
+
+		if ( ! empty( $_POST['compat'] ) && (bool) $_POST['compat'] ) {
+			$_POST['is_update_backward_compat'] = 1;
+		} else {
+			$_POST['is_update'] = '1';
+		}
 
 		// Update Checkout
 		// @see WC_AJAX::update_order_review()
