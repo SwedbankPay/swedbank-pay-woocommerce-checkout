@@ -548,7 +548,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				],
 				'payeeInfo'   => [
 					'payeeId'         => $this->payee_id,
-					'payeeReference'  => str_replace( '-', '', $order_uuid ),
+					'payeeReference'  => apply_filters( 'sb_get_payee_reference', null, $order, false ),
 					'payeeName'       => get_bloginfo( 'name' ),
 					'orderReference'  => $order->get_order_number()
 				],
@@ -617,35 +617,54 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		try {
 			$result = $this->request( 'POST', '/psp/paymentorders', $params );
 		} catch ( Exception $e ) {
-			// Check last response
-			if ( ( strpos( $this->response_body, 'is not active' ) !== false ) ||
-			     ( strpos( $this->response_body, 'Unable to verify consumerProfileRef' ) !== false )
-			) {
-				// Reference *** is not active, unable to complete
-				// Remove the inactive customer reference
-				$_POST['payex_customer_reference'] = null;
-				$this->drop_consumer_profile( $order->get_user_id() );
+			// Parse response
+			// https://tools.ietf.org/html/rfc7807
+			$response = @json_decode( $this->response_body, true );
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				wc_add_notice( $e->getMessage(), 'error' );
 
-				// Remove saved address
-				//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
-				//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
-				//WC()->session->__unset( 'payex_checkin_billing' );
-				//WC()->session->__unset( 'payex_checkin_shipping' );
-				$this->log( sprintf( 'It seem consumerProfileRef "%s" is invalid and was removed. Gateway returned error: %s', $reference, $e->getMessage() ) );
+				return false;
+			}
 
-				// Reload checkout
-				if ( $this->instant_checkout === 'yes' ) {
-					wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ), 'error' );
+			foreach ($response['problems'] as $problem) {
+				// PayeeReference: The given PayeeReference has already been used for another payment (xxxxx).
+				// @todo Check cause of different name "PaymentOrder.PayeeInfo.PayeeReference"
+				if ( $problem['name'] === 'PayeeReference' ) {
+					// Generate reference with salt
+					$order->delete_meta_data( '_sb_payee_reference' );
+					$order->save_meta_data();
+					apply_filters( 'sb_get_payee_reference', null, $order, true );
 
-					return array(
-						'result'   => 'failure',
-						'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ),
-						'reload'   => true,
-					);
+					return $this->process_payment( $order_id );
 				}
 
-				// Try again
-				return $this->process_payment( $order_id );
+				// ConsumerProfileRef: Reference *** is not active, unable to complete, Unable to verify consumerProfileRef
+				if ( $problem['name'] === 'ConsumerProfileRef' ) {
+					// Remove the inactive customer reference
+					$_POST['payex_customer_reference'] = null;
+					$this->drop_consumer_profile( $order->get_user_id() );
+
+					// Remove saved address
+					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
+					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
+					//WC()->session->__unset( 'payex_checkin_billing' );
+					//WC()->session->__unset( 'payex_checkin_shipping' );
+					$this->log( sprintf( 'It seem consumerProfileRef "%s" is invalid and was removed. Gateway returned error: %s', $reference, $e->getMessage() ) );
+
+					// Reload checkout
+					if ( $this->instant_checkout === 'yes' ) {
+						wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ), 'error' );
+
+						return array(
+							'result'   => 'failure',
+							'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ),
+							'reload'   => true,
+						);
+					}
+
+					// Try again
+					return $this->process_payment( $order_id );
+				}
 			}
 
 			wc_add_notice( $e->getMessage(), 'error' );
