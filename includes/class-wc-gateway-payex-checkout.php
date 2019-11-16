@@ -518,12 +518,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			delete_post_meta( $order_id, '_payex_paymentorder_id' );
 		}
 
-		// Get Order UUID
-		$order_uuid = mb_strimwidth( px_uuid( uniqid() ), 0, 30, '', 'UTF-8' );
-
 		// Check terms_url value
 		if ( parse_url( $this->terms_url, PHP_URL_SCHEME ) !== 'https' ) {
 			$this->terms_url = '';
+		}
+
+		$payeeReference = apply_filters( 'sb_get_payee_reference', null, $order, false );
+		if ( ! $payeeReference ) {
+			// It seem there's old version of payex-woocommerce-payments
+			$payeeReference = $order->get_order_number();
 		}
 
 		$params = [
@@ -548,7 +551,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				],
 				'payeeInfo'   => [
 					'payeeId'         => $this->payee_id,
-					'payeeReference'  => apply_filters( 'sb_get_payee_reference', null, $order, false ),
+					'payeeReference'  => $payeeReference,
 					'payeeName'       => get_bloginfo( 'name' ),
 					'orderReference'  => $order->get_order_number()
 				],
@@ -626,6 +629,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				return false;
 			}
 
+			// Check problems
 			foreach ($response['problems'] as $problem) {
 				// PayeeReference: The given PayeeReference has already been used for another payment (xxxxx).
 				// @todo Check cause of different name "PaymentOrder.PayeeInfo.PayeeReference"
@@ -638,8 +642,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					return $this->process_payment( $order_id );
 				}
 
-				// ConsumerProfileRef: Reference *** is not active, unable to complete, Unable to verify consumerProfileRef
-				if ( $problem['name'] === 'ConsumerProfileRef' ) {
+				// consumerProfileRef: Reference *** is not active, unable to complete
+				if ( $problem['name'] === 'consumerProfileRef' ) {
 					// Remove the inactive customer reference
 					$_POST['payex_customer_reference'] = null;
 					$this->drop_consumer_profile( $order->get_user_id() );
@@ -649,7 +653,6 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
 					//WC()->session->__unset( 'payex_checkin_billing' );
 					//WC()->session->__unset( 'payex_checkin_shipping' );
-					$this->log( sprintf( 'It seem consumerProfileRef "%s" is invalid and was removed. Gateway returned error: %s', $reference, $e->getMessage() ) );
 
 					// Reload checkout
 					if ( $this->instant_checkout === 'yes' ) {
