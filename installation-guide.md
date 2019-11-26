@@ -34,7 +34,11 @@ To connect your module to the PayEx system you need to navigate to https://admin
 Navigate to **Merchant->New Token** and mark the methods you intend to use. For more information about each method contact your PayEx Sales representative.
 Copy the Token and insert it in the appropriate field in your WooCommerce Payment Method setting.
 
-![image6](https://user-images.githubusercontent.com/6286270/63705441-6d0a8400-c82d-11e9-8baf-96e25c0ce244.png)
+![image6](https://user-images.githubusercontent.com/6286270/69639000-0c712a00-105c-11ea-944c-a2b254cb34a1.png)
+
+Navigate further down on the same page to select **Checkin country** and mark the country for which the payment method should work.
+
+![image7](https://user-images.githubusercontent.com/6286270/69638120-6244d280-105a-11ea-9453-ae8352722c5b.png)
 
 Don’t Forget to save.
 Note that Tokens differ for Production and Test.
@@ -47,4 +51,7 @@ For translation see https://developer.wordpress.org/themes/functionality/localiz
 You’ll find the logfiles under **WooCommerce->Status->Logs**.
 If you have rounding issues try to set Number of Decimals to “2” under **WooCommerce -> Settings -> General -> Currency options**
 
-![image7](https://user-images.githubusercontent.com/6286270/63705458-78f64600-c82d-11e9-8d60-d76ecdfb06c8.png)
+![image8](https://user-images.githubusercontent.com/6286270/63705458-78f64600-c82d-11e9-8d60-d76ecdfb06c8.png)
+
+
+
