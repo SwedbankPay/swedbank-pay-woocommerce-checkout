@@ -13,10 +13,10 @@ defined( 'ABSPATH' ) || exit;
 	<script id="payex-hostedview-script" src="<?php echo $js_url; ?>"></script>
 <?php endif; ?>
 
-<h3>1. <?php esc_html_e( 'Your information', 'woocommerce-gateway-payex-checkout' ); ?></h3>
+<h3>1. <?php esc_html_e( 'Your information', WC_Payex_Checkout::TEXT_DOMAIN ); ?></h3>
 <?php if ( $checkin_country === 'SELECT' ): ?>
 <label for="checkin_country">
-    <?php _e( 'Choose your country', 'woocommerce-gateway-payex-checkout' ); ?>
+    <?php _e( 'Choose your country', WC_Payex_Checkout::TEXT_DOMAIN ); ?>
 	<select id="checkin_country" name="checkin_country" class="select">
 		<option <?php echo $selected_country === 'SE' ? 'selected' : '' ?> value="SE">
             <?php _e('Sweden','woocommerce'); ?>
@@ -34,7 +34,7 @@ defined( 'ABSPATH' ) || exit;
 		<?php if ($consumer_data && $consumer_profile): ?>
             <div id="payex-consumer-profile" data-reference="<?php esc_html_e( $consumer_profile ); ?>"></div>
 			<!-- <strong>
-				<?php esc_html_e( 'You\'re logged in as payex customer.', 'woocommerce-gateway-payex-checkout' ); ?>
+				<?php esc_html_e( 'You\'re logged in as Swedbank Pay customer.', WC_Payex_Checkout::TEXT_DOMAIN ); ?>
 			</strong>
 			<p>
 				<?php esc_html_e( $consumer_data['first_name'] . ' ' . $consumer_data['last_name'] ); ?><br/>

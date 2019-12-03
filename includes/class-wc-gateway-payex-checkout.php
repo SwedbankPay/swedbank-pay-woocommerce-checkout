@@ -118,7 +118,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		$this->id           = 'payex_checkout';
 		$this->has_fields   = true;
-		$this->method_title = __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' );
+		$this->method_title = __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN );
 		//$this->icon         = apply_filters( 'woocommerce_payex_checkout_icon', plugins_url( '/assets/images/payex.gif', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -237,91 +237,91 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'          => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Enable/Disable', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable plugin', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => 'no'
 			),
 			'title'            => array(
-				'title'       => __( 'Title', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Title', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' )
+				'description' => __( 'This controls the title which the user sees during checkout.', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default'     => __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN )
 			),
 			'description'      => array(
-				'title'       => __( 'Description', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Description', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'This controls the description which the user sees during checkout.', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default'     => __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 			),
 			'merchant_token'   => array(
-				'title'       => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Merchant Token', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Merchant Token', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->merchant_token
 			),
 			'payee_id'         => array(
-				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Payee Id', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Payee Id', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
 			),
 			'subsite'         => array(
-				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Subsite', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Subsite', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->subsite
 			),
 			'testmode'         => array(
-				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Test Mode', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable PayEx Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->testmode
 			),
 			'debug'            => array(
-				'title'   => __( 'Debug', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Debug', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable logging', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->debug
 			),
 			'culture'          => array(
-				'title'       => __( 'Language', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Language', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'select',
 				'options'     => array(
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				),
-				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->culture
 			),
 			'instant_checkout' => array(
-				'title'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->instant_checkout
 			),
 			'checkin' => array(
-				'title'   => __( 'Enable Checkin on PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Checkin on PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->checkin
 			),
 			'checkin_country'  => array(
-				'title'       => __( 'Checkin country', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Checkin country', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'select',
 				'options'     => array(
 					'SE'     => __( 'Sweden', 'woocommerce' ),
 					'NO'     => __( 'Norway', 'woocommerce' ),
-					'SELECT' => __( 'Customer can choose', 'woocommerce-gateway-payex-checkout' ),
+					'SELECT' => __( 'Customer can choose', WC_Payex_Checkout::TEXT_DOMAIN ),
 				),
-				'description' => __( 'Checkin country', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Checkin country', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->checkin_country
 			),
 			'terms_url'        => array(
-				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Terms & Conditions Url', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Terms & Conditions Url', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => get_site_url()
 			),
 			'reject_credit_cards' => array(
@@ -542,7 +542,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'currency'    => $order->get_currency(),
 				'amount'      => apply_filters( 'sb_checkout_order_amount', 0, $order ),
 				'vatAmount'   => apply_filters( 'sb_checkout_order_vat', 0, $order ),
-				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
+				'description' => sprintf( __( 'Order #%s', WC_Payex_Checkout::TEXT_DOMAIN ), $order->get_order_number() ),
 				'userAgent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
 				'generateRecurrenceToken' => false,
@@ -663,11 +663,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 					// Reload checkout
 					if ( $this->instant_checkout === 'yes' ) {
-						wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ), 'error' );
+						wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', WC_Payex_Checkout::TEXT_DOMAIN ), 'error' );
 
 						return array(
 							'result'   => 'failure',
-							'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', 'woocommerce-gateway-payex-checkout' ),
+							'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', WC_Payex_Checkout::TEXT_DOMAIN ),
 							'reload'   => true,
 						);
 					}
