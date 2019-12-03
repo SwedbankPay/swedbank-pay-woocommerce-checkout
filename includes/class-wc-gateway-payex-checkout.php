@@ -224,6 +224,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			add_filter( 'woocommerce_checkout_get_value', array( $this, 'checkout_get_value' ), 10, 2 );
 			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
 		}
+
+		add_filter( 'sb_checkout_order_items', __CLASS__ . '::checkout_order_items', 10, 2 );
+		add_filter( 'sb_checkout_order_vat', __CLASS__ . '::checkout_order_vat', 10, 2 );
+		add_filter( 'sb_checkout_order_amount', __CLASS__ . '::checkout_order_amount', 10, 2 );
 	}
 
 	/**
@@ -454,6 +458,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Order Info
 		$info = $this->get_order_info( $order );
 
+		// Get Order Items
+		$items = apply_filters( 'sb_checkout_order_items', [], $order );
+
 		if ( isset( $_POST['is_update'] ) ) {
 			$order->calculate_totals( true );
 
@@ -490,9 +497,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$params = [
 				'paymentorder' => [
 					'operation' => 'UpdateOrder',
-					'amount'    => round( $order->get_total() * 100 ),
-					'vatAmount' => round( $info['vat_amount'] * 100 ),
-					'orderItems' => $this->get_checkout_order_items( $order )
+					'amount'    => apply_filters( 'sb_checkout_order_amount', 0, $order ),
+					'vatAmount' => apply_filters( 'sb_checkout_order_vat', 0, $order ),
+					'orderItems' => $items
 				]
 			];
 
@@ -533,8 +540,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'paymentorder' => [
 				'operation'   => 'Purchase',
 				'currency'    => $order->get_currency(),
-				'amount'      => round( 100 * $order->get_total() ),
-				'vatAmount'   => round( $info['vat_amount'] * 100 ),
+				'amount'      => apply_filters( 'sb_checkout_order_amount', 0, $order ),
+				'vatAmount'   => apply_filters( 'sb_checkout_order_vat', 0, $order ),
 				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
 				'userAgent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
@@ -585,7 +592,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 						'countryCode' => $order->get_billing_country()
 					],
 				],
-				'orderItems' => $this->get_checkout_order_items( $order ),
+				'orderItems' => $items,
 				'metadata'    => [
 					'order_id' => $order_id
 				],
@@ -1537,12 +1544,19 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	/**
 	 * Get Order Lines
 	 *
+	 * @param array $items
 	 * @param WC_Order $order
 	 *
 	 * @return array
 	 */
-	protected function get_checkout_order_items( $order ) {
-		$item = [];
+	public static function checkout_order_items( $items, $order ) {
+		if ( ! is_array( $items ) ) {
+			$items = [];
+		}
+
+		if ( ! $order instanceof WC_Order ) {
+			$order = wc_get_order( $order );
+		}
 
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
@@ -1573,7 +1587,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$productReference = trim( str_replace( ' ', '-', $order_item->get_product()->get_sku() ) );
 			$productName = trim( $order_item->get_name() );
 
-			$item[] = [
+			$items[] = [
 				// The field Reference must match the regular expression '[\\w-]*'
 				'reference'    => ! empty( $productReference ) ? $productReference : wp_generate_password(),
 				'name'         => ! empty( $productName ) ? $productName : '-',
@@ -1599,7 +1613,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
 			$shippingMethod = trim( $order->get_shipping_method() );
 
-			$item[] = [
+			$items[] = [
 				'reference' => 'shipping',
 				'name' => ! empty( $shippingMethod ) ? $shippingMethod : __( 'Shipping', 'woocommerce' ),
 				'type' => 'SHIPPING_FEE',
@@ -1621,7 +1635,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$feeWithTax = $fee + $tax;
 			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
-			$item[] = [
+			$items[] = [
 				'reference' => 'fee',
 				'name' => $order_fee->get_name(),
 				'type' => 'OTHER',
@@ -1637,12 +1651,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Add discount line
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount        = $order->get_total_discount( true );
-			$discountWithTax = $order->get_total_discount( false );
+			$discount        = abs( $order->get_total_discount( true ) );
+			$discountWithTax = abs( $order->get_total_discount( false ) );
 			$tax             = $discountWithTax - $discount;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			$item[] = [
+			$items[] = [
 				'reference' => 'discount',
 				'name' => __( 'Discount', 'payex-woocommerce-payments' ),
 				'type' => 'DISCOUNT',
@@ -1656,7 +1670,42 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			];
 		}
 
-		return $item;
+		return $items;
+	}
+
+	/**
+	 * Get Order VAT
+	 *
+	 * @param int $vatAmount
+	 * @param WC_Order $order
+	 *
+	 * @return int
+	 */
+	public static function checkout_order_vat( $vatAmount, $order ) {
+		if ( ! is_numeric( $vatAmount ) ) {
+			$vatAmount = 0;
+		}
+
+		$items = apply_filters( 'sb_checkout_order_items', [], $order );
+		foreach ($items as $item) {
+			if ( ! isset( $item['restrictedToInstruments'] ) ) {
+				$vatAmount += $item['vatAmount'];
+			}
+		}
+
+		return $vatAmount;
+	}
+
+	/**
+	 * Get Order Amount
+	 *
+	 * @param int $amount
+	 * @param WC_Order $order
+	 *
+	 * @return int
+	 */
+	public static function checkout_order_amount( $amount, $order ) {
+		return round( 100 * $order->get_total() );
 	}
 
 	/**
