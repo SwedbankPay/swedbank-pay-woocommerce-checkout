@@ -1682,18 +1682,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @return int
 	 */
 	public static function checkout_order_vat( $vatAmount, $order ) {
-		if ( ! is_numeric( $vatAmount ) ) {
-			$vatAmount = 0;
-		}
-
 		$items = apply_filters( 'sb_checkout_order_items', [], $order );
-		foreach ($items as $item) {
-			if ( ! isset( $item['restrictedToInstruments'] ) ) {
-				$vatAmount += $item['vatAmount'];
-			}
-		}
 
-		return $vatAmount;
+		return array_sum( array_column( $items, 'vatAmount') );
 	}
 
 	/**
