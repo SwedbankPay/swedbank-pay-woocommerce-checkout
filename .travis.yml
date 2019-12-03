@@ -38,14 +38,14 @@ install:
   - mkdir /tmp/tmp1
   - wget https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments/archive/master.zip
   - unzip /tmp/master.zip -d /tmp/tmp1
-  - mv /tmp/tmp1/swedbank-pay-woocommerce-payments-master/ /tmp/tmp1/payex-woocommerce-payments/
+  - mv /tmp/tmp1/swedbank-pay-woocommerce-payments-master/ /tmp/tmp1/swedbank-pay-woocommerce-payments/
   - cd /tmp/tmp1
-  - zip -r /tmp/payex-woocommerce-payments.zip ./
+  - zip -r /tmp/swedbank-pay-woocommerce-payments.zip ./
   - cd /tmp/wordpress
   - curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
   - php wp-cli.phar core config --dbname=woocommerce_test --dbuser=root --dbpass='' --dbhost=localhost --dbprefix=wp_
   - php wp-cli.phar core install --url="http://localhost:8080" --title="Example" --admin_user=admin --admin_password=password --admin_email=info@example.com --path=/tmp/wordpress --skip-email
-  - php wp-cli.phar plugin install /tmp/payex-woocommerce-payments.zip --activate
+  - php wp-cli.phar plugin install /tmp/swedbank-pay-woocommerce-payments.zip --activate
   - cd $TRAVIS_BUILD_DIR
 
 before_script:
