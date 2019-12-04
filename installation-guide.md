@@ -54,4 +54,3 @@ If you have rounding issues try to set Number of Decimals to “2” under **Woo
 ![image8](https://user-images.githubusercontent.com/6286270/63705458-78f64600-c82d-11e9-8d60-d76ecdfb06c8.png)
 
 
-
