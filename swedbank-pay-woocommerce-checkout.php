@@ -1,14 +1,14 @@
 <?php
 /*
  * Plugin Name: Swedbank Pay WooCommerce Checkout
- * Plugin URI: https://www.swedbankpay.se/
+ * Plugin URI: https://www.swedbankpay.com/
  * Description: Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
  * Author: Swedbank Pay
- * Author URI: https://www.swedbankpay.se/
+ * Author URI: https://www.swedbankpay.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 2.1.1
- * Text Domain: sb-woocommerce-checkout
+ * Text Domain: swedbank-pay-woocommerce-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 3.6.4
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 class WC_Payex_Checkout {
-	const TEXT_DOMAIN = 'sb-woocommerce-checkout';
+	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-checkout';
 
 	/**
 	 * Constructor
