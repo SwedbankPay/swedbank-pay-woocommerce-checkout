@@ -1,14 +1,14 @@
 <?php
 /*
- * Plugin Name: PayEx WooCommerce Checkout
- * Plugin URI: http://payex.com/
- * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
- * Author: PayEx
- * Author URI: http://payex.com/
+ * Plugin Name: Swedbank Pay WooCommerce Checkout
+ * Plugin URI: https://www.swedbankpay.com/
+ * Description: Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
+ * Author: Swedbank Pay
+ * Author URI: https://www.swedbankpay.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 2.1.1
- * Text Domain: woocommerce-gateway-payex-checkout
+ * Text Domain: swedbank-pay-woocommerce-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 3.6.4
@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 class WC_Payex_Checkout {
+	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-checkout';
+
 	/**
 	 * Constructor
 	 */
@@ -70,7 +72,7 @@ class WC_Payex_Checkout {
 
 				WC_Admin_Notices::add_custom_notice(
 					'wc-payex-checkout-notice',
-					__( 'Required PayEx WooCommerce payments plugin was automatically installed.', 'woocommerce-gateway-payex-checkout' )
+					__( 'Required Swedbank Pay WooCommerce payments plugin was automatically installed.', WC_Payex_Checkout::TEXT_DOMAIN )
 				);
 			}
 		} catch ( \Exception $e ) {
@@ -96,7 +98,7 @@ class WC_Payex_Checkout {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __( 'Settings', 'woocommerce-gateway-payex-checkout' ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __( 'Settings', WC_Payex_Checkout::TEXT_DOMAIN ) . '</a>'
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -108,7 +110,7 @@ class WC_Payex_Checkout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'woocommerce-gateway-payex-checkout', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( WC_Payex_Checkout::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -214,7 +216,7 @@ class WC_Payex_Checkout {
 
 		$plugins = get_plugins();
 		foreach ( $plugins as $file => $plugin ) {
-			if ( strpos( $file, 'payex-woocommerce-payments.php' ) !== false ) {
+			if ( strpos( $file, 'swedbank-pay-woocommerce-payments.php' ) !== false ) {
 				return $file;
 			}
 		}
@@ -235,7 +237,7 @@ class WC_Payex_Checkout {
 
 		// Install plugin
 		// Get latest release from Github
-		$response = wp_remote_get( 'https://api.github.com/repos/PayEx/payex-woocommerce-payments/releases/latest', array(
+		$response = wp_remote_get( 'https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments/releases/latest', array(
 			'headers' => array( 'Accept' => 'application/vnd.github.v3+json' ),
 		) );
 		if ( is_wp_error( $response ) ) {
@@ -244,7 +246,7 @@ class WC_Payex_Checkout {
 
 		$release = json_decode( $response['body'], true );
 		if ( ! isset( $release['zipball_url'] ) ) {
-			throw new Exception( 'Failed to get latest release of PayEx WooCommerce payments plugin' );
+			throw new Exception( 'Failed to get latest release of Swedbank Pay WooCommerce payments plugin' );
 		}
 
 		// Download package
@@ -269,8 +271,8 @@ class WC_Payex_Checkout {
 		// Move plugin to plugins directory
 		$files = $wp_filesystem->dirlist( $tmpdir );
 		foreach ( $files as $name => $details ) {
-			if ( strpos( $name, 'payex-woocommerce-payments' ) !== false ) {
-				$destination = WP_PLUGIN_DIR . '/payex-woocommerce-payments';
+			if ( strpos( $name, 'swedbank-pay-woocommerce-payments' ) !== false ) {
+				$destination = WP_PLUGIN_DIR . '/swedbank-pay-woocommerce-payments';
 				// Remove destination directory if exists
 				if ( $wp_filesystem->exists( $destination ) ) {
 					$wp_filesystem->rmdir( $destination );
@@ -295,7 +297,7 @@ class WC_Payex_Checkout {
 		// Remove temp directory
 		$wp_filesystem->rmdir( $tmpdir );
 
-		throw new Exception( 'Failed to install PayEx WooCommerce payments plugin' );
+		throw new Exception( 'Failed to install Swedbank Pay WooCommerce payments plugin' );
 	}
 }
 

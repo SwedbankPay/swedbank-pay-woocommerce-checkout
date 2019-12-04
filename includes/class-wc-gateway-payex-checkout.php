@@ -21,6 +21,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $payee_id = '';
 
 	/**
+	 * Subsite
+	 * @var string
+	 */
+	public $subsite = '';
+
+	/**
 	 * Test Mode
 	 * @var string
 	 */
@@ -43,6 +49,18 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @var string
 	 */
 	public $instant_checkout = 'no';
+
+	/**
+	 * Enable Checkin
+	 * @var string
+	 */
+	public $checkin = 'yes';
+
+	/**
+	 * Checkin Country
+	 * @var string
+	 */
+	public $checkin_country = 'SE';
 
 	/**
 	 * Backend Api Endpoint
@@ -75,6 +93,24 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public $reject_corporate_cards = 'no';
 
 	/**
+	 * Custom styles
+	 * @var string
+	 */
+	public $custom_styles = 'no';
+
+	/**
+	 * Styles of Checkin
+	 * @var string
+	 */
+	public $checkInStyle = '';
+
+	/**
+	 * Styles of PaymentMenu
+	 * @var string
+	 */
+	public $paymentMenuStyle = '';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -82,7 +118,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		$this->id           = 'payex_checkout';
 		$this->has_fields   = true;
-		$this->method_title = __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' );
+		$this->method_title = __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN );
 		//$this->icon         = apply_filters( 'woocommerce_payex_checkout_icon', plugins_url( '/assets/images/payex.gif', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -101,10 +137,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->description      = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 		$this->merchant_token   = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
 		$this->payee_id         = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite          = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
+		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
+		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// Reject Cards
@@ -112,6 +151,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$this->reject_debit_cards     = isset( $this->settings['reject_debit_cards'] ) ? $this->settings['reject_debit_cards'] : $this->reject_debit_cards;
 		$this->reject_consumer_cards  = isset( $this->settings['reject_consumer_cards'] ) ? $this->settings['reject_consumer_cards'] : $this->reject_consumer_cards;
 		$this->reject_corporate_cards = isset( $this->settings['reject_corporate_cards'] ) ? $this->settings['reject_corporate_cards'] : $this->reject_corporate_cards;
+
+		// Styles
+		$this->custom_styles    = isset( $this->settings['custom_styles'] ) ? $this->settings['custom_styles'] : $this->custom_styles;
+		$this->checkInStyle     = isset( $this->settings['checkInStyle'] ) ? $this->settings['checkInStyle'] : $this->checkInStyle;
+		$this->paymentMenuStyle = isset( $this->settings['paymentMenuStyle'] ) ? $this->settings['paymentMenuStyle'] : $this->paymentMenuStyle;
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
@@ -161,17 +205,29 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'ajax_payex_checkout_customer_profile'
 		) );
 
+		add_action( 'wp_ajax_sb_checkin', array( $this, 'ajax_sb_checkin' ) );
+		add_action( 'wp_ajax_nopriv_sb_checkin', array( $this, 'ajax_sb_checkin' ) );
+
 		add_action( 'wp_ajax_payex_place_order', array( $this, 'ajax_payex_place_order' ) );
 		add_action( 'wp_ajax_nopriv_payex_place_order', array( $this, 'ajax_payex_place_order' ) );
 
 		add_action( 'wp_ajax_payex_update_order', array( $this, 'ajax_payex_update_order' ) );
 		add_action( 'wp_ajax_nopriv_payex_update_order', array( $this, 'ajax_payex_update_order' ) );
 
+		add_action( 'wp_ajax_payex_checkout_log_error', array( $this, 'ajax_payex_checkout_log_error' ) );
+		add_action( 'wp_ajax_nopriv_payex_checkout_log_error', array( $this, 'ajax_payex_checkout_log_error' ) );
+
 		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 1 );
 
 		if ( $this->instant_checkout === 'yes' ) {
 			add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
+			add_filter( 'woocommerce_checkout_get_value', array( $this, 'checkout_get_value' ), 10, 2 );
+			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
 		}
+
+		add_filter( 'sb_checkout_order_items', __CLASS__ . '::checkout_order_items', 10, 2 );
+		add_filter( 'sb_checkout_order_vat', __CLASS__ . '::checkout_order_vat', 10, 2 );
+		add_filter( 'sb_checkout_order_amount', __CLASS__ . '::checkout_order_amount', 10, 2 );
 	}
 
 	/**
@@ -181,68 +237,91 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'          => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Enable/Disable', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable plugin', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => 'no'
 			),
 			'title'            => array(
-				'title'       => __( 'Title', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Title', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' )
+				'description' => __( 'This controls the title which the user sees during checkout.', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default'     => __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN )
 			),
 			'description'      => array(
-				'title'       => __( 'Description', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Description', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'This controls the description which the user sees during checkout.', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default'     => __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 			),
 			'merchant_token'   => array(
-				'title'       => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Merchant Token', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Merchant Token', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->merchant_token
 			),
 			'payee_id'         => array(
-				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Payee Id', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Payee Id', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
 			),
+			'subsite'         => array(
+				'title'       => __( 'Subsite', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'type'        => 'text',
+				'description' => __( 'Subsite', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default'     => $this->subsite
+			),
 			'testmode'         => array(
-				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Test Mode', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable PayEx Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->testmode
 			),
 			'debug'            => array(
-				'title'   => __( 'Debug', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Debug', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable logging', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->debug
 			),
 			'culture'          => array(
-				'title'       => __( 'Language', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Language', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'select',
 				'options'     => array(
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				),
-				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->culture
 			),
 			'instant_checkout' => array(
-				'title'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Use PayEx Checkout instead of WooCommerce Checkout', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default' => $this->instant_checkout
 			),
+			'checkin' => array(
+				'title'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default' => $this->checkin
+			),
+			'checkin_country'  => array(
+				'title'       => __( 'Checkin country', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'type'        => 'select',
+				'options'     => array(
+					'SE'     => __( 'Sweden', 'woocommerce' ),
+					'NO'     => __( 'Norway', 'woocommerce' ),
+					'SELECT' => __( 'Customer can choose', WC_Payex_Checkout::TEXT_DOMAIN ),
+				),
+				'description' => __( 'Checkin country', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'default'     => $this->checkin_country
+			),
 			'terms_url'        => array(
-				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Terms & Conditions Url', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Terms & Conditions Url', WC_Payex_Checkout::TEXT_DOMAIN ),
 				'default'     => get_site_url()
 			),
 			'reject_credit_cards' => array(
@@ -285,8 +364,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-		wp_enqueue_script( 'featherlight', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.js', array( 'jquery' ), '1.7.13', true );
-		wp_enqueue_style( 'featherlight-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.css', array(), '1.7.13', 'all' );
+
 		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style' . $suffix . '.css', array(), false, 'all' );
 
 		if ( $this->instant_checkout === 'yes' ) {
@@ -295,19 +373,46 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Checkout scripts
 		if ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() ) {
-			wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
-				'jquery',
-				'wc-checkout',
-				'featherlight'
-			), false, true );
+			if ( $this->instant_checkout === 'yes' ) {
+				wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
+					'jquery',
+					'wc-checkout'
+				), false, true );
+			} else {
+				// Styles
+				wp_enqueue_script( 'featherlight', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.js', array( 'jquery' ), '1.7.13', true );
+				wp_enqueue_style( 'featherlight-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.css', array(), '1.7.13', 'all' );
+
+				wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
+					'jquery',
+					'wc-checkout',
+					'featherlight'
+				), false, true );
+			}
 
 			// Localize the script with new data
 			$translation_array = array(
-				'culture'          => $this->culture,
-				'instant_checkout' => ( $this->instant_checkout === 'yes' ),
-				'nonce'            => wp_create_nonce( 'payex_checkout' ),
-				'ajax_url'         => admin_url( 'admin-ajax.php' ),
+				'culture'                      => $this->culture,
+				'instant_checkout'             => ( $this->instant_checkout === 'yes' ),
+				'needs_shipping_address'       => WC()->cart->needs_shipping(),
+				'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
+				'checkin'                      => ( $this->checkin === 'yes' ),
+				'nonce'                        => wp_create_nonce( 'payex_checkout' ),
+				'ajax_url'                     => admin_url( 'admin-ajax.php' ),
+				'paymentMenuStyle'             => null,
+				'checkInStyle'                 => null,
 			);
+
+			// Add PM styles
+			if ( $styles = apply_filters( 'payex_checkout_paymentmenu_style', $this->paymentMenuStyle ) ) {
+				$translation_array['paymentMenuStyle'] = $styles;
+			}
+
+			// Add CheckIn Styles
+			if ( $styles = apply_filters( 'payex_checkout_checkin_style', $this->checkInStyle ) ) {
+				$translation_array['checkInStyle'] = $styles;
+			}
+
 			wp_localize_script( 'wc-gateway-payex-checkout', 'WC_Gateway_PayEx_Checkout', $translation_array );
 
 			// Enqueued script with localized data.
@@ -353,16 +458,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Order Info
 		$info = $this->get_order_info( $order );
 
+		// Get Order Items
+		$items = apply_filters( 'sb_checkout_order_items', [], $order );
+
 		if ( isset( $_POST['is_update'] ) ) {
-			$params = [
-				'paymentorder' => [
-					'operation' => 'UpdateOrder',
-					'amount'    => round( $order->get_total() * 100 ),
-					'vatAmount' => 0,
-					//'vatAmount' => round( $info['vat_amount'] * 100 ),
-					//'orderItems' => $this->get_checkout_order_items( $order )
-				]
-			];
+			$order->calculate_totals( true );
 
 			// Get Payment Order ID
 			$payment_id = get_post_meta( $order_id, '_payex_paymentorder_id', true );
@@ -370,12 +470,20 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				$payment_id = WC()->session->get( 'payex_paymentorder_id' );
 			}
 
-			if ( ! empty( $payment_id ) ) {
-				$result = $this->request( 'PATCH', $payment_id, $params );
+			if ( empty( $payment_id ) ) {
+				// PaymentOrder is unknown
+				return false;
+			}
 
-				// Get JS URl
-				$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
+			$result     = $this->request( 'GET', $payment_id );
+			$js_url     = self::get_operation( $result['operations'], 'view-paymentorder' );
+			$update_url = self::get_operation( $result['operations'], 'update-paymentorder-updateorder' );
+			if ( empty( $update_url ) ) {
+				throw new Exception( 'Order update is not available.' );
+			}
 
+			// Don't update if amount is not changed
+			if ( (int) $result['paymentOrder']['amount'] === round( $order->get_total() * 100 ) ) {
 				return array(
 					'result'            => 'success',
 					'redirect'          => '#!payex-checkout',
@@ -385,24 +493,56 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				);
 			}
 
-			unset( $_POST['is_update'] );
+			// Update Order
+			$params = [
+				'paymentorder' => [
+					'operation' => 'UpdateOrder',
+					'amount'    => apply_filters( 'sb_checkout_order_amount', 0, $order ),
+					'vatAmount' => apply_filters( 'sb_checkout_order_vat', 0, $order ),
+					'orderItems' => $items
+				]
+			];
+
+			$result = $this->request( 'PATCH', $update_url, $params );
+
+			// Get JS Url
+			$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
+
+			return array(
+				'result'            => 'success',
+				'redirect'          => '#!payex-checkout',
+				'is_payex_checkout' => true,
+				'js_url'            => $js_url,
+				'payment_id'        => $result['paymentOrder']['id'],
+			);
 		}
 
-		// Get Order UUID
-		$order_uuid = mb_strimwidth( px_uuid( uniqid() ), 0, 30, '', 'UTF-8' );
+		// Mode that workaround "Order update is not available"
+		if ( isset( $_POST['is_update_backward_compat'] ) ) {
+			$order->calculate_totals( true );
+
+			// Delete Payment Order ID
+			delete_post_meta( $order_id, '_payex_paymentorder_id' );
+		}
 
 		// Check terms_url value
 		if ( parse_url( $this->terms_url, PHP_URL_SCHEME ) !== 'https' ) {
 			$this->terms_url = '';
 		}
 
+		$payeeReference = apply_filters( 'sb_get_payee_reference', null, $order, false );
+		if ( ! $payeeReference ) {
+			// It seem there's old version of payex-woocommerce-payments
+			$payeeReference = $order->get_order_number();
+		}
+
 		$params = [
 			'paymentorder' => [
 				'operation'   => 'Purchase',
 				'currency'    => $order->get_currency(),
-				'amount'      => round( 100 * $order->get_total() ),
-				'vatAmount'   => round( $info['vat_amount'] * 100 ),
-				'description' => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
+				'amount'      => apply_filters( 'sb_checkout_order_amount', 0, $order ),
+				'vatAmount'   => apply_filters( 'sb_checkout_order_vat', 0, $order ),
+				'description' => sprintf( __( 'Order #%s', WC_Payex_Checkout::TEXT_DOMAIN ), $order->get_order_number() ),
 				'userAgent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
 				'generateRecurrenceToken' => false,
@@ -418,9 +558,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				],
 				'payeeInfo'   => [
 					'payeeId'         => $this->payee_id,
-					'payeeReference'  => str_replace( '-', '', $order_uuid ),
+					'payeeReference'  => $payeeReference,
 					'payeeName'       => get_bloginfo( 'name' ),
-					'orderReference'  => $order->get_id()
+					'orderReference'  => $order->get_order_number()
 				],
 				'payer'       => [
 					'firstName' => $order->get_billing_first_name(),
@@ -452,7 +592,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 						'countryCode' => $order->get_billing_country()
 					],
 				],
-				'orderItems' => $this->get_checkout_order_items( $order ),
+				'orderItems' => $items,
 				'metadata'    => [
 					'order_id' => $order_id
 				],
@@ -464,36 +604,78 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			]
 		];
 
+		// Add subsite
+		if ( ! empty( $this->subsite ) ) {
+			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
+		}
+
 		// Get Consumer Profile
-		$consumer_profile = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
-		if ( empty( $consumer_profile ) ) {
-			$consumer_profile = get_user_meta( $order->get_user_id(), '_payex_consumer_profile', true );
+		$reference = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
+		if ( empty( $reference ) ) {
+			$profile   = $this->get_consumer_profile( $order->get_user_id() );
+			$reference = $profile['reference'];
 		}
 
-		if ( empty( $consumer_profile ) ) {
-			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-		}
-
-		if ( ! empty( $consumer_profile ) ) {
+		// Add consumerProfileRef if exists
+		if ( ! empty( $reference ) ) {
 			$params['paymentorder']['payer'] = [
-				'consumerProfileRef' => $consumer_profile // @todo Deprecated
+				'consumerProfileRef' => $reference
 			];
 		}
 
+		// Initiate Payment Order
 		try {
 			$result = $this->request( 'POST', '/psp/paymentorders', $params );
 		} catch ( Exception $e ) {
-			if ( ( strpos( $e->getMessage(), 'is not active' ) !== false ) ||
-			     ( strpos( $e->getMessage(), 'Unable to verify consumerProfileRef' ) !== false ) ) {
-				// Reference *** is not active, unable to complete
-				delete_user_meta( $order->get_user_id(), '_payex_consumer_profile' );
-
-				// Try again
-				return $this->process_payment( $order_id );
-			} else {
+			// Parse response
+			// https://tools.ietf.org/html/rfc7807
+			$response = @json_decode( $this->response_body, true );
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
 				wc_add_notice( $e->getMessage(), 'error' );
+
+				return false;
 			}
 
+			// Check problems
+			foreach ($response['problems'] as $problem) {
+				// PayeeReference: The given PayeeReference has already been used for another payment (xxxxx).
+				// @todo Check cause of different name "PaymentOrder.PayeeInfo.PayeeReference"
+				if ( $problem['name'] === 'PayeeReference' ) {
+					// Generate reference with salt
+					$order->delete_meta_data( '_sb_payee_reference' );
+					$order->save_meta_data();
+					apply_filters( 'sb_get_payee_reference', null, $order, true );
+
+					return $this->process_payment( $order_id );
+				}
+
+				// consumerProfileRef: Reference *** is not active, unable to complete
+				if ( $problem['name'] === 'consumerProfileRef' ) {
+					// Remove the inactive customer reference
+					$_POST['payex_customer_reference'] = null;
+					$this->drop_consumer_profile( $order->get_user_id() );
+
+					// Remove saved address
+					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
+					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
+					//WC()->session->__unset( 'payex_checkin_billing' );
+					//WC()->session->__unset( 'payex_checkin_shipping' );
+
+					// Reload checkout
+					if ( $this->instant_checkout === 'yes' ) {
+						wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', WC_Payex_Checkout::TEXT_DOMAIN ), 'error' );
+
+						return array(
+							'result'   => 'failure',
+							'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', WC_Payex_Checkout::TEXT_DOMAIN ),
+							'reload'   => true,
+						);
+					}
+
+					// Try again
+					return $this->process_payment( $order_id );
+				}
+			}
 
 			wc_add_notice( $e->getMessage(), 'error' );
 
@@ -504,8 +686,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
 		WC()->session->set( 'payex_paymentorder_id', $result['paymentOrder']['id'] );
 
-		// Get JS URl
+		// Get JS Url
 		$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
+
+		// Save JS Url in session
+		WC()->session->set( 'payex_checkout_js_url', $js_url );
 
 		return array(
 			'result'            => 'success',
@@ -790,6 +975,65 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	}
 
 	/**
+	 * Init Order
+	 */
+	public function init_order() {
+		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
+		if ( $order_id > 0 ) {
+			$order = wc_get_order( $order_id );
+			$order->set_payment_method( $this->id );
+			$order->save();
+		} else {
+			// Place Order
+			$customer = WC()->customer;
+			$order_id = WC()->checkout()->create_order( array(
+				'payment_method'        => $this->id,
+				'billing_first_name'    => $customer->get_billing_first_name(),
+				'billing_last_name'     => $customer->get_billing_last_name(),
+				'billing_company'       => $customer->get_billing_company(),
+				'billing_address_1'     => $customer->get_billing_address_1(),
+				'billing_address_2'     => $customer->get_billing_address_2(),
+				'billing_city'          => $customer->get_billing_city(),
+				'billing_state'         => $customer->get_billing_state(),
+				'billing_postcode'      => $customer->get_billing_postcode(),
+				'billing_country'       => $customer->get_billing_country(),
+				'billing_email'         => $customer->get_billing_email(),
+				'billing_phone'         => $customer->get_billing_phone(),
+				'shipping_first_name'   => $customer->get_shipping_first_name(),
+				'shipping_last_name'    => $customer->get_shipping_last_name(),
+				'shipping_company'      => $customer->get_shipping_company(),
+				'shipping_address_1'    => $customer->get_shipping_address_1(),
+				'shipping_address_2'    => $customer->get_shipping_address_2(),
+				'shipping_city'         => $customer->get_shipping_city(),
+				'shipping_state'        => $customer->get_shipping_state(),
+				'shipping_postcode'     => $customer->get_shipping_postcode(),
+				'shipping_country'      => $customer->get_shipping_country(),
+				'shipping_email'        => $customer->get_billing_email(),
+				'shipping_phone'        => $customer->get_billing_phone(),
+			) );
+
+			if ( is_wp_error( $order_id ) ) {
+				throw new Exception( $order_id->get_error_message() );
+			}
+
+			// Store Order ID in session so it can be re-used after payment failure
+			WC()->session->set( 'order_awaiting_payment', $order_id );
+		}
+
+		// Get Customer Profile
+		$profile = $this->get_consumer_profile( get_current_user_id() );
+
+		// Initiate Payment Order
+		$_POST['payex_customer_reference'] = $profile['reference'];
+		$result = $this->process_payment( $order_id );
+		if ( is_array( $result ) && isset( $result['js_url'] ) ) {
+			WC()->session->set( 'payex_checkout_js_url', $result['js_url'] );
+		} else {
+			WC()->session->__unset( 'payex_checkout_js_url' );
+		}
+	}
+
+	/**
 	 * Hook before_checkout_billing_form
 	 *
 	 * @param $checkout
@@ -799,43 +1043,42 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			return;
 		}
 
-		if ( is_user_logged_in() ) {
-			$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
-			$consumer_data    = get_user_meta( get_current_user_id(), '_payex_consumer_address_billing', true );
-			if ( empty( $consumer_data ) ) {
-				// Deprecated
-				$consumer_data = get_user_meta( get_current_user_id(), '_payex_consumer_address', true );
-			}
-		} else {
-			$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-			$consumer_data    = WC()->session->get( 'payex_checkin' );
+		if ( $this->checkin !== 'yes' ) {
+			return;
 		}
 
-		$js_url = null;
+		// Get saved consumerProfileRef
+		$profile = $this->get_consumer_profile( get_current_user_id() );
 
-		if ( empty( $consumer_profile ) ) {
+		// Initiate consumer session to obtain consumerProfileRef after checkin
+		$js_url = $profile['url'];
+		if ( empty( $profile['reference'] ) ) {
 			// Initiate consumer session
 			$params = [
 				'operation'           => 'initiate-consumer-session',
-				'consumerCountryCode' => 'SE', // @todo Allow choose country
+				'consumerCountryCode' => $this->checkin_country,
 			];
 
 			try {
 				$result = $this->request( 'POST', '/psp/consumers', $params );
+				$js_url = self::get_operation( $result['operations'], 'view-consumer-identification' );
 			} catch ( Exception $e ) {
-				return;
+				$profile['reference'] = null;
+				$profile['billing'] = null;
 			}
-
-			$js_url = self::get_operation( $result['operations'], 'view-consumer-identification' );
 		}
+
+		WC()->session->set( 'consumer_js_url', $js_url );
 
 		// Checkin Form
 		wc_get_template(
 			'checkout/payex/checkin.php',
 			array(
+				'checkin_country'  => $this->checkin_country,
+				'selected_country' => apply_filters( 'sb_checkin_default_country', 'SE' ),
 				'js_url'           => $js_url,
-				'consumer_data'    => $consumer_data,
-				'consumer_profile' => $consumer_profile
+				'consumer_data'    => $profile['billing'],
+				'consumer_profile' => $profile['reference']
 			),
 			'',
 			dirname( __FILE__ ) . '/../templates/'
@@ -848,11 +1091,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @return void
 	 */
 	public function woocommerce_checkout_payment() {
-		if ( $this->instant_checkout === 'yes' ) {
+		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
+			$js_url = WC()->session->get( 'payex_checkout_js_url' );
+
 			wc_get_template(
 				'checkout/payex/payment.php',
 				array(
 					//'checkout' => WC()->checkout()
+					'js_url' => $js_url
 				),
 				'',
 				dirname( __FILE__ ) . '/../templates/'
@@ -889,7 +1135,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			exit();
 		}
 
-		$address = $type === 'billing' ? $result['billingAddress'] : $result['shippingAddress'];
+		$address = isset( $result['billingAddress'] ) ? $result['billingAddress'] : $result['shippingAddress'];
 
 		// Parse name field
 		$parser = new \FullNameParser();
@@ -901,20 +1147,40 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'country'    => $address['countryCode'],
 			'postcode'   => $address['zipCode'],
 			'address_1'  => $address['streetAddress'],
-			'address_2'  => '',
+			'address_2'  => ! empty ( $address['coAddress'] ) ? 'c/o ' . $address['coAddress'] : '',
 			'city'       => $address['city'],
 			'state'      => '',
 			'phone'      => $result['msisdn'],
 			'email'      => $result['email'],
 		);
 
-		if ( is_user_logged_in() ) {
-			$user_id = get_current_user_id();
-			update_user_meta( $user_id, '_payex_consumer_address_' . $type, $output );
-		}
+		// Save address
+		$this->update_consumer_address( get_current_user_id(), $type, $output );
 
-		WC()->session->set( 'payex_checkin', $output );
 		wp_send_json_success( $output );
+	}
+
+	/**
+	 * Ajax: CheckIn
+	 */
+	public function ajax_sb_checkin() {
+		check_ajax_referer( 'payex_checkout', 'nonce' );
+
+		$country = isset( $_POST['country'] ) ? wc_clean( $_POST['country'] ) : '';
+
+		// Initiate consumer session
+		$params = [
+			'operation'           => 'initiate-consumer-session',
+			'consumerCountryCode' => $country,
+		];
+
+		try {
+			$result = $this->request( 'POST', '/psp/consumers', $params );
+			$js_url = self::get_operation( $result['operations'], 'view-consumer-identification' );
+			wp_send_json_success( $js_url );
+		} catch ( Exception $e ) {
+			wp_send_json_error( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -926,22 +1192,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
 		$customer_reference = isset( $_POST['consumerProfileRef'] ) ? wc_clean( $_POST['consumerProfileRef'] ) : '';
-
 		if ( empty( $customer_reference ) ) {
 			wp_send_json_error( array( 'message' => 'Customer reference required' ) );
 			exit();
 		}
 
 		// Store Customer Profile
-		if ( is_user_logged_in() ) {
-			$user_id = get_current_user_id();
-			$stored  = get_user_meta( $user_id, '_payex_consumer_profile', true );
-			if ( empty( $stored ) ) {
-				update_user_meta( $user_id, '_payex_consumer_profile', $customer_reference );
-			}
-		} else {
-			WC()->session->set( 'payex_consumer_profile', $customer_reference );
-		}
+		$url = WC()->session->get( 'consumer_js_url' );
+		$this->update_consumer_profile( get_current_user_id(),  $customer_reference, $url );
 
 		wp_send_json_success();
 	}
@@ -975,29 +1233,114 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	public function ajax_payex_update_order() {
 		check_ajax_referer( 'payex_checkout', 'nonce' );
 
+		// Get Order
+		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
+		if ( $order_id === 0 ) {
+			wp_send_json(  array(
+				'result'   => 'failure',
+				'messages' => 'Order is not exists',
+			) );
+
+			return;
+		}
+
+		// Get Order
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json(  array(
+				'result'   => 'failure',
+				'messages' => 'Order is not exists',
+			) );
+
+			return;
+		}
+
+		// Mark order failed instead of cancelled
+		if ( $order->get_payment_method() === $this->id && $order->has_status( 'cancelled' ) ) {
+			$order->update_status( 'failed' );
+		}
+
+		// Prepare $_POST data
 		$data = array();
 		parse_str( $_POST['data'], $data );
 		$_POST = $data;
 		unset( $_POST['terms-field'], $_POST['terms'] );
 
-		$_POST['payment_method'] = 'payex_checkout';
-		$_POST['is_update']      = '1';
+		$_POST['payment_method'] = $this->id;
 
-		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
-		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
+		if ( ! empty( $_POST['compat'] ) && (bool) $_POST['compat'] ) {
+			$_POST['is_update_backward_compat'] = 1;
+		} else {
+			$_POST['is_update'] = '1';
+		}
 
-		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
-		if ( $order_id > 0 ) {
-			$order = wc_get_order( $order_id );
-			if ( $order->get_payment_method() === $this->id ) {
-				// Mark order failed instead of cancelled
-				if ( $order->has_status( 'cancelled' ) ) {
-					$order->update_status( 'failed' );
-				}
+		// Update Checkout
+		// @see WC_AJAX::update_order_review()
+		if ( ! empty( $_POST['shipping_method'] ) && ! is_array( $_POST['shipping_method'] ) ) {
+			$shipping = $_POST['shipping_method'];
+			$_POST['shipping_method'] = array( $shipping );
+		}
+
+		$chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
+		if ( isset( $_POST['shipping_method'] ) && is_array( $_POST['shipping_method'] ) ) {
+			foreach ( $_POST['shipping_method'] as $i => $value ) {
+				$chosen_shipping_methods[ $i ] = wc_clean( $value );
 			}
 		}
 
+		WC()->session->set( 'chosen_shipping_methods', $chosen_shipping_methods );
+		WC()->session->set( 'chosen_payment_method', $this->id );
+
+		// Update address data
+		foreach ($_POST as $key => $value) {
+			if ( ( strpos( $key, 'billing_' ) !== false ) || ( strpos( $key, 'shipping_' ) !== false ) ) {
+				if ( is_callable( array( $order, "set_{$key}" ) ) ) {
+					$order->{"set_{$key}"}( $value );
+				}
+
+				WC()->customer->set_props( array(
+					$key => $value
+				) );
+			}
+		}
+
+		// Recalculate cart
+		WC()->customer->set_calculated_shipping( true );
+		WC()->customer->save();
+		WC()->cart->calculate_totals();
+
+		// Recalculate order
+		$order->calculate_totals( true );
+		$order->save();
+
+		// Process checkout
+		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
+		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
 		WC()->checkout()->process_checkout();
+	}
+
+	/**
+	 * FrontEnd Error logger
+	 */
+	public function ajax_payex_checkout_log_error() {
+		check_ajax_referer( 'payex_checkout', 'nonce' );
+
+		$id = isset( $_POST['id'] ) ? wc_clean( $_POST['id'] ) : null;
+		$data = isset( $_POST['data'] ) ? wc_clean( $_POST['data'] ) : null;
+
+		// Try to decode JSON
+		$decoded = @json_decode( $data );
+		if ( json_last_error() === JSON_ERROR_NONE ) {
+			$data = $decoded;
+		}
+
+		$this->log( sprintf( '[FRONTEND]: [%s]: [%s]: %s',
+			$id,
+			px_get_remote_address(),
+			var_export( $data, true )
+		) );
+
+		wp_send_json_success();
 	}
 
 	/**
@@ -1034,24 +1377,110 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 */
 	public function lock_checkout_fields( $fieldset ) {
 		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
-			if ( is_user_logged_in() ) {
-				$consumer_profile = get_user_meta( get_current_user_id(), '_payex_consumer_profile', true );
-			} else {
-				$consumer_profile = WC()->session->get( 'payex_consumer_profile' );
-			}
+			// Fill form with these data
+			foreach ( $fieldset as $section => &$fields ) {
+				foreach ( $fields as $key => &$field ) {
+					$field['default'] = $this->checkout_get_value( null, $key );
 
-			// @todo Fill form with these data
-			if ( empty ( $consumer_profile ) ) {
-				foreach ( $fieldset as $section => &$fields ) {
-					foreach ( $fields as $key => &$field ) {
-						$field['custom_attributes']['readonly'] = 'readonly';
-						$field['class'][]                       = 'payex-locked';
-					}
+					$field['custom_attributes']['readonly'] = 'readonly';
+					$field['class'][]                       = 'payex-locked';
 				}
 			}
 		}
 
 		return $fieldset;
+	}
+
+	/**
+	 * Fill checkout fields
+	 *
+	 * @param mixed $value
+	 * @param mixed $input
+	 *
+	 * @return mixed
+	 */
+	public function checkout_get_value( $value, $input ) {
+		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
+			$profile = $this->get_consumer_profile( get_current_user_id() );
+
+			// Add default data
+			$default = array(
+				'first_name' => WC()->customer->get_billing_first_name(),
+				'last_name'  => WC()->customer->get_billing_last_name(),
+				'postcode'   => WC()->customer->get_billing_postcode(),
+				'city'       => WC()->customer->get_billing_city(),
+				'email'      => WC()->customer->get_billing_email(),
+				'phone'      => WC()->customer->get_billing_phone(),
+				'country'    => WC()->customer->get_billing_country(),
+				'state'      => WC()->customer->get_billing_state(),
+				'address_1'  => WC()->customer->get_billing_address_1(),
+				'address_2'  => WC()->customer->get_billing_address_2(),
+			);
+			$billing = array_merge( $default, is_array( $profile['billing'] ) ? $profile['billing'] : array() );
+			$shipping = array_merge( $default, is_array( $profile['shipping'] ) ? $profile['shipping'] : array() );
+
+			// Fill form with these data
+			switch ( $input ) {
+				case 'billing_first_name':
+					$value = $billing['first_name'];
+					break;
+				case 'billing_last_name':
+					$value = $billing['last_name'];
+					break;
+				case 'billing_country':
+					$value = $billing['country'];
+					break;
+				case 'billing_address_1':
+					$value = $billing['address_1'];
+					break;
+				case 'billing_address_2':
+					$value = $billing['address_2'];
+					break;
+				case 'billing_postcode':
+					$value = $billing['postcode'];
+					break;
+				case 'billing_city':
+					$value = $billing['city'];
+					break;
+				case 'billing_state':
+					$value = $billing['state'];
+					break;
+				case 'billing_phone':
+					$value = $billing['phone'];
+					break;
+				case 'shipping_first_name':
+					$value = $shipping['first_name'];
+					break;
+				case 'shipping_last_name':
+					$value = $shipping['last_name'];
+					break;
+				case 'shipping_country':
+					$value = $shipping['country'];
+					break;
+				case 'shipping_address_1':
+					$value = $shipping['address_1'];
+					break;
+				case 'shipping_address_2':
+					$value = $shipping['address_2'];
+					break;
+				case 'shipping_postcode':
+					$value = $shipping['postcode'];
+					break;
+				case 'shipping_city':
+					$value = $shipping['city'];
+					break;
+				case 'shipping_state':
+					$value = $shipping['state'];
+					break;
+				case 'shipping_phone':
+					$value = $shipping['phone'];
+					break;
+				default:
+					// no default
+			}
+		}
+
+		return $value;
 	}
 
 	/**
@@ -1115,12 +1544,19 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	/**
 	 * Get Order Lines
 	 *
+	 * @param array $items
 	 * @param WC_Order $order
 	 *
 	 * @return array
 	 */
-	protected function get_checkout_order_items( $order ) {
-		$item = [];
+	public static function checkout_order_items( $items, $order ) {
+		if ( ! is_array( $items ) ) {
+			$items = [];
+		}
+
+		if ( ! $order instanceof WC_Order ) {
+			$order = wc_get_order( $order );
+		}
 
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
@@ -1131,17 +1567,32 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$qty          = $order_item->get_quantity();
 
 			if ( $image = wp_get_attachment_image_src( $order_item->get_product()->get_image_id(), 'full' ) ) {
-				$image = $image[0];
+				$image = array_shift( $image );
 			} else {
 				$image = wc_placeholder_img_src( 'full' );
 			}
 
-			$item[] = [
+			if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
+			     mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
+			) {
+				$image = wp_guess_url() . $image;
+			}
+
+			// Get Product Class
+			$product_class = get_post_meta( $order_item->get_product()->get_id(), '_sb_product_class', true );
+			if ( empty( $product_class ) ) {
+				$product_class = 'ProductGroup1';
+			}
+
+			$productReference = trim( str_replace( ' ', '-', $order_item->get_product()->get_sku() ) );
+			$productName = trim( $order_item->get_name() );
+
+			$items[] = [
 				// The field Reference must match the regular expression '[\\w-]*'
-				'reference'    => str_replace( ' ', '-', $order_item->get_product()->get_sku() ),
-				'name'         => $order_item->get_name(),
+				'reference'    => ! empty( $productReference ) ? $productReference : wp_generate_password(),
+				'name'         => ! empty( $productName ) ? $productName : '-',
 				'type'         => 'PRODUCT',
-				'class'        => 'ProductGroup1',
+				'class'        => $product_class,
 				'itemUrl'      => $order_item->get_product()->get_permalink(),
 				'imageUrl'     => $image,
 				'description'  => $order_item->get_name(),
@@ -1160,10 +1611,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$tax             = $order->get_shipping_tax();
 			$shippingWithTax = $shipping + $tax;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
+			$shippingMethod = trim( $order->get_shipping_method() );
 
-			$item[] = [
+			$items[] = [
 				'reference' => 'shipping',
-				'name' => $order->get_shipping_method(),
+				'name' => ! empty( $shippingMethod ) ? $shippingMethod : __( 'Shipping', 'woocommerce' ),
 				'type' => 'SHIPPING_FEE',
 				'class' => 'ProductGroup1',
 				'quantity' => 1,
@@ -1183,7 +1635,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$feeWithTax = $fee + $tax;
 			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
-			$item[] = [
+			$items[] = [
 				'reference' => 'fee',
 				'name' => $order_fee->get_name(),
 				'type' => 'OTHER',
@@ -1199,12 +1651,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Add discount line
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount        = $order->get_total_discount( true );
-			$discountWithTax = $order->get_total_discount( false );
+			$discount        = abs( $order->get_total_discount( true ) );
+			$discountWithTax = abs( $order->get_total_discount( false ) );
 			$tax             = $discountWithTax - $discount;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			$item[] = [
+			$items[] = [
 				'reference' => 'discount',
 				'name' => __( 'Discount', 'payex-woocommerce-payments' ),
 				'type' => 'DISCOUNT',
@@ -1218,7 +1670,183 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			];
 		}
 
-		return $item;
+		return $items;
+	}
+
+	/**
+	 * Get Order VAT
+	 *
+	 * @param int $vatAmount
+	 * @param WC_Order $order
+	 *
+	 * @return int
+	 */
+	public static function checkout_order_vat( $vatAmount, $order ) {
+		$items = apply_filters( 'sb_checkout_order_items', [], $order );
+
+		return array_sum( array_column( $items, 'vatAmount') );
+	}
+
+	/**
+	 * Get Order Amount
+	 *
+	 * @param int $amount
+	 * @param WC_Order $order
+	 *
+	 * @return int
+	 */
+	public static function checkout_order_amount( $amount, $order ) {
+		return round( 100 * $order->get_total() );
+	}
+
+	/**
+	 * Get Consumer Profile
+	 *
+	 * @param $user_id
+	 *
+	 * @return array
+	 */
+	protected function get_consumer_profile( $user_id ) {
+		if ( $user_id > 0 ) {
+			$expiration = get_user_meta( $user_id, '_payex_profile_expiration', true );
+			$reference  = get_user_meta( $user_id, '_payex_consumer_profile', true );
+			$url        = get_user_meta( $user_id, '_payex_consumer_url', true );
+
+			// Get saved the consumer address
+			$billing  = get_user_meta( $user_id, '_payex_consumer_address_billing', true );
+			$shipping = get_user_meta( $user_id, '_payex_consumer_address_shipping', true );
+		} else {
+			$expiration = WC()->session->get( 'payex_consumer_profile_expiration' );
+			$reference  = WC()->session->get( 'payex_consumer_profile' );
+			$url        = WC()->session->get( 'payex_consumer_url' );
+
+			// Get saved the consumer address
+			$billing  = WC()->session->get( 'payex_checkin_billing' );
+			$shipping = WC()->session->get( 'payex_checkin_shipping' );
+		}
+
+		// Check if expired
+		if ( ( absint( $expiration ) > 0 && time() >= $expiration ) || // Expired
+		     ( ! empty( $reference ) && empty( $expiration ) ) || // Deprecate saved reference without expiration
+		     ( ! empty( $reference ) && empty( $url ) ) // Deprecate saved reference without url
+		) {
+			// Remove expired data
+			$this->drop_consumer_profile( $user_id );
+
+			$expiration = null;
+			$reference = null;
+			$url       = null;
+		}
+
+		// Fill the consumer address
+		if ( $user_id > 0 ) {
+			try {
+				$customer = new WC_Customer( $user_id, false );
+			} catch (Exception $e) {
+				$customer = WC()->customer;
+			}
+		} else {
+			$customer = WC()->customer;
+		}
+
+		// Fill the consumer billing address
+		if ( empty( $billing ) ) {
+			$billing = array(
+				'first_name' => $customer->get_billing_first_name(),
+				'last_name'  => $customer->get_billing_last_name(),
+				'postcode'   => $customer->get_billing_postcode(),
+				'city'       => $customer->get_billing_city(),
+				'email'      => $customer->get_billing_email(),
+				'phone'      => $customer->get_billing_phone(),
+				'country'    => $customer->get_billing_country(),
+				'state'      => $customer->get_billing_state(),
+				'address_1'  => $customer->get_billing_address_1(),
+				'address_2'  => $customer->get_billing_address_2(),
+			);
+
+			if ( $user_id > 0 ) {
+				update_user_meta( $user_id, '_payex_consumer_address_billing', $billing );
+			}
+		}
+
+		// Fill the consumer shipping address
+		if ( empty( $shipping ) ) {
+			$shipping = array(
+				'first_name' => $customer->get_shipping_first_name(),
+				'last_name'  => $customer->get_shipping_last_name(),
+				'postcode'   => $customer->get_shipping_postcode(),
+				'city'       => $customer->get_shipping_city(),
+				'email'      => $customer->get_billing_email(),
+				'phone'      => $customer->get_billing_phone(),
+				'country'    => $customer->get_shipping_country(),
+				'state'      => $customer->get_shipping_state(),
+				'address_1'  => $customer->get_shipping_address_1(),
+				'address_2'  => $customer->get_shipping_address_2(),
+			);
+
+			if ( $user_id > 0 ) {
+				update_user_meta( $user_id, '_payex_consumer_address_shipping', $shipping );
+			}
+		}
+
+		// Return result
+		return [
+			'reference' => $reference,
+			'url'       => $url,
+			'billing'   => $billing,
+			'shipping'  => $shipping
+		];
+	}
+
+	/**
+	 * Update Consumer Profile
+	 *
+	 * @param $user_id
+	 * @param $reference
+	 * @param $url
+	 */
+	protected function update_consumer_profile( $user_id, $reference, $url = null ) {
+		if ( $user_id > 0 ) {
+			update_user_meta( $user_id, '_payex_profile_expiration', strtotime( '+48 hours' ) );
+			update_user_meta( $user_id, '_payex_consumer_profile', $reference );
+			update_user_meta( $user_id, '_payex_consumer_url', $url );
+		} else {
+			WC()->session->set( 'payex_consumer_profile_expiration', strtotime( '+48 hours' ) );
+			WC()->session->set( 'payex_consumer_profile', $reference );
+			WC()->session->set( 'payex_consumer_url', $url );
+		}
+	}
+
+	/**
+	 * Drop Consumer Profile
+	 *
+	 * @param $user_id
+	 */
+	protected function drop_consumer_profile( $user_id ) {
+		if ( $user_id > 0 ) {
+			delete_user_meta( $user_id, '_payex_profile_expiration' );
+			delete_user_meta( $user_id, '_payex_consumer_profile' );
+			delete_user_meta( $user_id, '_payex_consumer_url' );
+		} else {
+			WC()->session->__unset( 'payex_consumer_profile_expiration' );
+			WC()->session->__unset( 'payex_consumer_profile' );
+			WC()->session->__unset( 'payex_consumer_url' );
+		}
+	}
+
+	/**
+	 * Update Consumer Address
+	 *
+	 * @param $user_id
+	 * @param $type
+	 * @param $address
+	 */
+	protected function update_consumer_address( $user_id, $type, $address ) {
+		if ( $user_id > 0 ) {
+			update_user_meta( $user_id, '_payex_consumer_address_' . $type, $address );
+		} else {
+			WC()->session->set( 'payex_checkin_' . $type, $address );
+		}
 	}
 }
 
