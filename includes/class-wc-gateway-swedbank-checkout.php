@@ -5,8 +5,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 
-class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
-	implements WC_Payment_Gateway_Payex_Interface {
+class WC_Gateway_Swedbank_Checkout extends WC_Gateway_Swedbank_Cc
+	implements WC_Payment_Gateway_Swedbank_Interface {
 
 	/**
 	 * Merchant Token
@@ -114,16 +114,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * Init
 	 */
 	public function __construct() {
-		$this->transactions = WC_Payex_Transactions::instance();
+		$this->transactions = WC_Swedbank_Transactions::instance();
 
 		$this->id           = 'payex_checkout';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN );
-		//$this->icon         = apply_filters( 'woocommerce_payex_checkout_icon', plugins_url( '/assets/images/payex.gif', dirname( __FILE__ ) ) );
-		$this->supports     = array(
+		$this->method_title = __( 'Swedbank Pay Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN );
+		//$this->icon         = apply_filters( 'woocommerce_swedbank_checkout_icon', plugins_url( '/assets/images/checkout.gif', dirname( __FILE__ ) ) );
+		$this->supports     = [
 			'products',
 			'refunds',
-		);
+		];
 
 		// Load the form fields.
 		$this->init_form_fields();
@@ -169,62 +169,45 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		// JS Scrips
-		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+		add_action( 'wp_enqueue_scripts', [ $this, 'payment_scripts' ] );
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
-			$this,
-			'process_admin_options'
-		) );
-		add_action( 'woocommerce_thankyou_' . $this->id, array(
-			$this,
-			'thankyou_page'
-		) );
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, [ $this, 'process_admin_options' ] );
+		add_action( 'woocommerce_thankyou_' . $this->id, [ $this, 'thankyou_page' ] );
+
 		// Payment listener/API hook
-		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
-			$this,
-			'return_handler'
-		) );
+		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), [ $this, 'return_handler' ] );
 
 		// Payment confirmation
-		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
+		add_action( 'the_post', [ $this, 'payment_confirm' ] );
 
-		// Add SSN Checkout Field
-		add_action( 'woocommerce_checkout_init', array( $this, 'checkout_init' ), 10, 1 );
-		add_action( 'woocommerce_checkout_billing', array( $this, 'checkout_form_billing' ) );
-		add_action( 'woocommerce_before_checkout_billing_form', array( $this, 'before_checkout_billing_form' ) );
-		add_action( 'woocommerce_checkout_order_review', array( $this, 'woocommerce_checkout_payment' ), 20 );
-		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
-
-		add_action( 'wp_ajax_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
-		add_action( 'wp_ajax_nopriv_payex_checkout_get_address', array( $this, 'ajax_payex_checkout_get_address' ) );
-
-		add_action( 'wp_ajax_payex_checkout_customer_profile', array( $this, 'ajax_payex_checkout_customer_profile' ) );
-		add_action( 'wp_ajax_nopriv_payex_checkout_customer_profile', array(
-			$this,
-			'ajax_payex_checkout_customer_profile'
-		) );
-
-		add_action( 'wp_ajax_sb_checkin', array( $this, 'ajax_sb_checkin' ) );
-		add_action( 'wp_ajax_nopriv_sb_checkin', array( $this, 'ajax_sb_checkin' ) );
-
-		add_action( 'wp_ajax_payex_place_order', array( $this, 'ajax_payex_place_order' ) );
-		add_action( 'wp_ajax_nopriv_payex_place_order', array( $this, 'ajax_payex_place_order' ) );
-
-		add_action( 'wp_ajax_payex_update_order', array( $this, 'ajax_payex_update_order' ) );
-		add_action( 'wp_ajax_nopriv_payex_update_order', array( $this, 'ajax_payex_update_order' ) );
-
-		add_action( 'wp_ajax_payex_checkout_log_error', array( $this, 'ajax_payex_checkout_log_error' ) );
-		add_action( 'wp_ajax_nopriv_payex_checkout_log_error', array( $this, 'ajax_payex_checkout_log_error' ) );
-
-		add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 1 );
-
-		if ( $this->instant_checkout === 'yes' ) {
-			add_filter( 'woocommerce_checkout_fields', array( $this, 'lock_checkout_fields' ), 10, 1 );
-			add_filter( 'woocommerce_checkout_get_value', array( $this, 'checkout_get_value' ), 10, 2 );
-			add_action( 'woocommerce_before_checkout_form_cart_notices', array( $this, 'init_order' ) );
+		// Ajax Actions
+		foreach ( [
+			'checkout_get_address',
+			'checkout_customer_profile',
+			'checkin',
+			'place_order',
+			'update_order',
+			'checkout_log_error' ] as $action
+		) {
+			add_action( 'wp_ajax_swedbank_' . $action, [ $this, 'ajax_swedbank_' . $action ] );
+			add_action( 'wp_ajax_nopriv_swedbank_' . $action, [ $this, 'ajax_swedbank_' . $action ] );
 		}
 
+		// Instant Checkout
+		if ( $this->instant_checkout === 'yes' ) {
+			add_action( 'woocommerce_checkout_init', [ $this, 'checkout_init' ], 10, 1 );
+			add_action( 'woocommerce_checkout_billing', [ $this, 'checkout_form_billing' ] );
+			add_action( 'woocommerce_before_checkout_billing_form', [ $this, 'before_checkout_billing_form' ] );
+			add_action( 'woocommerce_checkout_order_review', [ $this, 'woocommerce_checkout_payment' ], 20 );
+			add_filter( 'wc_get_template', [ $this, 'override_template'], 5, 20 );
+			add_filter( 'woocommerce_available_payment_gateways', [ $this, 'filter_gateways' ], 1 );
+			add_filter( 'woocommerce_checkout_fields', [ $this, 'lock_checkout_fields' ], 10, 1 );
+			add_filter( 'woocommerce_checkout_get_value', [ $this, 'checkout_get_value' ], 10, 2 );
+			add_action( 'woocommerce_before_checkout_form_cart_notices', [ $this, 'init_order' ] );
+		}
+
+		// Filters
 		add_filter( 'sb_checkout_order_items', __CLASS__ . '::checkout_order_items', 10, 2 );
 		add_filter( 'sb_checkout_order_vat', __CLASS__ . '::checkout_order_vat', 10, 2 );
 		add_filter( 'sb_checkout_order_amount', __CLASS__ . '::checkout_order_amount', 10, 2 );
@@ -235,120 +218,120 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @return string|void
 	 */
 	public function init_form_fields() {
-		$this->form_fields = array(
-			'enabled'          => array(
-				'title'   => __( 'Enable/Disable', WC_Payex_Checkout::TEXT_DOMAIN ),
+		$this->form_fields = [
+			'enabled'          => [
+				'title'   => __( 'Enable/Disable', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'label'   => __( 'Enable plugin', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => 'no'
-			),
-			'title'            => array(
-				'title'       => __( 'Title', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'title'            => [
+				'title'       => __( 'Title', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', WC_Payex_Checkout::TEXT_DOMAIN ),
-				'default'     => __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN )
-			),
-			'description'      => array(
-				'title'       => __( 'Description', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'description' => __( 'This controls the title which the user sees during checkout.', WC_Swedbank_Checkout::TEXT_DOMAIN ),
+				'default'     => __( 'Swedbank Pay Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN )
+			],
+			'description'      => [
+				'title'       => __( 'Description', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', WC_Payex_Checkout::TEXT_DOMAIN ),
-				'default'     => __( 'Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
-			),
-			'merchant_token'   => array(
-				'title'       => __( 'Merchant Token', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'description' => __( 'This controls the description which the user sees during checkout.', WC_Swedbank_Checkout::TEXT_DOMAIN ),
+				'default'     => __( 'Swedbank Pay Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN ),
+			],
+			'merchant_token'   => [
+				'title'       => __( 'Merchant Token', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'description' => __( 'Merchant Token', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->merchant_token
-			),
-			'payee_id'         => array(
-				'title'       => __( 'Payee Id', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'payee_id'         => [
+				'title'       => __( 'Payee Id', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'description' => __( 'Payee Id', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
-			),
-			'subsite'         => array(
-				'title'       => __( 'Subsite', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'subsite'         => [
+				'title'       => __( 'Subsite', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Subsite', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'description' => __( 'Subsite', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->subsite
-			),
-			'testmode'         => array(
-				'title'   => __( 'Test Mode', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'testmode'         => [
+				'title'   => __( 'Test Mode', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->testmode
-			),
-			'debug'            => array(
-				'title'   => __( 'Debug', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'debug'            => [
+				'title'   => __( 'Debug', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'label'   => __( 'Enable logging', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->debug
-			),
-			'culture'          => array(
-				'title'       => __( 'Language', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'culture'          => [
+				'title'       => __( 'Language', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'select',
-				'options'     => array(
+				'options'     => [
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
-				),
-				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Payex_Checkout::TEXT_DOMAIN ),
+				],
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->culture
-			),
-			'instant_checkout' => array(
-				'title'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'instant_checkout' => [
+				'title'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'label'   => __( 'Use Swedbank Pay Checkout instead of WooCommerce Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->instant_checkout
-			),
-			'checkin' => array(
-				'title'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'checkin' => [
+				'title'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'label'   => __( 'Enable Checkin on Swedbank Pay Checkout', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->checkin
-			),
-			'checkin_country'  => array(
-				'title'       => __( 'Checkin country', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'checkin_country'  => [
+				'title'       => __( 'Checkin country', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'select',
-				'options'     => array(
+				'options'     => [
 					'SE'     => __( 'Sweden', 'woocommerce' ),
 					'NO'     => __( 'Norway', 'woocommerce' ),
-					'SELECT' => __( 'Customer can choose', WC_Payex_Checkout::TEXT_DOMAIN ),
-				),
-				'description' => __( 'Checkin country', WC_Payex_Checkout::TEXT_DOMAIN ),
+					'SELECT' => __( 'Customer can choose', WC_Swedbank_Checkout::TEXT_DOMAIN ),
+				],
+				'description' => __( 'Checkin country', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default'     => $this->checkin_country
-			),
-			'terms_url'        => array(
-				'title'       => __( 'Terms & Conditions Url', WC_Payex_Checkout::TEXT_DOMAIN ),
+			],
+			'terms_url'        => [
+				'title'       => __( 'Terms & Conditions Url', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', WC_Payex_Checkout::TEXT_DOMAIN ),
+				'description' => __( 'Terms & Conditions Url', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default'     => get_site_url()
-			),
-			'reject_credit_cards' => array(
-				'title'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+			],
+			'reject_credit_cards' => [
+				'title'   => __( 'Reject Credit Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Reject Credit Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->reject_credit_cards
-			),
-			'reject_debit_cards' => array(
-				'title'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+			],
+			'reject_debit_cards' => [
+				'title'   => __( 'Reject Debit Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Reject Debit Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->reject_debit_cards
-			),
-			'reject_consumer_cards' => array(
-				'title'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+			],
+			'reject_consumer_cards' => [
+				'title'   => __( 'Reject Consumer Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Reject Consumer Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->reject_consumer_cards
-			),
-			'reject_corporate_cards' => array(
-				'title'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+			],
+			'reject_corporate_cards' => [
+				'title'   => __( 'Reject Corporate Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Reject Corporate Cards', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'default' => $this->reject_corporate_cards
-			),
-		);
+			],
+		];
 	}
 
 	/**
@@ -365,58 +348,58 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		wp_enqueue_style( 'payex-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style' . $suffix . '.css', array(), false, 'all' );
+		wp_enqueue_style( 'swedbank-checkout-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style' . $suffix . '.css', [], false, 'all' );
 
 		if ( $this->instant_checkout === 'yes' ) {
-			wp_enqueue_style( 'payex-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant' . $suffix . '.css', array(), false, 'all' );
+			wp_enqueue_style( 'swedbank-checkout-instant', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant' . $suffix . '.css', [], false, 'all' );
 		}
 
 		// Checkout scripts
 		if ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() ) {
 			if ( $this->instant_checkout === 'yes' ) {
-				wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
+				wp_register_script( 'wc-gateway-swedbank-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', [
 					'jquery',
 					'wc-checkout'
-				), false, true );
+				], false, true );
 			} else {
 				// Styles
-				wp_enqueue_script( 'featherlight', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.js', array( 'jquery' ), '1.7.13', true );
-				wp_enqueue_style( 'featherlight-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.css', array(), '1.7.13', 'all' );
+				wp_enqueue_script( 'featherlight', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.js', [ 'jquery' ], '1.7.13', true );
+				wp_enqueue_style( 'featherlight-css', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/featherlight/featherlight' . $suffix . '.css', [], '1.7.13', 'all' );
 
-				wp_register_script( 'wc-gateway-payex-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', array(
+				wp_register_script( 'wc-gateway-swedbank-checkout', untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js', [
 					'jquery',
 					'wc-checkout',
 					'featherlight'
-				), false, true );
+				], false, true );
 			}
 
 			// Localize the script with new data
-			$translation_array = array(
+			$translation_array = [
 				'culture'                      => $this->culture,
 				'instant_checkout'             => ( $this->instant_checkout === 'yes' ),
 				'needs_shipping_address'       => WC()->cart->needs_shipping(),
 				'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
 				'checkin'                      => ( $this->checkin === 'yes' ),
-				'nonce'                        => wp_create_nonce( 'payex_checkout' ),
+				'nonce'                        => wp_create_nonce( 'swedbank_checkout' ),
 				'ajax_url'                     => admin_url( 'admin-ajax.php' ),
 				'paymentMenuStyle'             => null,
 				'checkInStyle'                 => null,
-			);
+			];
 
 			// Add PM styles
-			if ( $styles = apply_filters( 'payex_checkout_paymentmenu_style', $this->paymentMenuStyle ) ) {
+			if ( $styles = apply_filters( 'sb_checkout_paymentmenu_style', $this->paymentMenuStyle ) ) {
 				$translation_array['paymentMenuStyle'] = $styles;
 			}
 
 			// Add CheckIn Styles
-			if ( $styles = apply_filters( 'payex_checkout_checkin_style', $this->checkInStyle ) ) {
+			if ( $styles = apply_filters( 'sb_checkout_checkin_style', $this->checkInStyle ) ) {
 				$translation_array['checkInStyle'] = $styles;
 			}
 
-			wp_localize_script( 'wc-gateway-payex-checkout', 'WC_Gateway_PayEx_Checkout', $translation_array );
+			wp_localize_script( 'wc-gateway-swedbank-checkout', 'WC_Gateway_Swedbank_Checkout', $translation_array );
 
 			// Enqueued script with localized data.
-			wp_enqueue_script( 'wc-gateway-payex-checkout' );
+			wp_enqueue_script( 'wc-gateway-swedbank-checkout' );
 		}
 	}
 
@@ -484,13 +467,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 			// Don't update if amount is not changed
 			if ( (int) $result['paymentOrder']['amount'] === round( $order->get_total() * 100 ) ) {
-				return array(
-					'result'            => 'success',
-					'redirect'          => '#!payex-checkout',
-					'is_payex_checkout' => true,
-					'js_url'            => $js_url,
-					'payment_id'        => $result['paymentOrder']['id'],
-				);
+				return [
+					'result'               => 'success',
+					'redirect'             => '#!swedbank-checkout',
+					'is_swedbank_checkout' => true,
+					'js_url'               => $js_url,
+					'payment_id'           => $result['paymentOrder']['id'],
+				];
 			}
 
 			// Update Order
@@ -508,13 +491,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			// Get JS Url
 			$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
 
-			return array(
-				'result'            => 'success',
-				'redirect'          => '#!payex-checkout',
-				'is_payex_checkout' => true,
-				'js_url'            => $js_url,
-				'payment_id'        => $result['paymentOrder']['id'],
-			);
+			return [
+				'result'               => 'success',
+				'redirect'             => '#!swedbank-checkout',
+				'is_swedbank_checkout' => true,
+				'js_url'               => $js_url,
+				'payment_id'           => $result['paymentOrder']['id'],
+			];
 		}
 
 		// Mode that workaround "Order update is not available"
@@ -542,7 +525,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'currency'    => $order->get_currency(),
 				'amount'      => apply_filters( 'sb_checkout_order_amount', 0, $order ),
 				'vatAmount'   => apply_filters( 'sb_checkout_order_vat', 0, $order ),
-				'description' => sprintf( __( 'Order #%s', WC_Payex_Checkout::TEXT_DOMAIN ), $order->get_order_number() ),
+				'description' => sprintf( __( 'Order #%s', WC_Swedbank_Checkout::TEXT_DOMAIN ), $order->get_order_number() ),
 				'userAgent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : $order->get_customer_user_agent(),
 				'language'    => $this->culture,
 				'generateRecurrenceToken' => false,
@@ -610,7 +593,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		// Get Consumer Profile
-		$reference = isset( $_POST['payex_customer_reference'] ) ? wc_clean( $_POST['payex_customer_reference'] ) : null;
+		$reference = isset( $_POST['swedbank_customer_reference'] ) ? wc_clean( $_POST['swedbank_customer_reference'] ) : null;
 		if ( empty( $reference ) ) {
 			$profile   = $this->get_consumer_profile( $order->get_user_id() );
 			$reference = $profile['reference'];
@@ -652,24 +635,24 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				// consumerProfileRef: Reference *** is not active, unable to complete
 				if ( $problem['name'] === 'consumerProfileRef' ) {
 					// Remove the inactive customer reference
-					$_POST['payex_customer_reference'] = null;
+					$_POST['swedbank_customer_reference'] = null;
 					$this->drop_consumer_profile( $order->get_user_id() );
 
 					// Remove saved address
 					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_billing' );
 					//delete_user_meta( $order->get_user_id(), '_payex_consumer_address_shipping' );
-					//WC()->session->__unset( 'payex_checkin_billing' );
-					//WC()->session->__unset( 'payex_checkin_shipping' );
+					//WC()->session->__unset( 'swedbank_checkin_billing' );
+					//WC()->session->__unset( 'swedbank_checkin_shipping' );
 
 					// Reload checkout
 					if ( $this->instant_checkout === 'yes' ) {
-						wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', WC_Payex_Checkout::TEXT_DOMAIN ), 'error' );
+						wc_add_notice( __( 'Unable to verify consumer profile reference. Try to login again.', WC_Swedbank_Checkout::TEXT_DOMAIN ), 'error' );
 
-						return array(
+						return [
 							'result'   => 'failure',
-							'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', WC_Payex_Checkout::TEXT_DOMAIN ),
+							'messages' => __( 'Unable to verify consumer profile reference. Try to login again.', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 							'reload'   => true,
-						);
+						];
 					}
 
 					// Try again
@@ -684,21 +667,21 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Save PaymentOrder ID
 		update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
-		WC()->session->set( 'payex_paymentorder_id', $result['paymentOrder']['id'] );
+		WC()->session->set( 'swedbank_paymentorder_id', $result['paymentOrder']['id'] );
 
 		// Get JS Url
 		$js_url = self::get_operation( $result['operations'], 'view-paymentorder' );
 
 		// Save JS Url in session
-		WC()->session->set( 'payex_checkout_js_url', $js_url );
+		WC()->session->set( 'swedbank_checkout_js_url', $js_url );
 
-		return array(
-			'result'            => 'success',
-			'redirect'          => '#!payex-checkout',
-			'is_payex_checkout' => true,
-			'js_url'            => $js_url,
-			'payment_id'        => $result['paymentOrder']['id'],
-		);
+		return [
+			'result'               => 'success',
+			'redirect'             => '#!swedbank-checkout',
+			'is_swedbank_checkout' => true,
+			'js_url'               => $js_url,
+			'payment_id'           => $result['paymentOrder']['id'],
+		];
 	}
 
 	/**
@@ -719,11 +702,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			return;
 		}
 
-		if ( px_obj_prop( $order, 'payment_method' ) !== $this->id ) {
+		if ( swedbank_obj_prop( $order, 'payment_method' ) !== $this->id ) {
 			return;
 		}
 
-		WC()->session->__unset( 'payex_paymentorder_id' );
+		WC()->session->__unset( 'swedbank_paymentorder_id' );
 
 		// Check payments list and extract Payment ID
 		$payment_order = $order->get_meta( '_payex_paymentorder_id', true );
@@ -779,7 +762,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$payment_id      = $data['payment']['id'];
 
 			// Get Order by Order Payment Id
-			$order_id = px_get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
+			$order_id = swedbank_get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
 
 			// Get Order ID from payeeInfo if is not exist
 			if ( empty( $order_id ) ) {
@@ -835,7 +818,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				throw new Exception( 'Unable to get Invoice gateway' );
 			}
 
-			/** @var WC_Gateway_Payex_Invoice $gateway */
+			/** @var WC_Gateway_Swedbank_Invoice $gateway */
 			$gateway                 = $gateways['payex_psp_invoice'];
 			$gateway->merchant_token = $this->merchant_token;
 			$gateway->payee_id       = $this->payee_id;
@@ -875,7 +858,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				throw new Exception( 'Unable to get Invoice gateway' );
 			}
 
-			/** @var WC_Gateway_Payex_Invoice $gateway */
+			/** @var WC_Gateway_Swedbank_Invoice $gateway */
 			$gateway                 = $gateways['payex_psp_invoice'];
 			$gateway->merchant_token = $this->merchant_token;
 			$gateway->payee_id       = $this->payee_id;
@@ -917,7 +900,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				throw new Exception( 'Unable to get Invoice gateway' );
 			}
 
-			/** @var WC_Gateway_Payex_Invoice $gateway */
+			/** @var WC_Gateway_Swedbank_Invoice $gateway */
 			$gateway                 = $gateways['payex_psp_invoice'];
 			$gateway->merchant_token = $this->merchant_token;
 			$gateway->payee_id       = $this->payee_id;
@@ -952,7 +935,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$name   = $parser->parse_name( $result['payer']['shippingAddress']['addressee'] );
 			$co     = ! empty( $result['payer']['shippingAddress']['coAddress'] ) ? 'c/o ' . $result['payer']['shippingAddress']['coAddress'] : '';
 
-			$address = array(
+			$address = [
 				'first_name' => $name['fname'],
 				'last_name'  => $name['lname'],
 				'company'    => '',
@@ -964,7 +947,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'state'      => '',
 				'postcode'   => $result['payer']['shippingAddress']['zipCode'],
 				'country'    => $result['payer']['shippingAddress']['countryCode']
-			);
+			];
 
 			$order = wc_get_order( $order_id );
 			$order->set_address( $address, 'billing' );
@@ -986,7 +969,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		} else {
 			// Place Order
 			$customer = WC()->customer;
-			$order_id = WC()->checkout()->create_order( array(
+			$order_id = WC()->checkout()->create_order( [
 				'payment_method'        => $this->id,
 				'billing_first_name'    => $customer->get_billing_first_name(),
 				'billing_last_name'     => $customer->get_billing_last_name(),
@@ -1010,7 +993,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'shipping_country'      => $customer->get_shipping_country(),
 				'shipping_email'        => $customer->get_billing_email(),
 				'shipping_phone'        => $customer->get_billing_phone(),
-			) );
+			] );
 
 			if ( is_wp_error( $order_id ) ) {
 				throw new Exception( $order_id->get_error_message() );
@@ -1024,12 +1007,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$profile = $this->get_consumer_profile( get_current_user_id() );
 
 		// Initiate Payment Order
-		$_POST['payex_customer_reference'] = $profile['reference'];
+		$_POST['swedbank_customer_reference'] = $profile['reference'];
 		$result = $this->process_payment( $order_id );
 		if ( is_array( $result ) && isset( $result['js_url'] ) ) {
-			WC()->session->set( 'payex_checkout_js_url', $result['js_url'] );
+			WC()->session->set( 'swedbank_checkout_js_url', $result['js_url'] );
 		} else {
-			WC()->session->__unset( 'payex_checkout_js_url' );
+			WC()->session->__unset( 'swedbank_checkout_js_url' );
 		}
 	}
 
@@ -1072,14 +1055,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Checkin Form
 		wc_get_template(
-			'checkout/payex/checkin.php',
-			array(
+			'checkout/swedbank/checkin.php',
+			[
 				'checkin_country'  => $this->checkin_country,
 				'selected_country' => apply_filters( 'sb_checkin_default_country', 'SE' ),
 				'js_url'           => $js_url,
 				'consumer_data'    => $profile['billing'],
 				'consumer_profile' => $profile['reference']
-			),
+			],
 			'',
 			dirname( __FILE__ ) . '/../templates/'
 		);
@@ -1092,14 +1075,14 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 */
 	public function woocommerce_checkout_payment() {
 		if ( $this->enabled === 'yes' && $this->instant_checkout === 'yes' ) {
-			$js_url = WC()->session->get( 'payex_checkout_js_url' );
+			$js_url = WC()->session->get( 'swedbank_checkout_js_url' );
 
 			wc_get_template(
-				'checkout/payex/payment.php',
-				array(
+				'checkout/swedbank/payment.php',
+				[
 					//'checkout' => WC()->checkout()
 					'js_url' => $js_url
-				),
+				],
 				'',
 				dirname( __FILE__ ) . '/../templates/'
 			);
@@ -1111,8 +1094,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 *
 	 * @return void
 	 */
-	public function ajax_payex_checkout_get_address() {
-		check_ajax_referer( 'payex_checkout', 'nonce' );
+	public function ajax_swedbank_checkout_get_address() {
+		check_ajax_referer( 'swedbank_checkout', 'nonce' );
 
 		$type = isset( $_POST['type'] ) ? wc_clean( $_POST['type'] ) : '';
 		$url  = isset( $_POST['url'] ) ? wc_clean( $_POST['url'] ) : '';
@@ -1125,13 +1108,13 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			}
 
 			$host = parse_url( $url, PHP_URL_HOST );
-			if ( ! in_array( $host, array( 'api.payex.com', 'api.externalintegration.payex.com' ) ) ) {
+			if ( ! in_array( $host, [ 'api.payex.com', 'api.externalintegration.payex.com' ] ) ) {
 				throw new Exception( 'Access denied' );
 			}
 
 			$result = $this->request( 'GET', $url );
 		} catch ( Exception $e ) {
-			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+			wp_send_json_error( [ 'message' => $e->getMessage() ] );
 			exit();
 		}
 
@@ -1141,7 +1124,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		$parser = new \FullNameParser();
 		$name   = $parser->parse_name( $address['addressee'] );
 
-		$output = array(
+		$output = [
 			'first_name' => $name['fname'],
 			'last_name'  => $name['lname'],
 			'country'    => $address['countryCode'],
@@ -1152,7 +1135,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			'state'      => '',
 			'phone'      => $result['msisdn'],
 			'email'      => $result['email'],
-		);
+		];
 
 		// Save address
 		$this->update_consumer_address( get_current_user_id(), $type, $output );
@@ -1163,8 +1146,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	/**
 	 * Ajax: CheckIn
 	 */
-	public function ajax_sb_checkin() {
-		check_ajax_referer( 'payex_checkout', 'nonce' );
+	public function ajax_swedbank_checkin() {
+		check_ajax_referer( 'swedbank_checkout', 'nonce' );
 
 		$country = isset( $_POST['country'] ) ? wc_clean( $_POST['country'] ) : '';
 
@@ -1188,12 +1171,12 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 *
 	 * @return void
 	 */
-	public function ajax_payex_checkout_customer_profile() {
-		check_ajax_referer( 'payex_checkout', 'nonce' );
+	public function ajax_swedbank_checkout_customer_profile() {
+		check_ajax_referer( 'swedbank_checkout', 'nonce' );
 
 		$customer_reference = isset( $_POST['consumerProfileRef'] ) ? wc_clean( $_POST['consumerProfileRef'] ) : '';
 		if ( empty( $customer_reference ) ) {
-			wp_send_json_error( array( 'message' => 'Customer reference required' ) );
+			wp_send_json_error( [ 'message' => 'Customer reference required' ] );
 			exit();
 		}
 
@@ -1209,15 +1192,15 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 *
 	 * @throws Exception
 	 */
-	public function ajax_payex_place_order() {
-		check_ajax_referer( 'payex_checkout', 'nonce' );
+	public function ajax_swedbank_place_order() {
+		check_ajax_referer( 'swedbank_checkout', 'nonce' );
 
-		$data = array();
+		$data = [];
 		parse_str( $_POST['data'], $data );
 		$_POST = $data;
 		unset( $_POST['terms-field'], $_POST['terms'] );
 
-		$_POST['payment_method'] = 'payex_checkout';
+		$_POST['payment_method'] = 'swedbank_checkout';
 
 		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
 		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
@@ -1230,16 +1213,16 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 *
 	 * @throws Exception
 	 */
-	public function ajax_payex_update_order() {
-		check_ajax_referer( 'payex_checkout', 'nonce' );
+	public function ajax_swedbank_update_order() {
+		check_ajax_referer( 'swedbank_checkout', 'nonce' );
 
 		// Get Order
 		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
 		if ( $order_id === 0 ) {
-			wp_send_json(  array(
+			wp_send_json( [
 				'result'   => 'failure',
 				'messages' => 'Order is not exists',
-			) );
+			] );
 
 			return;
 		}
@@ -1247,10 +1230,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Get Order
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			wp_send_json(  array(
+			wp_send_json( [
 				'result'   => 'failure',
 				'messages' => 'Order is not exists',
-			) );
+			] );
 
 			return;
 		}
@@ -1261,7 +1244,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		}
 
 		// Prepare $_POST data
-		$data = array();
+		$data = [];
 		parse_str( $_POST['data'], $data );
 		$_POST = $data;
 		unset( $_POST['terms-field'], $_POST['terms'] );
@@ -1278,7 +1261,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// @see WC_AJAX::update_order_review()
 		if ( ! empty( $_POST['shipping_method'] ) && ! is_array( $_POST['shipping_method'] ) ) {
 			$shipping = $_POST['shipping_method'];
-			$_POST['shipping_method'] = array( $shipping );
+			$_POST['shipping_method'] = [ $shipping ];
 		}
 
 		$chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
@@ -1294,13 +1277,11 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		// Update address data
 		foreach ($_POST as $key => $value) {
 			if ( ( strpos( $key, 'billing_' ) !== false ) || ( strpos( $key, 'shipping_' ) !== false ) ) {
-				if ( is_callable( array( $order, "set_{$key}" ) ) ) {
+				if ( is_callable( [ $order, "set_{$key}" ] ) ) {
 					$order->{"set_{$key}"}( $value );
 				}
 
-				WC()->customer->set_props( array(
-					$key => $value
-				) );
+				WC()->customer->set_props( [ $key => $value ] );
 			}
 		}
 
@@ -1322,8 +1303,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	/**
 	 * FrontEnd Error logger
 	 */
-	public function ajax_payex_checkout_log_error() {
-		check_ajax_referer( 'payex_checkout', 'nonce' );
+	public function ajax_swedbank_checkout_log_error() {
+		check_ajax_referer( 'swedbank_checkout', 'nonce' );
 
 		$id = isset( $_POST['id'] ) ? wc_clean( $_POST['id'] ) : null;
 		$data = isset( $_POST['data'] ) ? wc_clean( $_POST['data'] ) : null;
@@ -1336,7 +1317,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		$this->log( sprintf( '[FRONTEND]: [%s]: [%s]: %s',
 			$id,
-			px_get_remote_address(),
+			swedbank_get_remote_address(),
 			var_export( $data, true )
 		) );
 
@@ -1344,7 +1325,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	}
 
 	/**
-	 * Unset all payment methods except PayEx Checkout
+	 * Unset all payment methods except Swedbank Pay Checkout
 	 *
 	 * @param $gateways
 	 *
@@ -1383,7 +1364,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 					$field['default'] = $this->checkout_get_value( null, $key );
 
 					$field['custom_attributes']['readonly'] = 'readonly';
-					$field['class'][]                       = 'payex-locked';
+					$field['class'][]                       = 'swedbank-locked';
 				}
 			}
 		}
@@ -1404,7 +1385,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$profile = $this->get_consumer_profile( get_current_user_id() );
 
 			// Add default data
-			$default = array(
+			$default = [
 				'first_name' => WC()->customer->get_billing_first_name(),
 				'last_name'  => WC()->customer->get_billing_last_name(),
 				'postcode'   => WC()->customer->get_billing_postcode(),
@@ -1415,9 +1396,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'state'      => WC()->customer->get_billing_state(),
 				'address_1'  => WC()->customer->get_billing_address_1(),
 				'address_2'  => WC()->customer->get_billing_address_2(),
-			);
-			$billing = array_merge( $default, is_array( $profile['billing'] ) ? $profile['billing'] : array() );
-			$shipping = array_merge( $default, is_array( $profile['shipping'] ) ? $profile['shipping'] : array() );
+			];
+			$billing = array_merge( $default, is_array( $profile['billing'] ) ? $profile['billing'] : [] );
+			$shipping = array_merge( $default, is_array( $profile['shipping'] ) ? $profile['shipping'] : [] );
 
 			// Fill form with these data
 			switch ( $input ) {
@@ -1489,8 +1470,8 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * @param WC_Checkout $checkout
 	 */
 	public function checkout_init( $checkout ) {
-		remove_action( 'woocommerce_checkout_billing', array( $checkout, 'checkout_form_billing' ), 10 );
-		remove_action( 'woocommerce_checkout_shipping', array( $checkout, 'checkout_form_shipping' ), 10 );
+		remove_action( 'woocommerce_checkout_billing', [ $checkout, 'checkout_form_billing' ], 10 );
+		remove_action( 'woocommerce_checkout_shipping', [ $checkout, 'checkout_form_shipping' ], 10 );
 	}
 
 	/**
@@ -1498,10 +1479,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 */
 	public function checkout_form_billing() {
 		wc_get_template(
-			'checkout/payex/form-billing.php',
-			array(
+			'checkout/swedbank/form-billing.php',
+			[
 				'checkout' => WC()->checkout()
-			),
+			],
 			'',
 			dirname( __FILE__ ) . '/../templates/'
 		);
@@ -1511,7 +1492,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 	 * Shipping Info
 	 */
 	public function checkout_form_shipping() {
-		wc_get_template( 'checkout/form-shipping.php', array( 'checkout' => WC()->checkout() ) );
+		wc_get_template( 'checkout/form-shipping.php', [ 'checkout' => WC()->checkout() ] );
 	}
 
 	/**
@@ -1532,7 +1513,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		if ( strpos( $located, 'checkout/form-checkout.php' ) !== false ) {
 			$located = wc_locate_template(
-				'checkout/payex/form-checkout.php',
+				'checkout/swedbank/form-checkout.php',
 				$template_path,
 				dirname( __FILE__ ) . '/../templates/'
 			);
@@ -1573,7 +1554,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			}
 
 			if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
-			     mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
+				 mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
 			) {
 				$image = wp_guess_url() . $image;
 			}
@@ -1658,7 +1639,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 			$items[] = [
 				'reference' => 'discount',
-				'name' => __( 'Discount', 'payex-woocommerce-payments' ),
+				'name' => __( 'Discount', WC_Swedbank_Checkout::TEXT_DOMAIN ),
 				'type' => 'DISCOUNT',
 				'class' => 'ProductGroup1',
 				'quantity' => 1,
@@ -1716,19 +1697,19 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			$billing  = get_user_meta( $user_id, '_payex_consumer_address_billing', true );
 			$shipping = get_user_meta( $user_id, '_payex_consumer_address_shipping', true );
 		} else {
-			$expiration = WC()->session->get( 'payex_consumer_profile_expiration' );
-			$reference  = WC()->session->get( 'payex_consumer_profile' );
-			$url        = WC()->session->get( 'payex_consumer_url' );
+			$expiration = WC()->session->get( 'swedbank_consumer_profile_expiration' );
+			$reference  = WC()->session->get( 'swedbank_consumer_profile' );
+			$url        = WC()->session->get( 'swedbank_consumer_url' );
 
 			// Get saved the consumer address
-			$billing  = WC()->session->get( 'payex_checkin_billing' );
-			$shipping = WC()->session->get( 'payex_checkin_shipping' );
+			$billing  = WC()->session->get( 'swedbank_checkin_billing' );
+			$shipping = WC()->session->get( 'swedbank_checkin_shipping' );
 		}
 
 		// Check if expired
 		if ( ( absint( $expiration ) > 0 && time() >= $expiration ) || // Expired
-		     ( ! empty( $reference ) && empty( $expiration ) ) || // Deprecate saved reference without expiration
-		     ( ! empty( $reference ) && empty( $url ) ) // Deprecate saved reference without url
+			 ( ! empty( $reference ) && empty( $expiration ) ) || // Deprecate saved reference without expiration
+			 ( ! empty( $reference ) && empty( $url ) ) // Deprecate saved reference without url
 		) {
 			// Remove expired data
 			$this->drop_consumer_profile( $user_id );
@@ -1751,7 +1732,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Fill the consumer billing address
 		if ( empty( $billing ) ) {
-			$billing = array(
+			$billing = [
 				'first_name' => $customer->get_billing_first_name(),
 				'last_name'  => $customer->get_billing_last_name(),
 				'postcode'   => $customer->get_billing_postcode(),
@@ -1762,7 +1743,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'state'      => $customer->get_billing_state(),
 				'address_1'  => $customer->get_billing_address_1(),
 				'address_2'  => $customer->get_billing_address_2(),
-			);
+			];
 
 			if ( $user_id > 0 ) {
 				update_user_meta( $user_id, '_payex_consumer_address_billing', $billing );
@@ -1771,7 +1752,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 
 		// Fill the consumer shipping address
 		if ( empty( $shipping ) ) {
-			$shipping = array(
+			$shipping = [
 				'first_name' => $customer->get_shipping_first_name(),
 				'last_name'  => $customer->get_shipping_last_name(),
 				'postcode'   => $customer->get_shipping_postcode(),
@@ -1782,7 +1763,7 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 				'state'      => $customer->get_shipping_state(),
 				'address_1'  => $customer->get_shipping_address_1(),
 				'address_2'  => $customer->get_shipping_address_2(),
-			);
+			];
 
 			if ( $user_id > 0 ) {
 				update_user_meta( $user_id, '_payex_consumer_address_shipping', $shipping );
@@ -1811,9 +1792,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			update_user_meta( $user_id, '_payex_consumer_profile', $reference );
 			update_user_meta( $user_id, '_payex_consumer_url', $url );
 		} else {
-			WC()->session->set( 'payex_consumer_profile_expiration', strtotime( '+48 hours' ) );
-			WC()->session->set( 'payex_consumer_profile', $reference );
-			WC()->session->set( 'payex_consumer_url', $url );
+			WC()->session->set( 'swedbank_consumer_profile_expiration', strtotime( '+48 hours' ) );
+			WC()->session->set( 'swedbank_consumer_profile', $reference );
+			WC()->session->set( 'swedbank_consumer_url', $url );
 		}
 	}
 
@@ -1828,9 +1809,9 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 			delete_user_meta( $user_id, '_payex_consumer_profile' );
 			delete_user_meta( $user_id, '_payex_consumer_url' );
 		} else {
-			WC()->session->__unset( 'payex_consumer_profile_expiration' );
-			WC()->session->__unset( 'payex_consumer_profile' );
-			WC()->session->__unset( 'payex_consumer_url' );
+			WC()->session->__unset( 'swedbank_consumer_profile_expiration' );
+			WC()->session->__unset( 'swedbank_consumer_profile' );
+			WC()->session->__unset( 'swedbank_consumer_url' );
 		}
 	}
 
@@ -1845,10 +1826,10 @@ class WC_Gateway_Payex_Checkout extends WC_Gateway_Payex_Cc
 		if ( $user_id > 0 ) {
 			update_user_meta( $user_id, '_payex_consumer_address_' . $type, $address );
 		} else {
-			WC()->session->set( 'payex_checkin_' . $type, $address );
+			WC()->session->set( 'swedbank_checkin_' . $type, $address );
 		}
 	}
 }
 
 // Register Gateway
-WC_Payex_Psp::register_gateway( 'WC_Gateway_Payex_Checkout' );
+WC_Swedbank_Psp::register_gateway( 'WC_Gateway_Swedbank_Checkout' );

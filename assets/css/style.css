@@ -1,8 +1,8 @@
-.featherlight-payex .featherlight-content {
+.featherlight-swedbank .featherlight-content {
   width: 50%; }
 
 @media (max-width: 767px) {
-  .featherlight-payex .featherlight-content {
+  .featherlight-swedbank .featherlight-content {
     width: 100%;
     width: -moz-available;
     width: -webkit-fill-available;
@@ -20,11 +20,11 @@
   padding-right: 15px;
   padding-top: 5px; }
 
-#payex-consumer h2,
-#payex-paymentmenu h2 {
+#swedbank-consumer h2,
+#swedbank-paymentmenu h2 {
   margin-bottom: -10px; }
 
-.payex-locked {
+.swedbank-locked {
   opacity: .7;
   pointer-events: none;
   user-select: none;
