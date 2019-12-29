@@ -60,7 +60,7 @@ jQuery( function( $ ) {
             }
 
             // Use saved consumerProfileRef
-            let consumerProfileElm = $( '#swedbank-consumer-profile' );
+            let consumerProfileElm = $( '#swedbank-pay-consumer-profile' );
             if ( consumerProfileElm.length > 0 ) {
                 let reference = consumerProfileElm.data( 'reference' );
                 console.log( 'Initiate consumerProfileRef', reference );
@@ -81,10 +81,10 @@ jQuery( function( $ ) {
         loadCheckIn: function( country ) {
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'swedbank_checkin',
-                    nonce: WC_Gateway_Swedbank_Checkout.nonce,
+                    action: 'swedbank_pay_checkin',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     country: country
                 },
                 dataType: 'json'
@@ -104,7 +104,7 @@ jQuery( function( $ ) {
 
                 // Destroy JS
                 $( "script[src*='px.consumer.client']" ).remove();
-                $( '#swedbank-checkin iframe' ).remove();
+                $( '#swedbank-pay-checkin iframe' ).remove();
                 wc_sb_checkout.loadJs( data.data, function () {
                     wc_sb_checkout.initCheckIn();
                 } );
@@ -127,9 +127,9 @@ jQuery( function( $ ) {
 
                 // Init PayEx hostedView
                 window.payex.hostedView.consumer( {
-                    container: 'swedbank-checkin',
-                    culture: WC_Gateway_Swedbank_Checkout.culture,
-                    style: WC_Gateway_Swedbank_Checkout.checkInStyle ? JSON.parse( WC_Gateway_Swedbank_Checkout.checkInStyle ) : null,
+                    container: 'swedbank-pay-checkin',
+                    culture: WC_Gateway_Swedbank_Pay_Checkout.culture,
+                    style: WC_Gateway_Swedbank_Pay_Checkout.checkInStyle ? JSON.parse( WC_Gateway_Swedbank_Pay_Checkout.checkInStyle ) : null,
                     onConsumerIdentified: function( data ) {
                         console.log( 'hostedView: onConsumerIdentified' );
                         wc_sb_checkout.onConsumerIdentified( data );
@@ -145,8 +145,8 @@ jQuery( function( $ ) {
                         wc_sb_checkout.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
-                        if ( WC_Gateway_Swedbank_Checkout.needs_shipping_address ||
-                            WC_Gateway_Swedbank_Checkout.ship_to_billing_address_only
+                        if ( WC_Gateway_Swedbank_Pay_Checkout.needs_shipping_address ||
+                            WC_Gateway_Swedbank_Pay_Checkout.ship_to_billing_address_only
                         ) {
                             wc_sb_checkout.onAddressDetailsAvailable( 'billing', data );
                         }
@@ -166,19 +166,19 @@ jQuery( function( $ ) {
             // Show "Change shipping info" button
             $( '#change-shipping-info' ).show();
 
-            wc_sb_checkout.form.find( '.swedbank_customer_reference' ).remove();
-            wc_sb_checkout.form.append( "<input type='hidden' class='swedbank_customer_reference' name='swedbank_customer_reference' value='" + reference + "'/>" );
+            wc_sb_checkout.form.find( '.swedbank_pay_customer_reference' ).remove();
+            wc_sb_checkout.form.append( "<input type='hidden' class='swedbank_pay_customer_reference' name='swedbank_pay_customer_reference' value='" + reference + "'/>" );
 
             //wc_sb_checkout.form.submit();
             wc_sb_checkout.onSubmit();
         },
 
         isInstantCheckout() {
-            return WC_Gateway_Swedbank_Checkout.instant_checkout;
+            return WC_Gateway_Swedbank_Pay_Checkout.instant_checkout;
         },
 
         isCheckinEnabled() {
-            return WC_Gateway_Swedbank_Checkout.checkin;
+            return WC_Gateway_Swedbank_Pay_Checkout.checkin;
         },
 
         isPaymentMethodChosen: function() {
@@ -411,7 +411,7 @@ jQuery( function( $ ) {
                     window.payex.hostedView.paymentMenu().close();
                 }
 
-                $( '#payment-swedbank-checkout iframe' ).remove();
+                $( '#payment-swedbank-pay-checkout iframe' ).remove();
                 //delete window.payex.hostedView;
             }
 
@@ -420,20 +420,20 @@ jQuery( function( $ ) {
 
             // Load JS
             wc_sb_checkout.loadJs( url, function () {
-                $( '#payment-swedbank-checkout iframe' ).remove();
+                $( '#payment-swedbank-pay-checkout iframe' ).remove();
 
                 // Load SwedBank Pay Checkout frame
                 if ( wc_sb_checkout.isInstantCheckout() ) {
                     $( '#payment' ).hide();
-                    wc_sb_checkout.initPaymentMenu( 'payment-swedbank-checkout' );
+                    wc_sb_checkout.initPaymentMenu( 'payment-swedbank-pay-checkout' );
                 } else {
-                    $.featherlight( '<div id="swedbank-paymentmenu">&nbsp;</div>', {
-                        variant: 'featherlight-swedbank',
+                    $.featherlight( '<div id="swedbank-pay-paymentmenu">&nbsp;</div>', {
+                        variant: 'featherlight-swedbank-pay',
                         persist: true,
                         closeOnClick: false,
                         closeOnEsc: false,
                         afterOpen: function () {
-                            wc_sb_checkout.initPaymentMenu( 'swedbank-paymentmenu' );
+                            wc_sb_checkout.initPaymentMenu( 'swedbank-pay-paymentmenu' );
                         },
                         afterClose: function () {
                             wc_sb_checkout.form.removeClass( 'processing' ).unblock();
@@ -462,8 +462,8 @@ jQuery( function( $ ) {
             // Load SwedBank Pay Checkout frame
             this.paymentMenu = window.payex.hostedView.paymentMenu( {
                 container: id,
-                culture: WC_Gateway_Swedbank_Checkout.culture,
-                style: WC_Gateway_Swedbank_Checkout.paymentMenuStyle ? JSON.parse( WC_Gateway_Swedbank_Checkout.paymentMenuStyle ) : null,
+                culture: WC_Gateway_Swedbank_Pay_Checkout.culture,
+                style: WC_Gateway_Swedbank_Pay_Checkout.paymentMenuStyle ? JSON.parse( WC_Gateway_Swedbank_Pay_Checkout.paymentMenuStyle ) : null,
                 onApplicationConfigured: function( data ) {
                     console.log( 'onApplicationConfigured' );
                     console.log( data );
@@ -530,10 +530,10 @@ jQuery( function( $ ) {
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'swedbank_place_order',
-                    nonce: WC_Gateway_Swedbank_Checkout.nonce,
+                    action: 'swedbank_pay_place_order',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     data: fields
                 },
                 dataType: 'json'
@@ -575,10 +575,10 @@ jQuery( function( $ ) {
 
             wc_sb_checkout.xhr = $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'swedbank_update_order',
-                    nonce: WC_Gateway_Swedbank_Checkout.nonce,
+                    action: 'swedbank_pay_update_order',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     data: fields
                 },
                 dataType: 'json'
@@ -648,10 +648,10 @@ jQuery( function( $ ) {
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'swedbank_checkout_customer_profile',
-                    nonce: WC_Gateway_Swedbank_Checkout.nonce,
+                    action: 'swedbank_pay_checkout_customer_profile',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     consumerProfileRef: data.consumerProfileRef
                 },
                 dataType: 'json'
@@ -683,10 +683,10 @@ jQuery( function( $ ) {
             wc_sb_checkout.block();
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'swedbank_checkout_get_address',
-                    nonce: WC_Gateway_Swedbank_Checkout.nonce,
+                    action: 'swedbank_pay_checkout_get_address',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     type: type,
                     url: data.url
                 },
@@ -711,7 +711,7 @@ jQuery( function( $ ) {
                         }
 
                         el.prop('readonly', false);
-                        el.closest('.form-row').removeClass('swedbank-locked');
+                        el.closest('.form-row').removeClass('swedbank-pay-locked');
                         el.val(value).change();
 
                         if (key === 'country' || key === 'state') {
@@ -754,10 +754,10 @@ jQuery( function( $ ) {
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'swedbank_checkout_log_error',
-                    nonce: WC_Gateway_Swedbank_Checkout.nonce,
+                    action: 'swedbank_pay_checkout_log_error',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     id: id,
                     data: JSON.stringify( data )
                 },

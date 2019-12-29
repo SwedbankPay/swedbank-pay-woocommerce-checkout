@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Swedbank_Checkout {
+class WC_Swedbank_Pay_Checkout {
 	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-checkout';
 
 	/**
@@ -41,7 +41,7 @@ class WC_Swedbank_Checkout {
 	 */
 	public function activate() {
 		// Required plugin: Swedbank Pay WooCommerce Payments
-		if ( class_exists( 'WC_Swedbank_Psp', false ) ) {
+		if ( class_exists( 'WC_Swedbank_Pay', false ) ) {
 			return true;
 		}
 
@@ -66,7 +66,7 @@ class WC_Swedbank_Checkout {
 
 				WC_Admin_Notices::add_custom_notice(
 					'wc-payex-checkout-notice',
-					__( 'Required Swedbank Pay WooCommerce payments plugin was automatically installed.', WC_Swedbank_Checkout::TEXT_DOMAIN )
+					__( 'Required Swedbank Pay WooCommerce payments plugin was automatically installed.', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN )
 				);
 			}
 		} catch ( \Exception $e ) {
@@ -92,7 +92,7 @@ class WC_Swedbank_Checkout {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = [
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __( 'Settings', WC_Swedbank_Checkout::TEXT_DOMAIN ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __( 'Settings', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN ) . '</a>'
 		];
 
 		return array_merge( $plugin_links, $links );
@@ -104,7 +104,7 @@ class WC_Swedbank_Checkout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( WC_Swedbank_Checkout::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( WC_Swedbank_Pay_Checkout::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -112,11 +112,11 @@ class WC_Swedbank_Checkout {
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-		if ( ! class_exists( 'WC_Swedbank_Psp', false ) ) {
+		if ( ! class_exists( 'WC_Swedbank_Pay', false ) ) {
 			return;
 		}
 
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-checkout.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-checkout.php' );
 	}
 
 	/**
@@ -295,4 +295,4 @@ class WC_Swedbank_Checkout {
 	}
 }
 
-new WC_Swedbank_Checkout();
+new WC_Swedbank_Pay_Checkout();
