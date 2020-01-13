@@ -1565,12 +1565,17 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 				$product_class = 'ProductGroup1';
 			}
 
-			$productReference = trim( str_replace( ' ', '-', $order_item->get_product()->get_sku() ) );
+			// Get Product Sku
+			$productReference = trim( str_replace( [ ' ', '.', ',' ], '-', $order_item->get_product()->get_sku() ) );
+			if ( empty( $productReference ) ) {
+				$productReference = wp_generate_password(12, false);
+			}
+
 			$productName = trim( $order_item->get_name() );
 
 			$items[] = [
 				// The field Reference must match the regular expression '[\\w-]*'
-				'reference'    => ! empty( $productReference ) ? $productReference : wp_generate_password(),
+				'reference'    => $productReference,
 				'name'         => ! empty( $productName ) ? $productName : '-',
 				'type'         => 'PRODUCT',
 				'class'        => $product_class,
