@@ -3,9 +3,9 @@ jQuery( function( $ ) {
     'use strict';
 
     /**
-     * Object to handle PayEx checkout payment forms.
+     * Object to handle Swedbank Pay checkout payment forms.
      */
-    window.wc_payex_checkout = {
+    window.wc_sb_checkout = {
         js_url: null,
         paymentMenu: null,
         isPaymentMenuLoaded: false,
@@ -36,16 +36,16 @@ jQuery( function( $ ) {
                 $( '#change-shipping-info' ).hide();
 
                 // Show Address Fields
-                wc_payex_checkout.showAddressFields();
+                wc_sb_checkout.showAddressFields();
             } );
 
             $( document.body ).on( 'change', '#checkin_country', function () {
-                wc_payex_checkout.loadCheckIn( $(this).val() );
+                wc_sb_checkout.loadCheckIn( $(this).val() );
             } );
 
             // Initialize Instant Checkout
-            if ( wc_payex_checkout.isInstantCheckout() ) {
-                wc_payex_checkout.initInstantCheckout();
+            if ( wc_sb_checkout.isInstantCheckout() ) {
+                wc_sb_checkout.initInstantCheckout();
             }
         },
 
@@ -55,21 +55,21 @@ jQuery( function( $ ) {
         initInstantCheckout: function () {
             console.log( 'Initialization of Instant Checkout...' );
 
-            if ( wc_payex_checkout.isCheckinEnabled() ) {
-                wc_payex_checkout.hideAddressFields();
+            if ( wc_sb_checkout.isCheckinEnabled() ) {
+                wc_sb_checkout.hideAddressFields();
             }
 
             // Use saved consumerProfileRef
-            let consumerProfileElm = $( '#payex-consumer-profile' );
+            let consumerProfileElm = $( '#swedbank-pay-consumer-profile' );
             if ( consumerProfileElm.length > 0 ) {
                 let reference = consumerProfileElm.data( 'reference' );
                 console.log( 'Initiate consumerProfileRef', reference );
-                //wc_payex_checkout.initCheckout( reference );
-                wc_payex_checkout.initCheckIn();
+                //wc_sb_checkout.initCheckout( reference );
+                wc_sb_checkout.initCheckIn();
             } else {
                 // Initiate checkin
 
-                wc_payex_checkout.initCheckIn();
+                wc_sb_checkout.initCheckIn();
             }
         },
 
@@ -81,16 +81,16 @@ jQuery( function( $ ) {
         loadCheckIn: function( country ) {
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'sb_checkin',
-                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    action: 'swedbank_pay_checkin',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     country: country
                 },
                 dataType: 'json'
             } ).done( function ( data ) {
                 if ( ! data.success ) {
-                    wc_payex_checkout.logError( 'payex-checkin-loader', data );
+                    wc_sb_checkout.logError( 'sb-checkin-loader', data );
                     alert( data.details );
                     return;
                 }
@@ -104,9 +104,9 @@ jQuery( function( $ ) {
 
                 // Destroy JS
                 $( "script[src*='px.consumer.client']" ).remove();
-                $( '#payex-checkin iframe' ).remove();
-                wc_payex_checkout.loadJs( data.data, function () {
-                    wc_payex_checkout.initCheckIn();
+                $( '#swedbank-pay-checkin iframe' ).remove();
+                wc_sb_checkout.loadJs( data.data, function () {
+                    wc_sb_checkout.initCheckIn();
                 } );
             } );
         },
@@ -119,7 +119,7 @@ jQuery( function( $ ) {
                 return;
             }
 
-            wc_payex_checkout.waitForLoading('payex.hostedView.consumer', function ( err ) {
+            wc_sb_checkout.waitForLoading('payex.hostedView.consumer', function ( err ) {
                 if ( err ) {
                     console.warn( err );
                     return;
@@ -127,36 +127,36 @@ jQuery( function( $ ) {
 
                 // Init PayEx hostedView
                 window.payex.hostedView.consumer( {
-                    container: 'payex-checkin',
-                    culture: WC_Gateway_PayEx_Checkout.culture,
-                    style: WC_Gateway_PayEx_Checkout.checkInStyle ? JSON.parse( WC_Gateway_PayEx_Checkout.checkInStyle ) : null,
+                    container: 'swedbank-pay-checkin',
+                    culture: WC_Gateway_Swedbank_Pay_Checkout.culture,
+                    style: WC_Gateway_Swedbank_Pay_Checkout.checkInStyle ? JSON.parse( WC_Gateway_Swedbank_Pay_Checkout.checkInStyle ) : null,
                     onConsumerIdentified: function( data ) {
                         console.log( 'hostedView: onConsumerIdentified' );
-                        wc_payex_checkout.onConsumerIdentified( data );
+                        wc_sb_checkout.onConsumerIdentified( data );
                     },
                     onNewConsumer: function( data ) {
                         console.log( 'hostedView: onNewConsumer' );
-                        wc_payex_checkout.onConsumerIdentified( data );
+                        wc_sb_checkout.onConsumerIdentified( data );
                     },
                     onConsumerRemoved: function( data ) {
                         console.log( 'hostedView: onConsumerRemoved' );
                     },
                     onBillingDetailsAvailable: function( data ) {
-                        wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
+                        wc_sb_checkout.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
-                        if ( WC_Gateway_PayEx_Checkout.needs_shipping_address ||
-                            WC_Gateway_PayEx_Checkout.ship_to_billing_address_only
+                        if ( WC_Gateway_Swedbank_Pay_Checkout.needs_shipping_address ||
+                            WC_Gateway_Swedbank_Pay_Checkout.ship_to_billing_address_only
                         ) {
-                            wc_payex_checkout.onAddressDetailsAvailable( 'billing', data );
+                            wc_sb_checkout.onAddressDetailsAvailable( 'billing', data );
                         }
 
-                        wc_payex_checkout.onAddressDetailsAvailable( 'shipping', data );
+                        wc_sb_checkout.onAddressDetailsAvailable( 'shipping', data );
                     },
                     onError: function ( data ) {
-                        wc_payex_checkout.logError( 'payex-checkin', data );
+                        wc_sb_checkout.logError( 'sb-checkin', data );
                         alert( data.details );
-                        wc_payex_checkout.onError( data.details );
+                        wc_sb_checkout.onError( data.details );
                     }
                 } ).open();
             });
@@ -166,19 +166,19 @@ jQuery( function( $ ) {
             // Show "Change shipping info" button
             $( '#change-shipping-info' ).show();
 
-            wc_payex_checkout.form.find( '.payex_customer_reference' ).remove();
-            wc_payex_checkout.form.append( "<input type='hidden' class='payex_customer_reference' name='payex_customer_reference' value='" + reference + "'/>" );
+            wc_sb_checkout.form.find( '.swedbank_pay_customer_reference' ).remove();
+            wc_sb_checkout.form.append( "<input type='hidden' class='swedbank_pay_customer_reference' name='swedbank_pay_customer_reference' value='" + reference + "'/>" );
 
-            //wc_payex_checkout.form.submit();
-            wc_payex_checkout.onSubmit();
+            //wc_sb_checkout.form.submit();
+            wc_sb_checkout.onSubmit();
         },
 
         isInstantCheckout() {
-            return WC_Gateway_PayEx_Checkout.instant_checkout;
+            return WC_Gateway_Swedbank_Pay_Checkout.instant_checkout;
         },
 
         isCheckinEnabled() {
-            return WC_Gateway_PayEx_Checkout.checkin;
+            return WC_Gateway_Swedbank_Pay_Checkout.checkin;
         },
 
         isPaymentMethodChosen: function() {
@@ -186,9 +186,9 @@ jQuery( function( $ ) {
         },
 
         block: function() {
-            let form_data = wc_payex_checkout.form.data();
+            let form_data = wc_sb_checkout.form.data();
             if ( 1 !== form_data['blockUI.isBlocked'] ) {
-                wc_payex_checkout.form.block({
+                wc_sb_checkout.form.block({
                     message: null,
                     overlayCSS: {
                         background: '#fff',
@@ -199,11 +199,11 @@ jQuery( function( $ ) {
         },
 
         unblock: function() {
-            wc_payex_checkout.form.unblock();
+            wc_sb_checkout.form.unblock();
         },
 
         onClose: function() {
-            wc_payex_checkout.unblock();
+            wc_sb_checkout.unblock();
         },
 
         onReady: function() {
@@ -213,7 +213,7 @@ jQuery( function( $ ) {
         onUpdateCheckout: function() {
             console.log( 'onUpdateCheckout' );
 
-            if ( ! wc_payex_checkout.isInstantCheckout() ) {
+            if ( ! wc_sb_checkout.isInstantCheckout() ) {
                 return false;
             }
 
@@ -223,53 +223,53 @@ jQuery( function( $ ) {
         onUpdatedCheckout: function() {
             console.log( 'onUpdatedCheckout' );
 
-            if ( ! wc_payex_checkout.isInstantCheckout() ) {
+            if ( ! wc_sb_checkout.isInstantCheckout() ) {
                 return false;
             }
 
-            if ( wc_payex_checkout.form.is( '.processing' ) ) {
+            if ( wc_sb_checkout.form.is( '.processing' ) ) {
                 return false;
             }
 
-            if ( ! wc_payex_checkout.validateForm() ) {
+            if ( ! wc_sb_checkout.validateForm() ) {
                 console.log( 'onUpdatedCheckout: Validation is failed' );
                 return false;
             }
 
             $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-            wc_payex_checkout.updateOrder();
+            wc_sb_checkout.updateOrder();
         },
 
         onSubmit: function( e ) {
-            if ( wc_payex_checkout.form_submit ) {
+            if ( wc_sb_checkout.form_submit ) {
                 return true;
             }
 
-            if ( wc_payex_checkout.isPaymentMethodChosen() ) {
+            if ( wc_sb_checkout.isPaymentMethodChosen() ) {
                 if ( typeof e !== 'undefined' ) {
                     e.preventDefault();
                 }
 
-                if ( ! wc_payex_checkout.validateForm() ) {
+                if ( ! wc_sb_checkout.validateForm() ) {
                     return false;
                 }
 
                 console.log( 'onSubmit' );
 
-                if ( wc_payex_checkout.form.is( '.processing' ) ) {
+                if ( wc_sb_checkout.form.is( '.processing' ) ) {
                     return false;
                 }
 
                 $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-                wc_payex_checkout.form.addClass( 'processing' );
-                wc_payex_checkout.block();
-                wc_payex_checkout.placeOrder()
+                wc_sb_checkout.form.addClass( 'processing' );
+                wc_sb_checkout.block();
+                wc_sb_checkout.placeOrder()
                     .always( function ( response ) {
-                        wc_payex_checkout.form.removeClass( 'processing' );
-                        wc_payex_checkout.unblock();
+                        wc_sb_checkout.form.removeClass( 'processing' );
+                        wc_sb_checkout.unblock();
                     } )
                     .fail( function( jqXHR, textStatus ) {
-                        wc_payex_checkout.onError( textStatus );
+                        wc_sb_checkout.onError( textStatus );
                     } )
                     .done( function ( response) {
                         console.log( response );
@@ -285,13 +285,13 @@ jQuery( function( $ ) {
                                 $( document.body ).trigger( 'update_checkout' );
                             }
 
-                            wc_payex_checkout.onError( response.messages );
+                            wc_sb_checkout.onError( response.messages );
                             return;
                         }
 
-                        // Load PayEx Checkout frame
-                        wc_payex_checkout.js_url = response['js_url'];
-                        wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url );
+                        // Load SwedBank Pay Checkout frame
+                        wc_sb_checkout.js_url = response['js_url'];
+                        wc_sb_checkout.initPaymentJS( wc_sb_checkout.js_url );
                     } );
 
                 return false;
@@ -301,7 +301,7 @@ jQuery( function( $ ) {
         },
 
         resetCheckout: function() {
-            wc_payex_checkout.form_submit = false;
+            wc_sb_checkout.form_submit = false;
         },
 
         validateForm: function () {
@@ -411,7 +411,7 @@ jQuery( function( $ ) {
                     window.payex.hostedView.paymentMenu().close();
                 }
 
-                $( '#payment-payex-checkout iframe' ).remove();
+                $( '#payment-swedbank-pay-checkout iframe' ).remove();
                 //delete window.payex.hostedView;
             }
 
@@ -419,24 +419,24 @@ jQuery( function( $ ) {
             $( "script[src*='px.paymentmenu.client']" ).remove();
 
             // Load JS
-            wc_payex_checkout.loadJs( url, function () {
-                $( '#payment-payex-checkout iframe' ).remove();
+            wc_sb_checkout.loadJs( url, function () {
+                $( '#payment-swedbank-pay-checkout iframe' ).remove();
 
-                // Load PayEx Checkout frame
-                if ( wc_payex_checkout.isInstantCheckout() ) {
+                // Load SwedBank Pay Checkout frame
+                if ( wc_sb_checkout.isInstantCheckout() ) {
                     $( '#payment' ).hide();
-                    wc_payex_checkout.initPaymentMenu( 'payment-payex-checkout' );
+                    wc_sb_checkout.initPaymentMenu( 'payment-swedbank-pay-checkout' );
                 } else {
-                    $.featherlight( '<div id="payex-paymentmenu">&nbsp;</div>', {
-                        variant: 'featherlight-payex',
+                    $.featherlight( '<div id="swedbank-pay-paymentmenu">&nbsp;</div>', {
+                        variant: 'featherlight-swedbank-pay',
                         persist: true,
                         closeOnClick: false,
                         closeOnEsc: false,
                         afterOpen: function () {
-                            wc_payex_checkout.initPaymentMenu( 'payex-paymentmenu' );
+                            wc_sb_checkout.initPaymentMenu( 'swedbank-pay-paymentmenu' );
                         },
                         afterClose: function () {
-                            wc_payex_checkout.form.removeClass( 'processing' ).unblock();
+                            wc_sb_checkout.form.removeClass( 'processing' ).unblock();
                         }
                     } );
                 }
@@ -459,21 +459,21 @@ jQuery( function( $ ) {
                 callback = function () {};
             }
 
-            // Load PayEx Checkout frame
+            // Load SwedBank Pay Checkout frame
             this.paymentMenu = window.payex.hostedView.paymentMenu( {
                 container: id,
-                culture: WC_Gateway_PayEx_Checkout.culture,
-                style: WC_Gateway_PayEx_Checkout.paymentMenuStyle ? JSON.parse( WC_Gateway_PayEx_Checkout.paymentMenuStyle ) : null,
+                culture: WC_Gateway_Swedbank_Pay_Checkout.culture,
+                style: WC_Gateway_Swedbank_Pay_Checkout.paymentMenuStyle ? JSON.parse( WC_Gateway_Swedbank_Pay_Checkout.paymentMenuStyle ) : null,
                 onApplicationConfigured: function( data ) {
                     console.log( 'onApplicationConfigured' );
                     console.log( data );
-                    wc_payex_checkout.isPaymentMenuLoaded = true;
+                    wc_sb_checkout.isPaymentMenuLoaded = true;
                     callback( null );
                 },
                 onPaymentMenuInstrumentSelected: function ( data ) {
                     console.log( 'onPaymentMenuInstrumentSelected' );
                     console.log( data );
-                    wc_payex_checkout.onPaymentMenuInstrumentSelected( data.name, data.instrument );
+                    wc_sb_checkout.onPaymentMenuInstrumentSelected( data.name, data.instrument );
                 },
                 onPaymentCreated: function () {
                     console.log( 'onPaymentCreated' );
@@ -486,16 +486,16 @@ jQuery( function( $ ) {
                 onPaymentCanceled: function ( data ) {
                     console.log( 'onPaymentCanceled' );
                     console.log( data );
-                    wc_payex_checkout.logError( 'payment-menu-cancel', data );
+                    wc_sb_checkout.logError( 'payment-menu-cancel', data );
                 },
                 onPaymentFailed: function ( data ) {
                     console.log( 'onPaymentFailed' );
                     console.log( data );
-                    wc_payex_checkout.logError( 'payment-menu-failed', data );
+                    wc_sb_checkout.logError( 'payment-menu-failed', data );
                     //self.location.href = data.redirectUrl;
                 },
                 onError: function ( data ) {
-                    wc_payex_checkout.logError( 'payment-menu-error', data );
+                    wc_sb_checkout.logError( 'payment-menu-error', data );
                     callback( data );
                 }
             } );
@@ -516,7 +516,7 @@ jQuery( function( $ ) {
                 this.paymentMenu.refresh();
             } else {
                 console.warn( 'refreshPaymentMenu: refresh workaround' );
-                //wc_payex_checkout.initPaymentJS( wc_payex_checkout.js_url )
+                //wc_sb_checkout.initPaymentJS( wc_sb_checkout.js_url )
             }
         },
 
@@ -530,10 +530,10 @@ jQuery( function( $ ) {
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'payex_place_order',
-                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    action: 'swedbank_pay_place_order',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     data: fields
                 },
                 dataType: 'json'
@@ -545,8 +545,8 @@ jQuery( function( $ ) {
          		}
 
                 if ( response.hasOwnProperty('result') && response.result === 'failure' ) {
-                    wc_payex_checkout.logError( 'payex-place-order', response );
-                    wc_payex_checkout.onError( response.messages );
+                    wc_sb_checkout.logError( 'sb-place-order', response );
+                    wc_sb_checkout.onError( response.messages );
                 }
             } );
         },
@@ -566,51 +566,51 @@ jQuery( function( $ ) {
 
             fields += '&compatibility=' + compatibility;
 
-            wc_payex_checkout.form.addClass( 'processing' );
-            wc_payex_checkout.block();
+            wc_sb_checkout.form.addClass( 'processing' );
+            wc_sb_checkout.block();
 
-            if ( wc_payex_checkout.xhr ) {
-                wc_payex_checkout.xhr.abort();
+            if ( wc_sb_checkout.xhr ) {
+                wc_sb_checkout.xhr.abort();
             }
 
-            wc_payex_checkout.xhr = $.ajax( {
+            wc_sb_checkout.xhr = $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'payex_update_order',
-                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    action: 'swedbank_pay_update_order',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     data: fields
                 },
                 dataType: 'json'
             } )
                 .always( function ( response ) {
-                    wc_payex_checkout.xhr = false;
-                    wc_payex_checkout.form.removeClass( 'processing' );
-                    wc_payex_checkout.unblock();
+                    wc_sb_checkout.xhr = false;
+                    wc_sb_checkout.form.removeClass( 'processing' );
+                    wc_sb_checkout.unblock();
                 } )
                 .fail( function( jqXHR, textStatus ) {
                     console.log( 'updateOrder error:' + textStatus );
-                    wc_payex_checkout.onError( textStatus );
+                    wc_sb_checkout.onError( textStatus );
                 } )
                 .done( function ( response) {
                     console.log( response );
 
                     if ( response.hasOwnProperty('result') && response.result === 'success' ) {
                         // Refresh Payment Menu
-                        wc_payex_checkout.js_url = response['js_url'];
-                        wc_payex_checkout.refreshPaymentMenu();
+                        wc_sb_checkout.js_url = response['js_url'];
+                        wc_sb_checkout.refreshPaymentMenu();
 
                         return;
                     }
 
                     if ( response.hasOwnProperty('result') && response.result === 'failure' ) {
-                        // SwedenBank Payment returns error that Order update is not available
+                        // SwedBank Payment returns error that Order update is not available
                         if ( response.messages.indexOf( 'Order update is not available.' ) > -1 && ! compatibility ) {
                             // Force reload
                             console.warn( 'refreshPaymentMenu: refresh workaround. Force reload.' );
-                            wc_payex_checkout.updateOrder( true ).done( function ( response ) {
+                            wc_sb_checkout.updateOrder( true ).done( function ( response ) {
                                 if ( response.hasOwnProperty('js_url') ) {
-                                    wc_payex_checkout.initPaymentJS( response.js_url );
+                                    wc_sb_checkout.initPaymentJS( response.js_url );
                                 }
                             } );
 
@@ -630,11 +630,11 @@ jQuery( function( $ ) {
                         $( document.body ).trigger( 'update_checkout' );
                     }
 
-                    wc_payex_checkout.logError( 'payex-update-order', response );
-                    wc_payex_checkout.onError( response.messages );
+                    wc_sb_checkout.logError( 'sb-update-order', response );
+                    wc_sb_checkout.onError( response.messages );
                 } );
 
-                return  wc_payex_checkout.xhr;
+                return  wc_sb_checkout.xhr;
         },
 
         /**
@@ -648,10 +648,10 @@ jQuery( function( $ ) {
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'payex_checkout_customer_profile',
-                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    action: 'swedbank_pay_checkout_customer_profile',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     consumerProfileRef: data.consumerProfileRef
                 },
                 dataType: 'json'
@@ -665,7 +665,7 @@ jQuery( function( $ ) {
                 }
 
                 // Initiate Checkout
-                wc_payex_checkout.initCheckout( data.consumerProfileRef );
+                wc_sb_checkout.initCheckout( data.consumerProfileRef );
             } );
         },
 
@@ -680,23 +680,23 @@ jQuery( function( $ ) {
 
             $( '#change-shipping-info' ).show();
 
-            wc_payex_checkout.block();
+            wc_sb_checkout.block();
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'payex_checkout_get_address',
-                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    action: 'swedbank_pay_checkout_get_address',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     type: type,
                     url: data.url
                 },
                 dataType: 'json'
             } ).always( function ( response ) {
-                wc_payex_checkout.unblock();
+                wc_sb_checkout.unblock();
             } ).done( function ( response) {
                 console.log(response);
                 if (!response.success) {
-                    wc_payex_checkout.logError('payex-address-details', response);
+                    wc_sb_checkout.logError('sb-address-details', response);
                     alert(response.data.message);
                     return;
                 }
@@ -711,7 +711,7 @@ jQuery( function( $ ) {
                         }
 
                         el.prop('readonly', false);
-                        el.closest('.form-row').removeClass('payex-locked');
+                        el.closest('.form-row').removeClass('swedbank-pay-locked');
                         el.val(value).change();
 
                         if (key === 'country' || key === 'state') {
@@ -754,10 +754,10 @@ jQuery( function( $ ) {
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_PayEx_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
                 data: {
-                    action: 'payex_checkout_log_error',
-                    nonce: WC_Gateway_PayEx_Checkout.nonce,
+                    action: 'swedbank_pay_checkout_log_error',
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
                     id: id,
                     data: JSON.stringify( data )
                 },
@@ -767,14 +767,14 @@ jQuery( function( $ ) {
 
         onError: function ( data ) {
             console.log( 'onError', data );
-            wc_payex_checkout.submit_error( '<div class="woocommerce-error">' + data + '</div>' );
+            wc_sb_checkout.submit_error( '<div class="woocommerce-error">' + data + '</div>' );
         },
         submit_error: function( error_message ) {
             $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-            wc_payex_checkout.form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' );
-            wc_payex_checkout.form.removeClass( 'processing' ).unblock();
-            wc_payex_checkout.form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
-            wc_payex_checkout.scroll_to_notices();
+            wc_sb_checkout.form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' );
+            wc_sb_checkout.form.removeClass( 'processing' ).unblock();
+            wc_sb_checkout.form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
+            wc_sb_checkout.scroll_to_notices();
             $( document.body ).trigger( 'checkout_error' );
         },
         scroll_to_notices: function() {
@@ -794,7 +794,7 @@ jQuery( function( $ ) {
     };
 
     $(document).ready( function () {
-        wc_payex_checkout.init( $( "form.checkout, form#order_review, form#add_payment_method" ) );
+        wc_sb_checkout.init( $( "form.checkout, form#order_review, form#add_payment_method" ) );
     } );
 });
 

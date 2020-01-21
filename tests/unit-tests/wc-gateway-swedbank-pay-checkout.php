@@ -1,8 +1,8 @@
 <?php
 
-class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
+class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 	/**
-	 * @var WC_Gateway_Payex_Checkout
+	 * @var WC_Gateway_Swedbank_Pay_Checkout
 	 */
 	private $gateway;
 
@@ -19,14 +19,14 @@ class WC_Unit_Gateway_Payex_Checkout extends WC_Unit_Test_Case {
 
 		$this->wc = WC();
 
-		// Init PayEx Payments plugin
-		$this->gateway              = new WC_Gateway_Payex_Checkout();
+		// Init Swedbank Pay plugin
+		$this->gateway              = new WC_Gateway_Swedbank_Pay_Checkout();
 		$this->gateway->enabled     = 'yes';
 		$this->gateway->testmode    = 'yes';
 		$this->gateway->description = 'Test';
 
 		// Add PayEx to PM List
-		tests_add_filter( 'woocommerce_payment_gateways', array( $this, 'payment_gateways' ) );
+		tests_add_filter( 'woocommerce_payment_gateways', [ $this, 'payment_gateways' ] );
 	}
 
 	/**

@@ -18,36 +18,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Payex_Checkout {
+class WC_Swedbank_Pay_Checkout {
 	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-checkout';
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
+		add_action( 'admin_notices', [ $this, 'display_admin_notices' ] );
 
 		// Activation
-		register_activation_hook( __FILE__, array( $this, 'activate' ) );
+		register_activation_hook( __FILE__, [ $this, 'activate' ] );
 
 		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array(
-			$this,
-			'plugin_action_links'
-		) );
-		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
-		add_action( 'woocommerce_loaded', array(
-			$this,
-			'woocommerce_loaded'
-		), 20 );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'plugin_action_links' ] );
+		add_action( 'plugins_loaded', [ $this, 'init' ], 0 );
+		add_action( 'woocommerce_loaded', [ $this, 'woocommerce_loaded' ], 20 );
 	}
 
 	/**
 	 * Activate Plugin
 	 */
 	public function activate() {
-		// Required plugin: WooCommerce PayEx PSP Gateway
-		if ( class_exists( 'WC_Payex_Psp', false ) ) {
+		// Required plugin: Swedbank Pay WooCommerce Payments
+		if ( class_exists( 'WC_Swedbank_Pay', false ) ) {
 			return true;
 		}
 
@@ -72,7 +66,7 @@ class WC_Payex_Checkout {
 
 				WC_Admin_Notices::add_custom_notice(
 					'wc-payex-checkout-notice',
-					__( 'Required Swedbank Pay WooCommerce payments plugin was automatically installed.', WC_Payex_Checkout::TEXT_DOMAIN )
+					__( 'Required Swedbank Pay WooCommerce payments plugin was automatically installed.', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN )
 				);
 			}
 		} catch ( \Exception $e ) {
@@ -97,9 +91,9 @@ class WC_Payex_Checkout {
 	 * @return array
 	 */
 	public function plugin_action_links( $links ) {
-		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __( 'Settings', WC_Payex_Checkout::TEXT_DOMAIN ) . '</a>'
-		);
+		$plugin_links = [
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __( 'Settings', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN ) . '</a>'
+		];
 
 		return array_merge( $plugin_links, $links );
 	}
@@ -110,7 +104,7 @@ class WC_Payex_Checkout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( WC_Payex_Checkout::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( WC_Swedbank_Pay_Checkout::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -118,11 +112,11 @@ class WC_Payex_Checkout {
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-		if ( ! class_exists( 'WC_Payex_Psp', false ) ) {
+		if ( ! class_exists( 'WC_Swedbank_Pay', false ) ) {
 			return;
 		}
 
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-checkout.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-checkout.php' );
 	}
 
 	/**
@@ -151,7 +145,7 @@ class WC_Payex_Checkout {
 		delete_transient( 'wc-payex-checkout-notice' );
 
 		// Deactivate plugin
-		deactivate_plugins( array( __FILE__ ), true );
+		deactivate_plugins( [ __FILE__ ], true );
 	}
 
 	/**
@@ -165,11 +159,11 @@ class WC_Payex_Checkout {
 	public static function add_admin_notice( $message, $type = 'error' ) {
 		wp_cache_delete( 'wc-payex-checkout-notice', 'transient' );
 		if ( ! ( $notices = get_transient( 'wc-payex-checkout-notice' ) ) ) {
-			$notices = array();
+			$notices = [];
 		}
 
 		if ( ! isset( $notices[ $type ] ) ) {
-			$notices[ $type ] = array();
+			$notices[ $type ] = [];
 		}
 
 		$notices[ $type ][] = $message;
@@ -183,7 +177,7 @@ class WC_Payex_Checkout {
 	 */
 	public static function get_admin_notices() {
 		if ( ! ( $notices = get_transient( 'wc-payex-checkout-notice' ) ) ) {
-			$notices = array();
+			$notices = [];
 		}
 
 		return $notices;
@@ -237,9 +231,9 @@ class WC_Payex_Checkout {
 
 		// Install plugin
 		// Get latest release from Github
-		$response = wp_remote_get( 'https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments/releases/latest', array(
-			'headers' => array( 'Accept' => 'application/vnd.github.v3+json' ),
-		) );
+		$response = wp_remote_get( 'https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments/releases/latest', [
+			'headers' => [ 'Accept' => 'application/vnd.github.v3+json' ],
+		] );
 		if ( is_wp_error( $response ) ) {
 			throw new Exception( $response->get_error_message() );
 		}
@@ -297,8 +291,8 @@ class WC_Payex_Checkout {
 		// Remove temp directory
 		$wp_filesystem->rmdir( $tmpdir );
 
-		throw new Exception( 'Failed to install Swedbank Pay WooCommerce payments plugin' );
+		throw new Exception( 'Failed to install "Swedbank Pay WooCommerce Payments" plugin' );
 	}
 }
 
-new WC_Payex_Checkout();
+new WC_Swedbank_Pay_Checkout();
