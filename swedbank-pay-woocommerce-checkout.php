@@ -7,11 +7,11 @@
  * Author URI: https://www.swedbankpay.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 2.1.1
+ * Version: 2.2.0
  * Text Domain: swedbank-pay-woocommerce-checkout
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 3.6.4
+ * WC tested up to: 3.8.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
