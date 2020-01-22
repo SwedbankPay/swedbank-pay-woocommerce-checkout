@@ -3,7 +3,7 @@ Contributors: payex
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, swedbank, payex, payment gateway, woocommerce
 Requires at least: 4.7
 Tested up to: 5.2
-Stable tag: 2.2.0
+Stable tag: 3.0.0
 License: Apache License 2.0
 License URI: http://www.apache.org/licenses/LICENSE-2.0
 

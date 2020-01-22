@@ -1,4 +1,4 @@
-Version 2.2.0
+Version 3.0.0
 * Updates for Swedbank Pay
 * Disallow some special characters in product reference
 * Update styles
