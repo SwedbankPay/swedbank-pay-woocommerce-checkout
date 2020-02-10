@@ -1584,7 +1584,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 				'description'  => $order_item->get_name(),
 				'quantity'     => $qty,
 				'quantityUnit' => 'pcs',
-				'unitPrice'    => round( $price / $qty * 100 ),
+				'unitPrice'    => round( $priceWithTax / $qty * 100 ),
 				'vatPercent'   => round( $taxPercent * 100 ),
 				'amount'       => round( $priceWithTax * 100 ),
 				'vatAmount'    => round( $tax * 100 )
