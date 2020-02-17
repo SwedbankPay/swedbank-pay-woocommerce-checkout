@@ -1606,7 +1606,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 				'class' => 'ProductGroup1',
 				'quantity' => 1,
 				'quantityUnit' => 'pcs',
-				'unitPrice' => round( $shipping * 100 ),
+				'unitPrice' => round( $shippingWithTax * 100 ),
 				'vatPercent' => round( $taxPercent * 100 ),
 				'amount' => round( $shippingWithTax * 100 ),
 				'vatAmount' => round( $tax * 100 )
@@ -1628,7 +1628,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 				'class' => 'ProductGroup1',
 				'quantity' => 1,
 				'quantityUnit' => 'pcs',
-				'unitPrice' => round( $fee * 100 ),
+				'unitPrice' => round( $feeWithTax * 100 ),
 				'vatPercent' => round( $taxPercent * 100 ),
 				'amount' => round( $feeWithTax * 100 ),
 				'vatAmount' => round( $tax * 100 )
@@ -1649,7 +1649,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 				'class' => 'ProductGroup1',
 				'quantity' => 1,
 				'quantityUnit' => 'pcs',
-				'unitPrice' => round( - 100 * $discount ),
+				'unitPrice' => round( - 100 * $discountWithTax ),
 				'vatPercent' => round( 100 * $taxPercent ),
 				'amount' => round( - 100 * $discountWithTax ),
 				'vatAmount' => round( - 100 * $tax )
