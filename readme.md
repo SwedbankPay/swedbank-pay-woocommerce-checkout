@@ -1,5 +1,14 @@
 # Swedbank Pay WooCommerce Checkout
 
+![Swedbank Pay WooCommerce Checkout][opengraph-image]
+
+## About
+
+**IMPORTANT**: This plugin is at an early stage and not yet used in production.
+We do not offer support for this version, but will release supported versions
+in the future. Feel free to play around, but for full functionality and support,
+please wait for the supported, stable release.
+
 This plugin provides the Swedbank Pay Checkout for WooCommerce.
 
 * Contributors: payex
@@ -28,3 +37,5 @@ Swedbank Pay Payments Gateway for WooCommerce. Payment gateway allows to accept 
 * WooCommerce 3 or greater is recommended
 
 Visit the [Installation guide](https://github.com/SwedbankPay/swedbank-pay-woocommerce-checkout/blob/master/installation-guide.md) for a detailed information.
+
+[opengraph-image]: https://repository-images.githubusercontent.com/211837771/f4583f00-53ed-11ea-907a-6d8016202c25
