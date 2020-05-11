@@ -805,6 +805,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 			$order = wc_get_order( $order );
 		}
 
+		if ( ! $amount ) {
+			$amount = $order->get_total();
+		}
+
 		$payment_id = get_post_meta( $order->get_id(), '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new Exception( 'Unable to get payment ID' );
@@ -829,7 +833,58 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 			return;
 		}
 
-		parent::capture_payment( $order, $amount );
+		//parent::capture_payment( $order, $amount );
+
+		$paymentorder_id = get_post_meta( $order->get_id(), '_payex_paymentorder_id', true );
+		$result = $this->request( 'GET', $paymentorder_id );
+		$capture_href = self::get_operation( $result['operations'], 'create-paymentorder-capture' );
+		if ( empty( $capture_href ) ) {
+			throw new Exception( __( 'Capture unavailable', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN ) );
+		}
+
+		// Order Info
+		$info = $this->get_order_info( $order );
+
+		// Get Order UUID
+		$payeeReference = swedbank_pay_uuid( uniqid( $order->get_id() ) );
+
+		$orderItems = apply_filters( 'swedbank_pay_checkout_order_items', [], $order );
+
+		$params = [
+			'transaction' => [
+				'amount'         => (int) round( $amount * 100 ),
+				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
+				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
+				'payeeReference' => $payeeReference,
+				'orderItems' => $orderItems
+
+			]
+		];
+		$result = $this->request( 'POST', $capture_href, $params );
+
+		// Save transaction
+		$transaction = $result['capture']['transaction'];
+		$this->transactions->import( $transaction, $order->get_id() );
+
+		switch ( $transaction['state'] ) {
+			case 'Completed':
+				$order->update_meta_data( '_payex_payment_state', 'Captured' );
+				$order->update_meta_data( '_payex_transaction_capture', $transaction['id'] );
+				$order->save_meta_data();
+
+				$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN ) );
+				$order->payment_complete( $transaction['number'] );
+
+				break;
+			case 'Initialized':
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN ), $transaction['state'] ) );
+				break;
+			case 'Failed':
+			default:
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', WC_Swedbank_Pay_Checkout::TEXT_DOMAIN );
+				throw new Exception( $message );
+				break;
+		}
 	}
 
 	/**
