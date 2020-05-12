@@ -792,6 +792,29 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 	}
 
 	/**
+	 * Check is Capture possible
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool $amount
+	 *
+	 * @return bool
+	 */
+	public function can_capture( $order, $amount = false ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$paymentorder_id = get_post_meta( $order->get_id(), '_payex_paymentorder_id', true );
+		$result = $this->request( 'GET', $paymentorder_id );
+		$capture_href = self::get_operation( $result['operations'], 'create-paymentorder-capture' );
+		if ( empty( $capture_href ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Capture
 	 *
 	 * @param WC_Order|int $order
