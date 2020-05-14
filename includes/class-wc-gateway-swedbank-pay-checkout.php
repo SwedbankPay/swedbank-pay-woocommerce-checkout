@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-use SwedbankPay\Checkout\WooCommerce\WC_Adapter;
+use SwedbankPay\Core\Adapter\WC_Adapter;
 use SwedbankPay\Checkout\WooCommerce\WC_Background_Swedbank_Pay_Queue;
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Core\Core;

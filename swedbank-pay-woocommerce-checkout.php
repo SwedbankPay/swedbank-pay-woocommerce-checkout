@@ -87,7 +87,6 @@
 	 * @return void
 	 */
 	public function woocommerce_loaded() {
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-adapter.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-checkout.php' );
 
 		// Register Gateway

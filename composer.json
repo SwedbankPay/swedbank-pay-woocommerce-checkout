@@ -7,6 +7,15 @@
     "prefer-stable": true,
     "minimum-stability": "dev",
     "require": {
-        "php": ">=7.0"
-    }
+        "php": ">=7.0",
+        "aait/php-name-parser": "^1.0",
+        "ramsey/uuid": "^3.7",
+        "swedbank-pay/swedbank-pay-woocommerce-core": "dev-master"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/SwedbankPay/swedbank-pay-woocommerce-core"
+        }
+    ]
 }

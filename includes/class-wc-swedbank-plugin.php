@@ -77,46 +77,32 @@ class WC_Swedbank_Plugin {
 	}
 
 	public function includes() {
-		$vendors_dir = dirname( __FILE__ ) . '/../vendors';
-
-		//if ( ! class_exists( '\\SwedbankPay\\Api\\Client\\Client', false ) ) {
-		//require_once $vendors_dir.'/swedbank-pay-sdk-php/vendor/autoload.php';
-		//}
-
-		spl_autoload_register(
-			function ( $class_name ) {
-				$auto_load_path = dirname( __FILE__ ) . '/../vendors/swedbank-pay-sdk-php/src/';
-				$class_file     = $auto_load_path . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
-				if ( file_exists( $class_file ) ) {
-					  require_once $class_file;
-
-					  return true;
-				}
-
-				return false;
-			}
-		);
-
-		spl_autoload_register(
-			function ( $class_name ) {
-				$auto_load_path = dirname( __FILE__ ) . '/../vendors/swedbank-pay-core-library/src/';
-				$class_file     = $auto_load_path . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
-				if ( file_exists( $class_file ) ) {
-					  require_once $class_file;
-
-					  return true;
-				}
-
-				return false;
-			}
-		);
-
-		if ( class_exists( '\\Ramsey\\Uuid\\Uuid', false ) ) {
-			require_once $vendors_dir . '/ramsey-uuid/vendor/autoload.php';
+		if ( ! defined( 'VERSION' ) ) {
+			define( 'VERSION', '1.0.0' );
 		}
 
-		if ( ! class_exists( 'FullNameParser', false ) ) {
-			require_once $vendors_dir . '/php-name-parser/vendor/autoload.php';
+		$vendors_dir = dirname( __FILE__ ) . '/../vendor';
+
+		// Check if the payments plugin was installed
+		include_once ABSPATH . '/wp-admin/includes/plugin.php';
+		$plugins = get_plugins();
+		foreach ( $plugins as $file => $plugin ) {
+			if ( strpos( $file, 'swedbank-pay-woocommerce-payments.php' ) !== false ) {
+				if ( file_exists( dirname( $file ) . '/vendor/autoload.php') ) {
+					$vendors_dir = dirname( $file ) . '/vendor';
+					break;
+				}
+			}
+		}
+
+		if ( file_exists( $vendors_dir . '/autoload.php' ) ) {
+			// Prevent conflicts of the composer
+			$content = file_get_contents( $vendors_dir . '/composer/autoload_real.php' );
+			$matches = array();
+			preg_match('/class\s+(\w+)(.*)?/', $content, $matches, PREG_OFFSET_CAPTURE, 0);
+			if ( ! isset( $matches[1] ) || ! class_exists( $matches[1][0], false ) ) {
+				require_once $vendors_dir . '/autoload.php';
+			}
 		}
 
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
