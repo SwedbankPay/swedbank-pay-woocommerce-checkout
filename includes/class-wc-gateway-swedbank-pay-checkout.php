@@ -589,7 +589,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Gateway_Swedbank_Pay_Cc
 
 		// Add subsite
 		if ( ! empty( $this->subsite ) ) {
-			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
+			$params['paymentorder']['payeeInfo']['subsite'] = $this->subsite;
 		}
 
 		// Get Consumer Profile
