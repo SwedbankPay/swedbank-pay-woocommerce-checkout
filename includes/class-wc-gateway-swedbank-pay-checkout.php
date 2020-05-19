@@ -990,7 +990,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public function update_address( $order_id ) {
 		$paymentorder_id = get_post_meta( $order_id, '_payex_paymentorder_id', true );
 		if ( ! empty( $paymentorder_id ) ) {
-			$result = $this->request( 'GET', $paymentorder_id . '/payers' );
+			$result = $this->core->request( 'GET', $paymentorder_id . '/payers' );
 
 			if ( ! isset( $result['payer'] ) ) {
 				return;
