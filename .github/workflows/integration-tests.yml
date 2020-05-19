@@ -1,0 +1,53 @@
+name: Integration tests
+
+on:
+  push:
+    branches:
+    - '*'
+    tags:
+    - '*'
+  pull_request:
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-16.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: swedbank-pay-woocommerce-checkout
+
+      - name: WooCommerce Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: woocommerce/woocommerce
+          ref: 4.1.0
+          path: woocommerce
+
+      - name: Set up MySQL
+        run: sudo systemctl start mysql.service
+
+      - name: Build WooCommerce Test Enviroment
+        run: |
+          cd $GITHUB_WORKSPACE/woocommerce
+          bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
+          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
+          composer install
+
+      - name: Run tests
+        uses: php-actions/phpunit@v1
+        env:
+          MERCHANT_TOKEN: ${{ secrets.MERCHANT_TOKEN }}
+          PAYEE_ID: ${{ secrets.PAYEE_ID }}
+        run: |
+          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
+          phpunit
+
+      - name: Run PHPCS inspection
+        uses: rtCamp/action-phpcs-code-review@v2.0.2
+        env:
+          SKIP_FOLDERS: "woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js"
+        with:
+          args: "WordPress-Core"
