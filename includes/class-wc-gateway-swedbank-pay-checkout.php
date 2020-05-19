@@ -902,7 +902,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			$this->core->refund( $order->get_id(), $amount );
+			$this->core->refundCheckout( $order->get_id(), $amount, 0 );
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -942,7 +942,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			$this->core->capture( $order->get_id(), $amount, $vat_amount );
+			$order_data = $this->adapter->getOrderData( $order->get_id() );
+			$this->core->captureCheckout( $order->get_id(), $amount, $vat_amount, $order_data[ OrderInterface::ITEMS ] );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
 		}
@@ -974,7 +975,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			$this->core->cancel( $order->get_id() );
+			$this->core->cancelCheckout( $order->get_id() );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
 		}

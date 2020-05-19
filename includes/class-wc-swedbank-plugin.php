@@ -218,6 +218,11 @@ class WC_Swedbank_Plugin {
 			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 			10
 		);
+		remove_action(
+			'woocommerce_order_status_changed',
+			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+			10
+		);
 
 		$payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
@@ -271,6 +276,11 @@ class WC_Swedbank_Plugin {
 		add_action(
 			'woocommerce_order_status_changed',
 			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+			10
+		);
+		add_action(
+			'woocommerce_order_status_changed',
+			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 			10
 		);
 	}
