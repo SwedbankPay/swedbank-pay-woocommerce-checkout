@@ -999,7 +999,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 			// Parse name field
 			$parser = new \ADCI\FullNameParser\Parser();
-			$name   = $parser->parse_name( $result['payer']['shippingAddress']['addressee'] );
+			$name   = $parser->parse( $result['payer']['shippingAddress']['addressee'] );
 			$co     = ! empty( $result['payer']['shippingAddress']['coAddress'] ) ? 'c/o ' . $result['payer']['shippingAddress']['coAddress'] : '';
 
 			$address = array(
@@ -1186,7 +1186,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 		// Parse name field
 		$parser = new \ADCI\FullNameParser\Parser();
-		$name   = $parser->parse_name( $address['addressee'] );
+		$name   = $parser->parse( $address['addressee'] );
 
 		$output = array(
 			'first_name' => $name->getFirstName(),
