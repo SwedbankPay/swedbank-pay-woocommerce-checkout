@@ -998,13 +998,13 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			}
 
 			// Parse name field
-			$parser = new \FullNameParser();
+			$parser = new \ADCI\FullNameParser\Parser();
 			$name   = $parser->parse_name( $result['payer']['shippingAddress']['addressee'] );
 			$co     = ! empty( $result['payer']['shippingAddress']['coAddress'] ) ? 'c/o ' . $result['payer']['shippingAddress']['coAddress'] : '';
 
 			$address = array(
-				'first_name' => $name['fname'],
-				'last_name'  => $name['lname'],
+				'first_name' => $name->getFirstName(),
+				'last_name'  => trim( $name->getMiddleName() . ' ' . $name->getLastName() ),
 				'company'    => '',
 				'email'      => $result['payer']['email'],
 				'phone'      => $result['payer']['msisdn'],
@@ -1185,12 +1185,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$address = isset( $result['billingAddress'] ) ? $result['billingAddress'] : $result['shippingAddress'];
 
 		// Parse name field
-		$parser = new \FullNameParser();
+		$parser = new \ADCI\FullNameParser\Parser();
 		$name   = $parser->parse_name( $address['addressee'] );
 
 		$output = array(
-			'first_name' => $name['fname'],
-			'last_name'  => $name['lname'],
+			'first_name' => $name->getFirstName(),
+			'last_name'  => trim( $name->getMiddleName() . ' ' . $name->getLastName() ),
 			'country'    => $address['countryCode'],
 			'postcode'   => $address['zipCode'],
 			'address_1'  => $address['streetAddress'],
