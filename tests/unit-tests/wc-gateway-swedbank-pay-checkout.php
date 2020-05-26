@@ -87,39 +87,6 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$this->assertNull( $result );
 	}
 
-	public function test_can_capture() {
-		/** @var WC_Order $order */
-		$order = WC_Helper_Order::create_order();
-		$order->update_meta_data( '_payex_payment_state', 'Authorized' );
-		$order->save();
-
-		$result = $this->gateway->can_capture( $order );
-		$this->assertTrue( $result );
-	}
-
-	public function test_can_cancel() {
-		/** @var WC_Order $order */
-		$order = WC_Helper_Order::create_order();
-		$order->update_meta_data( '_payex_payment_state', 'Captured' );
-		$order->save();
-
-		$result = $this->gateway->can_cancel( $order );
-		$this->assertFalse( $result );
-	}
-
-	/**
-	 * @expectedException Exception
-	 */
-	public function test_can_refund() {
-		/** @var WC_Order $order */
-		$order = WC_Helper_Order::create_order();
-		$order->update_meta_data( '_payex_payment_id', '/invalid/payment/id' );
-		$order->update_meta_data( '_payex_payment_state', 'Captured' );
-		$order->save();
-
-		$this->gateway->can_refund( $order );
-	}
-
 	/**
 	 * @expectedException Exception
 	 */
@@ -136,11 +103,9 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$this->gateway->cancel_payment( $order );
 	}
 
-	/**
-	 * @expectedException Exception
-	 */
-	public function test_refund_payment() {
-		$order = WC_Helper_Order::create_order();
-		$this->gateway->refund_payment( $order );
+	public function test_process_refund() {
+		$order  = WC_Helper_Order::create_order();
+		$result = $this->gateway->process_refund( $order->get_id(), $order->get_total(), 'Test' );
+		$this->assertInstanceOf( 'WP_Error', $result );
 	}
 }

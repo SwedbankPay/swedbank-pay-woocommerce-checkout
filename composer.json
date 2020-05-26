@@ -7,6 +7,9 @@
     "prefer-stable": true,
     "minimum-stability": "dev",
     "require": {
-        "php": ">=7.0"
+        "php": ">=7.0",
+        "adci/full-name-parser": "^0.2.4",
+        "ramsey/uuid": "^3.7",
+        "swedbank-pay/swedbank-pay-woocommerce-core": "^1.0"
     }
 }
