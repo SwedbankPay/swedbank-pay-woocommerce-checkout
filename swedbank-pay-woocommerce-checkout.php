@@ -43,6 +43,11 @@
 	 * Install
 	 */
 	public function install() {
+		// Check dependencies
+		if ( ! file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+			die( 'This plugin can\'t be activated. Please run `composer install` to install dependencies.' );
+		}
+
 		parent::install();
 
 		// Set Version

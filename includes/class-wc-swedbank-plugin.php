@@ -31,9 +31,6 @@ class WC_Swedbank_Plugin {
 		// Includes
 		$this->includes();
 
-		// Activation
-		register_activation_hook( __FILE__, array( $this, 'install' ) );
-
 		// Actions
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
