@@ -598,6 +598,42 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					return $this->process_payment( $order_id );
 				}
 
+				// PaymentOrder.Payer.BillingAddress.Msisdn: The Msisdn is not valid, no configuration for +45739000001 exist.
+				if ( in_array(
+					$problem['name'],
+					[ 'PaymentOrder.Payer.BillingAddress.Msisdn', 'PaymentOrder.Payer.ShippingAddress.Msisdn' ],
+					true )
+				) {
+					if ( $order->get_user_id() > 0 ) {
+						$customer = new WC_Customer( $order->get_user_id(), true );
+						$customer->set_billing_phone( '' );
+						$customer->save();
+
+						clean_user_cache( $customer->get_id() );
+					}
+
+					$order->set_billing_phone( '' );
+					$order->save();
+					clean_post_cache( $order->get_id() );
+
+					wc_add_notice(
+						__(
+							'Phone number is invalid. Please change it and submit the form again.',
+							'swedbank-pay-woocommerce-checkout'
+						),
+						'error'
+					);
+
+					return array(
+						'result'   => 'failure',
+						'messages' => __(
+							'Phone number is invalid. Please change it and submit the form again.',
+							'swedbank-pay-woocommerce-checkout'
+						),
+						'reload'   => true,
+					);
+				}
+
 				// consumerProfileRef: Reference *** is not active, unable to complete
 				if ( 'consumerProfileRef' === $problem['name'] ) {
 					// Remove the inactive customer reference
