@@ -598,6 +598,42 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					return $this->process_payment( $order_id );
 				}
 
+				// PaymentOrder.Payer.BillingAddress.Msisdn: The Msisdn is not valid, no configuration for +45739000001 exist.
+				if ( in_array(
+					$problem['name'],
+					[ 'PaymentOrder.Payer.BillingAddress.Msisdn', 'PaymentOrder.Payer.ShippingAddress.Msisdn' ],
+					true )
+				) {
+					if ( $order->get_user_id() > 0 ) {
+						$customer = new WC_Customer( $order->get_user_id(), true );
+						$customer->set_billing_phone( '' );
+						$customer->save();
+
+						clean_user_cache( $customer->get_id() );
+					}
+
+					$order->set_billing_phone( '' );
+					$order->save();
+					clean_post_cache( $order->get_id() );
+
+					wc_add_notice(
+						__(
+							'Phone number is invalid. Please change it and submit the form again.',
+							'swedbank-pay-woocommerce-checkout'
+						),
+						'error'
+					);
+
+					return array(
+						'result'   => 'failure',
+						'messages' => __(
+							'Phone number is invalid. Please change it and submit the form again.',
+							'swedbank-pay-woocommerce-checkout'
+						),
+						'reload'   => true,
+					);
+				}
+
 				// consumerProfileRef: Reference *** is not active, unable to complete
 				if ( 'consumerProfileRef' === $problem['name'] ) {
 					// Remove the inactive customer reference
@@ -803,6 +839,19 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		try {
+			// Verify the order key
+			$order_id  = absint(  wc_clean( $_GET['order_id'] ) ); // WPCS: input var ok, CSRF ok.
+			$order_key = empty( $_GET['key'] ) ? '' : wc_clean( wp_unslash( $_GET['key'] ) ); // WPCS: input var ok, CSRF ok.
+
+			if ( empty( $order_id ) || empty( $order_id ) ) {
+				throw new Exception( 'An order ID or order key wasn\'t provided' );
+			}
+
+			$order = wc_get_order( $order_id );
+			if ( ! $order || ! hash_equals( $order->get_order_key(), $order_key ) ) {
+				throw new Exception( 'A provided order key has been invalid.' );
+			}
+
 			if ( ! isset( $data['paymentOrder'] ) || ! isset( $data['paymentOrder']['id'] ) ) {
 				throw new \Exception( 'Error: Invalid paymentOrder value' );
 			}
