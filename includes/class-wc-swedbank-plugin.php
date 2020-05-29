@@ -19,6 +19,10 @@ class WC_Swedbank_Plugin {
 		'payex_psp_swish',
 	);
 
+	const DB_VERSION = '1.0.0';
+	const DB_VERSION_SLUG = 'swedbank_pay_checkout_version';
+	const ADMIN_UPGRADE_PAGE_SLUG = 'swedbank-pay-checkout-upgrade';
+
 	/**
 	 * @var WC_Background_Swedbank_Pay_Queue
 	 */
@@ -71,6 +75,16 @@ class WC_Swedbank_Plugin {
 			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
 			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
 		}
+
+		// Add admin menu
+		add_action( 'admin_menu', array( $this, 'admin_menu' ), 99 );
+
+		// Add Upgrade Notice
+		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
+		     current_user_can( 'manage_woocommerce' )
+		) {
+			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+		}
 	}
 
 	public function includes() {
@@ -113,8 +127,8 @@ class WC_Swedbank_Plugin {
 		WC_Swedbank_Pay_Transactions::instance()->install_schema();
 
 		// Set Version
-		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
-			add_option( 'woocommerce_payex_psp_version', '1.1.0' );
+		if ( ! get_option( self::DB_VERSION_SLUG ) ) {
+			add_option( self::DB_VERSION_SLUG, self::DB_VERSION );
 		}
 	}
 
@@ -477,5 +491,61 @@ class WC_Swedbank_Plugin {
 	 */
 	public function maybe_process_queue() {
 		self::$background_process->dispatch();
+	}
+
+	/**
+	 * Provide Admin Menu items
+	 */
+	public function admin_menu() {
+		// Add Upgrade Page
+		global $_registered_pages;
+
+		$hookname = get_plugin_page_hookname( self::ADMIN_UPGRADE_PAGE_SLUG, '' );
+		if ( ! empty( $hookname ) ) {
+			add_action( $hookname, __CLASS__ . '::upgrade_page' );
+		}
+
+		$_registered_pages[ $hookname ] = true;
+	}
+
+	/**
+	 * Upgrade Page
+	 */
+	public static function upgrade_page() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
+		// Run Database Update
+		include_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-update.php' );
+		WC_Swedbank_Pay_Update::update();
+
+		echo esc_html__( 'Upgrade finished.', 'swedbank-pay-woocommerce-payments' );
+	}
+
+	/**
+	 * Upgrade Notice
+	 */
+	public static function upgrade_notice() {
+		?>
+		<div id="message" class="error">
+			<p>
+				<?php
+				echo esc_html__(
+					'Warning! Swedbank Pay Checkout plugin requires to update the database structure.',
+					'swedbank-pay-woocommerce-payments'
+				);
+				echo ' ' . sprintf(
+					/* translators: 1: start tag 2: end tag */                        esc_html__(
+						'Please click %1$s here %2$s to start upgrade.',
+						'swedbank-pay-woocommerce-payments'
+					),
+						'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::ADMIN_UPGRADE_PAGE_SLUG ) ) . '">',
+						'</a>'
+					);
+				?>
+			</p>
+		</div>
+		<?php
 	}
 }
