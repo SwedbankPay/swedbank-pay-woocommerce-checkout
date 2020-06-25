@@ -1,5 +1,5 @@
 === Swedbank Pay WooCommerce Checkout ===
-Contributors: payex
+Contributors: swedbankpay
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, swedbank, payex, payment gateway, woocommerce
 Requires at least: 5.0
 Tested up to: 5.3

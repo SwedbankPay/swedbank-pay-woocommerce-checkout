@@ -11,7 +11,7 @@ support, please wait for a future, stable release.
 
 This plugin provides the Swedbank Pay Checkout for WooCommerce.
 
-* Contributors: payex
+* Contributors: swedbankpay
 * Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, swedbank, payex, payment gateway, woocommerce
 * Requires at least: 5.0
 * Tested up to: 5.3
