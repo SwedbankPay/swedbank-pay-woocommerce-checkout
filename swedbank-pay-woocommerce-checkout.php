@@ -95,7 +95,7 @@
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-checkout.php' );
 
 		// Register Gateway
-		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Checkout' );
+		WC_Swedbank_Pay_Checkout::register_gateway( 'WC_Gateway_Swedbank_Pay_Checkout' );
 	}
 }
 
