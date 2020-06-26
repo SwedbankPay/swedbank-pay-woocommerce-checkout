@@ -268,12 +268,32 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'type'        => 'text',
 				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
 				'default'     => $this->merchant_token,
+				'custom_attributes' => array(
+					'required' => 'required'
+				),
+				'sanitize_callback' => function( $value ) {
+					if ( empty( $value ) ) {
+						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+					}
+
+					return $value;
+				},
 			),
 			'payee_id'               => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-checkout' ),
 				'type'        => 'text',
 				'description' => __( 'Payee Id', 'swedbank-pay-woocommerce-checkout' ),
 				'default'     => $this->payee_id,
+				'custom_attributes' => array(
+					'required' => 'required'
+				),
+				'sanitize_callback' => function( $value ) {
+					if ( empty( $value ) ) {
+						throw new Exception( __( '"Payee Id" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+					}
+
+					return $value;
+				},
 			),
 			'subsite'                => array(
 				'title'       => __( 'Subsite', 'swedbank-pay-woocommerce-checkout' ),
@@ -367,6 +387,17 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'default' => $this->reject_corporate_cards,
 			),
 		);
+	}
+
+	/**
+	 * Output the gateway settings screen.
+	 *
+	 * @return void
+	 */
+	public function admin_options() {
+		$this->display_errors();
+
+		parent::admin_options();
 	}
 
 	/**
