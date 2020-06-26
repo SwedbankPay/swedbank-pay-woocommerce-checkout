@@ -789,7 +789,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 		// Change a payment method
 		// or process orders that have zero amount
-		if ( (float) $order->get_total() === 0 || self::wcs_is_payment_change() ) {
+		if ( (float) $order->get_total() < 0.01 || self::wcs_is_payment_change() ) {
 			if ( absint( $token_id ) > 0 ) {
 				// Replace the token to another saved before
 				$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
@@ -866,7 +866,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					'result'   => 'success',
 					'redirect' => $this->get_return_url( $order ),
 				);
-			} elseif ( (float) $order->get_total() === 0 || self::wcs_is_payment_change() ) {
+			} elseif ( (float) $order->get_total() < 0.01 || self::wcs_is_payment_change() ) {
 				// Initiate new payment card
 				$this->is_change_credit_card = true;
 				$result                      = $this->core->initiatePaymentOrderVerify( $order->get_id() );
