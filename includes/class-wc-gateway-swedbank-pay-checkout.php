@@ -57,6 +57,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $culture = 'en-US';
 
 	/**
+	 * Auto Capture
+	 * @var string
+	 */
+	public $auto_capture = 'no';
+
+	/**
 	 * Use Instant Checkout
 	 * @var string
 	 */
@@ -174,11 +180,11 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
 		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->auto_capture     = 'no';
 		$this->save_cc          = 'no';
 
 		// Reject Cards
@@ -394,6 +400,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					'swedbank-pay-woocommerce-checkout'
 				),
 				'default'     => $this->culture,
+			),
+			'auto_capture'           => array(
+				'title'   => __( 'Auto Capture', 'swedbank-pay-woocommerce-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable Auto Capture', 'swedbank-pay-woocommerce-checkout' ),
+				'default' => $this->auto_capture,
 			),
 			'instant_checkout'       => array(
 				'title'   => __(
