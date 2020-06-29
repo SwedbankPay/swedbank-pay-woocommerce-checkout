@@ -136,7 +136,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 
 			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
-			/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
+			/** @var \WC_Gateway_Swedbank_Pay_Checkout $gateway */
 			$gateway = isset( $gateways[ $item['payment_method_id'] ] ) ? $gateways[ $item['payment_method_id'] ] : false;
 			if ( ! $gateway ) {
 				throw new \Exception(
@@ -147,6 +147,11 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 				);
 			}
 
+			// Verify fields of callBack. Field paymentOrder, payment, transaction are mandatory
+			if ( ! isset( $data['paymentOrder'] ) || ! isset( $data['paymentOrder']['id'] ) ) {
+				throw new \Exception( 'Error: Invalid paymentOrder value' );
+			}
+
 			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
 				throw new \Exception( 'Error: Invalid payment value' );
 			}
@@ -155,11 +160,20 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 				throw new \Exception( 'Error: Invalid transaction number' );
 			}
 
-			// Get Order by Payment Id
-			$payment_id = $data['payment']['id'];
-			$order_id   = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
+			// Use orderReference as Order ID if was defined
+			$order_id = null;
+			if ( isset( $data['orderReference' ] ) ) {
+				$order_id = $data['orderReference' ];
+			}
+
+			// Fetch payment info
+			$result           = $gateway->core->fetchPaymentInfo( $data['paymentOrder']['id'], 'currentPayment,payeeInfo' );
+			$payment_order_id = $result['paymentOrder']['id'];
+			$payment_id       = $result['paymentOrder']['currentPayment']['payment']['id'];
+
+			// Workaround if orderReference wasn't defined
 			if ( ! $order_id ) {
-				throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
+				$order_id = $result['paymentOrder']['currentPayment']['payment']['orderReference'];
 			}
 
 			// Get Order
@@ -167,6 +181,11 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			if ( ! $order ) {
 				throw new \Exception( sprintf( 'Error: Failed to get order by Id %s', $order_id ) );
 			}
+
+			// Save Order Payment Id
+			$order->update_meta_data( '_payex_paymentorder_id', $payment_order_id );
+			$order->update_meta_data( '_payex_payment_id', $payment_id );
+			$order->save_meta_data();
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: Validation error: %s', $e->getMessage() ) );
 
@@ -189,7 +208,16 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			// Process transaction
 			try {
 				// Disable status change hook
-				remove_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10 );
+				remove_action(
+					'woocommerce_order_status_changed',
+					'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+					10
+				);
+				remove_action(
+					'woocommerce_order_status_changed',
+					'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+					10
+				);
 
 				$gateway->core->processTransaction( $order->get_id(), $transaction );
 			} catch ( \Exception $e ) {
@@ -197,7 +225,16 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			}
 
 			// Enable status change hook
-			add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
+			add_action(
+				'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
+			add_action(
+				'woocommerce_order_status_changed',
+				'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
 			return false;
 		} catch ( \Exception $e ) {
