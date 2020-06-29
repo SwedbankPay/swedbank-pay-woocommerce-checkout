@@ -56,7 +56,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 */
 	public $culture = 'en-US';
 
-
 	/**
 	 * Auto Capture
 	 * @var string
@@ -188,7 +187,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-    $this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->logo_url         = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
@@ -239,7 +238,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			array(
 				'checkout_get_address',
 				'checkout_customer_profile',
-				'checkin',
 				'place_order',
 				'update_order',
 				'checkout_log_error',
@@ -249,11 +247,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			add_action( 'wp_ajax_nopriv_swedbank_pay_' . $action, array( $this, 'ajax_swedbank_pay_' . $action ) );
 		}
 
+		// Check-in
+		if ( 'yes' === $this->enabled && 'yes' === $this->checkin ) {
+			add_action( 'woocommerce_before_checkout_billing_form', array( $this, 'before_checkout_billing_form' ) );
+			add_action( 'wp_ajax_swedbank_pay_checkin', array( $this, 'ajax_swedbank_pay_checkin' ) );
+			add_action( 'wp_ajax_nopriv_swedbank_pay_checkin', array( $this, 'ajax_swedbank_pay_checkin' ) );
+		}
+
 		// Instant Checkout
 		if ( 'yes' === $this->enabled && 'yes' === $this->instant_checkout ) {
 			add_action( 'woocommerce_checkout_init', array( $this, 'checkout_init' ), 10, 1 );
 			add_action( 'woocommerce_checkout_billing', array( $this, 'checkout_form_billing' ) );
-			add_action( 'woocommerce_before_checkout_billing_form', array( $this, 'before_checkout_billing_form' ) );
+
 			add_action( 'woocommerce_checkout_order_review', array( $this, 'woocommerce_checkout_payment' ), 20 );
 			add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
 			add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 1 );
@@ -545,22 +550,43 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
-		// Checkout scripts
-		if ( ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() ) &&
-		     ! self::wcs_is_payment_change()
-		) {
-			if ( 'yes' === $this->instant_checkout ) {
-				wp_enqueue_style(
-					'swedbank-pay-checkout-css',
-					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style' . $suffix . '.css',
-					array(),
-					false,
-					'all'
-				);
+		wp_enqueue_style(
+			'swedbank-pay-checkout-css',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/style' . $suffix . '.css',
+			array(),
+			false,
+			'all'
+		);
 
+		// Checkout scripts
+		if ( is_checkout() || isset( $_GET['pay_for_order'] ) || is_add_payment_method_page() ) {
+			wp_register_script(
+				'wc-sb-common',
+				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/common' . $suffix . '.js',
+				array(
+					'jquery',
+					'wc-checkout',
+				),
+				false,
+				true
+			);
+
+			wp_register_script(
+				'wc-sb-checkin',
+				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkin' . $suffix . '.js',
+				array(
+					'wc-sb-common',
+				),
+				false,
+				true
+			);
+
+
+			if ( 'yes' === $this->instant_checkout ) {
+				// Instant Checkout
 				wp_enqueue_style(
 					'swedbank-pay-checkout-instant',
-					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant' . $suffix . '.css',
+					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/css/instant-checkout' . $suffix . '.css',
 					array(),
 					false,
 					'all'
@@ -568,16 +594,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 				wp_register_script(
 					'wc-gateway-swedbank-pay-checkout',
-					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkout' . $suffix . '.js',
+					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/instant-checkout' . $suffix . '.js',
 					array(
 						'jquery',
 						'wc-checkout',
+						'wc-sb-common',
+						'wc-sb-checkin'
 					),
 					false,
 					true
 				);
 			} else {
-				// Styles
+				// Non-Instant Checkout
 				wp_enqueue_script(
 					'featherlight',
 					untrailingslashit(
@@ -590,6 +618,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					'1.7.13',
 					true
 				);
+
 				wp_enqueue_style(
 					'featherlight-css',
 					untrailingslashit(
@@ -601,6 +630,20 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					array(),
 					'1.7.13',
 					'all'
+				);
+
+				wp_register_script(
+					'wc-gateway-swedbank-pay-checkout',
+					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/instant-checkout' . $suffix . '.js',
+					array(
+						'jquery',
+						'wc-checkout',
+						'wc-sb-common',
+						'wc-sb-checkin',
+						'featherlight',
+					),
+					false,
+					true
 				);
 			}
 
@@ -630,12 +673,14 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			}
 
 			wp_localize_script(
-				'wc-gateway-swedbank-pay-checkout',
+				'wc-sb-common',
 				'WC_Gateway_Swedbank_Pay_Checkout',
 				$translation_array
 			);
 
 			// Enqueued script with localized data.
+			wp_enqueue_script( 'wc-sb-common' );
+			wp_enqueue_script( 'wc-sb-checkin' );
 			wp_enqueue_script( 'wc-gateway-swedbank-pay-checkout' );
 		}
 	}
@@ -1688,40 +1733,29 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Hook before_checkout_billing_form
+	 * Add Check-in widget on the checkout form.
+	 * Use Hook before_checkout_billing_form
 	 *
-	 * @param $checkout
+	 * @param WC_Checkout $checkout
 	 */
 	public function before_checkout_billing_form( $checkout ) {
-		if ( 'yes' !== $this->enabled ) {
-			return;
-		}
-
-		if ( 'yes' !== $this->instant_checkout ) {
-			return;
-		}
-
-		if ( 'yes' !== $this->checkin ) {
-			return;
-		}
-
 		// Get saved consumerProfileRef
 		$profile = $this->get_consumer_profile( get_current_user_id() );
 
 		// Initiate consumer session to obtain consumerProfileRef after checkin
-		$js_url = $profile['url'];
+		$js_view_url = $profile['url'];
 		if ( empty( $profile['reference'] ) ) {
 			// Initiate consumer session
 			try {
 				$result = $this->core->initiateConsumerSession( $this->checkin_country );
-				$js_url = $result->getOperationByRel( 'view-consumer-identification' );
+				$js_view_url = $result->getOperationByRel( 'view-consumer-identification' );
 			} catch ( Exception $e ) {
 				$profile['reference'] = null;
 				$profile['billing']   = null;
 			}
 		}
 
-		WC()->session->set( 'consumer_js_url', $js_url );
+		WC()->session->set( 'consumer_js_url', $js_view_url );
 
 		// Checkin Form
 		wc_get_template(
@@ -1729,7 +1763,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			array(
 				'checkin_country'  => $this->checkin_country,
 				'selected_country' => apply_filters( 'swedbank_pay_checkin_default_country', 'SE' ),
-				'js_url'           => $js_url,
+				'js_view_url'      => $js_view_url,
 				'consumer_data'    => $profile['billing'],
 				'consumer_profile' => $profile['reference'],
 			),
