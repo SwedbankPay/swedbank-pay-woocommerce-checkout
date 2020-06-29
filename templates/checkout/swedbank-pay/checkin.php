@@ -6,11 +6,11 @@ defined( 'ABSPATH' ) || exit;
 /** @var string $selected_country */
 /** @var array $consumer_data */
 /** @var string $consumer_profile */
-/** @var string $js_url */
+/** @var string $js_view_url */
 ?>
 
-<?php if ( $js_url ) : ?>
-	<script id="swedbank-hostedview-script" src="<?php echo $js_url; ?>"></script>
+<?php if ( $js_view_url ) : ?>
+	<script id="swedbank-hostedview-script" src="<?php echo $js_view_url; ?>"></script>
 <?php endif; ?>
 
 <h3>1. <?php esc_html_e( 'Your information', 'swedbank-pay-woocommerce-checkout' ); ?></h3>
