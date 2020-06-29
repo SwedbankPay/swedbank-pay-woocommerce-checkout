@@ -148,6 +148,7 @@ class WC_Swedbank_Plugin {
 	 */
 	public function woocommerce_hook_loaded() {
 		// Includes
+		include_once( dirname( __FILE__ ) . '/class-wc-payment-token-swedbank-pay.php' );
 	}
 
 	/**
