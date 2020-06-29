@@ -56,11 +56,19 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 */
 	public $culture = 'en-US';
 
+
 	/**
 	 * Auto Capture
 	 * @var string
 	 */
 	public $auto_capture = 'no';
+
+	/**
+	 * Url of Merchant Logo.
+	 *
+	 * @var string
+	 */
+	public $logo_url = '';
 
 	/**
 	 * Use Instant Checkout
@@ -180,7 +188,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+    $this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->logo_url         = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
 		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
@@ -461,6 +470,24 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'type'        => 'text',
 				'description' => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-checkout' ),
 				'default'     => get_site_url(),
+			),
+			'logo_url'              => array(
+				'title'       => __( 'Logo Url', 'swedbank-pay-woocommerce-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'The URL that will be used for showing the customer logo. Must be a picture with maximum 50px height and 400px width. Require https.', 'swedbank-pay-woocommerce-checkout' ),
+				'desc_tip'    => true,
+				'default'     => '',
+				'sanitize_callback' => function( $value ) {
+					if ( ! empty( $value ) ) {
+						if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
+							throw new Exception( __( 'Logo Url is invalid.', 'swedbank-pay-woocommerce-checkout' ) );
+						} elseif ( 'https' !== parse_url( $value, PHP_URL_SCHEME ) ) {
+							throw new Exception( __( 'Logo Url should use https scheme.', 'swedbank-pay-woocommerce-checkout' ) );
+						}
+					}
+
+					return $value;
+				},
 			),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-checkout' ),
