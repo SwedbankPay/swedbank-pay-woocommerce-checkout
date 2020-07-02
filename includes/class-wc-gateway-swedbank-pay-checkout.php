@@ -130,6 +130,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $checkin_style = '';
 
 	/**
+	 * Send payer info
+	 * @var string
+	 */
+	public $use_payer_info = 'yes';
+
+	/**
+	 * Send cardholder info
+	 * @var string
+	 */
+	public $use_cardholder_info = 'yes';
+
+	/**
 	 * Styles of PaymentMenu
 	 * @var string
 	 */
@@ -178,22 +190,24 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled          = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title            = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description      = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token   = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
-		$this->payee_id         = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite          = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
-		$this->logo_url         = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
-		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
-		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
-		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
-		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->save_cc          = 'no';
+		$this->enabled                = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title                  = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description            = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->merchant_token         = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->payee_id               = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite                = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode               = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug                  = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture                = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->auto_capture           = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->logo_url               = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->instant_checkout       = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
+		$this->checkin                = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
+		$this->checkin_country        = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
+		$this->terms_url              = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->save_cc                = 'no';
+		$this->use_payer_info         = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
+		$this->use_cardholder_info    = isset( $this->settings['use_cardholder_info'] ) ? $this->settings['use_cardholder_info'] : $this->use_cardholder_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -493,6 +507,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 					return $value;
 				},
+			),
+			'use_payer_info'        => array(
+				'title'   => __( 'Send payer information', 'swedbank-pay-woocommerce-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Send billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-checkout' ),
+				'default' => $this->use_payer_info
+			),
+			'use_cardholder_info'        => array(
+				'title'   => __( 'Send card holder information', 'swedbank-pay-woocommerce-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Send name, email, phone, billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-checkout' ),
+				'default' => $this->use_cardholder_info
 			),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-checkout' ),
@@ -1396,7 +1422,11 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			}
 
 			// Update address
-			$this->update_address( $order_id );
+			try {
+				$this->update_address( $order_id );
+			} catch ( \Exception $e ) {
+				// Ignore errors
+			}
 
 			// Create Background Process Task
 			$background_process = new WC_Background_Swedbank_Pay_Queue();
