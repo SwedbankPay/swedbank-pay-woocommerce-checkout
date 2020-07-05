@@ -136,12 +136,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $use_payer_info = 'yes';
 
 	/**
-	 * Send cardholder info
-	 * @var string
-	 */
-	public $use_cardholder_info = 'yes';
-
-	/**
 	 * Styles of PaymentMenu
 	 * @var string
 	 */
