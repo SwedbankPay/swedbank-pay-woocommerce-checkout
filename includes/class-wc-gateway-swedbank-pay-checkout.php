@@ -1632,7 +1632,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		if ( ! empty( $paymentorder_id ) ) {
 			$result = $this->core->request( 'GET', $paymentorder_id . '/payers' );
 
-			if ( ! isset( $result['payer'] ) ) {
+			if ( ! isset( $result['payer'] ) || ! isset( $result['payer']['shippingAddress'] ) ) {
 				return;
 			}
 
