@@ -383,7 +383,7 @@ jQuery( function( $ ) {
                 } )
                 .fail( function( jqXHR, textStatus ) {
                     console.log( 'updateOrder error:' + textStatus );
-                    wc_sb_checkout.onError( textStatus );
+                    //wc_sb_checkout.onError( textStatus );
                 } )
                 .done( function ( response) {
                     console.log( response );
@@ -397,6 +397,11 @@ jQuery( function( $ ) {
                     }
 
                     if ( response.hasOwnProperty('result') && response.result === 'failure' ) {
+                        if (response.messages === '') {
+                            console.warn( 'Error message is empty.' );
+                            return;
+                        }
+
                         // SwedBank Payment returns error that Order update is not available
                         if ( response.messages.indexOf( 'Order update is not available.' ) > -1 && ! compatibility ) {
                             // Force reload
@@ -424,7 +429,7 @@ jQuery( function( $ ) {
                     }
 
                     wc_sb_common.logError( 'sb-update-order', response );
-                    wc_sb_checkout.onError( response.messages );
+                    //wc_sb_checkout.onError( response.messages );
                 } );
 
                 return  wc_sb_checkout.xhr;
