@@ -64,7 +64,8 @@ class WC_Swedbank_Plugin {
 
 		// Filters
 		add_filter( 'swedbank_pay_generate_uuid', array( $this, 'generate_uuid' ), 10, 1 );
-		add_filter( 'swedbank_pay_payment_description', array( $this, 'payment_description' ), 10, 2 );
+		add_filter( 'swedbank_pay_payment_description', __CLASS__ . '::payment_description', 10, 2 );
+		add_filter( 'swedbank_pay_order_billing_phone', __CLASS__ . '::billing_phone', 10, 2 );
 
 		// Process swedbank queue
 		if ( ! is_multisite() ) {
@@ -481,6 +482,59 @@ class WC_Swedbank_Plugin {
 	 */
 	public function generate_uuid( $node ) {
 		return \Ramsey\Uuid\Uuid::uuid5( \Ramsey\Uuid\Uuid::NAMESPACE_OID, $node )->toString();
+	}
+
+	/**
+	 * Payment Description.
+	 *
+	 * @param string $description
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public static function payment_description( $description, $order ) {
+		return $description;
+	}
+
+	/**
+	 * Billing phone.
+	 *
+	 * @param string $billing_phone
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public static function billing_phone( $billing_phone, $order ) {
+		$billing_country = $order->get_billing_country();
+		$billing_phone = preg_replace( '/[^0-9\+]/', '', $billing_phone );
+
+		if ( ! preg_match('/^((00|\+)([1-9][1-9])|0([1-9]))(\d*)/', $billing_phone, $matches) ) {
+			return null;
+		}
+
+		switch ($billing_country) {
+			case 'SE':
+				$country_code = '46';
+				break;
+			case 'NO':
+				$country_code = '47';
+				break;
+			case 'DK':
+				$country_code = '45';
+				break;
+			default:
+				$country_code = '46';
+		}
+
+		if ( isset( $matches[3] ) && isset( $matches[5]) ) { // country code present
+			$billing_phone = $matches[3] . $matches[5];
+		}
+
+		if ( isset( $matches[4]) && isset( $matches[5]) ) { // no country code present. removing leading 0
+			$billing_phone = $country_code . $matches[4] . $matches[5];
+		}
+
+		return strlen( $billing_phone ) > 7 && strlen( $billing_phone ) < 16 ? '+' . $billing_phone : null;
 	}
 
 	/**
