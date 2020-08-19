@@ -2023,6 +2023,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		WC()->cart->calculate_totals();
 
 		// Recalculate order
+		$order->set_cart_hash( WC()->cart->get_cart_hash() );
 		$order->calculate_totals( true );
 		$order->save();
 
