@@ -7,6 +7,7 @@ use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Checkout\WooCommerce\WC_Payment_Token_Swedbank_Pay;
 use SwedbankPay\Core\Core;
 use SwedbankPay\Core\OrderInterface;
+use SwedbankPay\Core\OrderItemInterface;
 use SwedbankPay\Core\Log\LogLevel;
 
 class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
@@ -1554,7 +1555,23 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			$this->core->refundCheckout( $order->get_id(), $amount, 0 );
+			$items = [
+				[
+					OrderItemInterface::FIELD_REFERENCE => 'refund',
+					OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
+					OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
+					OrderItemInterface::FIELD_DESCRIPTION => __( 'Refund', 'woocommerce' ),
+					OrderItemInterface::FIELD_CLASS => 'ProductGroup1',
+					OrderItemInterface::FIELD_QTY => 1,
+					OrderItemInterface::FIELD_QTY_UNIT => 'abstract',
+					OrderItemInterface::FIELD_UNITPRICE => round( $amount * 100 ),
+					OrderItemInterface::FIELD_VAT_PERCENT => 0,
+					OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
+					OrderItemInterface::FIELD_VAT_AMOUNT => 0,
+				]
+			];
+
+			$this->core->refundCheckout( $order->get_id(), $amount, 0, $items );
 
 			return true;
 		} catch ( \Exception $e ) {
