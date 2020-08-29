@@ -15,6 +15,8 @@ class WC_Swedbank_Plugin {
 		'payex_checkout',
 	);
 
+	const PLUGIN_NAME = 'Swedbank Pay Checkout plugin';
+	const PLUGIN_PATH = 'swedbank-pay-woocommerce-checkout/swedbank-pay-woocommerce-checkout.php';
 	const DB_VERSION = '1.0.0';
 	const DB_VERSION_SLUG = 'swedbank_pay_checkout_version';
 	const ADMIN_UPGRADE_PAGE_SLUG = 'swedbank-pay-checkout-upgrade';
@@ -76,12 +78,7 @@ class WC_Swedbank_Plugin {
 		// Add admin menu
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 99 );
 
-		// Add Upgrade Notice
-		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
-		     current_user_can( 'manage_woocommerce' )
-		) {
-			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
-		}
+		add_action( 'init', __CLASS__ . '::may_add_notice' );
 	}
 
 	public function includes() {
@@ -95,7 +92,7 @@ class WC_Swedbank_Plugin {
 		include_once ABSPATH . '/wp-admin/includes/plugin.php';
 		$plugins = get_plugins();
 		foreach ( $plugins as $file => $plugin ) {
-			if ( strpos( $file, 'swedbank-pay-woocommerce-payments.php' ) !== false ) {
+			if ( strpos( $file, 'swedbank-pay-woocommerce-checkout.php' ) !== false ) {
 				if ( file_exists( dirname( $file ) . '/vendor/autoload.php') ) {
 					$vendors_dir = dirname( $file ) . '/vendor';
 					break;
@@ -256,7 +253,7 @@ class WC_Swedbank_Plugin {
 					// Rollback
 					$order->update_status(
 						$from,
-						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-payments' ), $message )
+						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-checkout' ), $message )
 					);
 				}
 				break;
@@ -273,7 +270,7 @@ class WC_Swedbank_Plugin {
 					// Rollback
 					$order->update_status(
 						$from,
-						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-payments' ), $message )
+						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-checkout' ), $message )
 					);
 				}
 				break;
@@ -310,7 +307,7 @@ class WC_Swedbank_Plugin {
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'swedbank_payment_actions',
-						__( 'Swedbank Pay Payments Actions', 'swedbank-pay-woocommerce-payments' ),
+						__( 'Swedbank Pay Payments Actions', 'swedbank-pay-woocommerce-checkout' ),
 						__CLASS__ . '::order_meta_box_payment_actions',
 						'shop_order',
 						'side',
@@ -412,7 +409,7 @@ class WC_Swedbank_Plugin {
 			// Localize the script
 			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'swedbank-pay-woocommerce-payments' ),
+				'text_wait' => __( 'Please wait...', 'swedbank-pay-woocommerce-checkout' ),
 			);
 			wp_localize_script( 'swedbank-pay-admin-js', 'SwedbankPay_Admin', $translation_array );
 
@@ -439,7 +436,7 @@ class WC_Swedbank_Plugin {
 
 			try {
 				$gateway->capture_payment( $order_id );
-				wp_send_json_success( __( 'Capture success.', 'swedbank-pay-woocommerce-payments' ) );
+				wp_send_json_success( __( 'Capture success.', 'swedbank-pay-woocommerce-checkout' ) );
 			} catch ( Exception $e ) {
 				$message = $e->getMessage();
 				wp_send_json_error( $message );
@@ -465,7 +462,7 @@ class WC_Swedbank_Plugin {
 
 			try {
 				$gateway->cancel_payment( $order_id );
-				wp_send_json_success( __( 'Cancel success.', 'swedbank-pay-woocommerce-payments' ) );
+				wp_send_json_success( __( 'Cancel success.', 'swedbank-pay-woocommerce-checkout' ) );
 			} catch ( Exception $e ) {
 				$message = $e->getMessage();
 				wp_send_json_error( $message );
@@ -545,6 +542,22 @@ class WC_Swedbank_Plugin {
 	}
 
 	/**
+	 * Add Upgrade notice
+	 */
+	public static function may_add_notice() {
+		// Check if WooCommerce is missing
+		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
+			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
+		}
+
+		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
+		     current_user_can( 'manage_woocommerce' )
+		) {
+			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+		}
+	}
+
+	/**
 	 * Provide Admin Menu items
 	 */
 	public function admin_menu() {
@@ -571,7 +584,7 @@ class WC_Swedbank_Plugin {
 		include_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-update.php' );
 		WC_Swedbank_Pay_Update::update();
 
-		echo esc_html__( 'Upgrade finished.', 'swedbank-pay-woocommerce-payments' );
+		echo esc_html__( 'Upgrade finished.', 'swedbank-pay-woocommerce-checkout' );
 	}
 
 	/**
@@ -582,14 +595,18 @@ class WC_Swedbank_Plugin {
 		<div id="message" class="error">
 			<p>
 				<?php
-				echo esc_html__(
-					'Warning! Swedbank Pay Checkout plugin requires to update the database structure.',
-					'swedbank-pay-woocommerce-payments'
+				echo sprintf(
+				    /* translators: 1: plugin name */                        esc_html__(
+					    'Warning! %1$s requires to update the database structure.',
+					    'swedbank-pay-woocommerce-checkout'
+				    ),
+					self::PLUGIN_NAME
 				);
+
 				echo ' ' . sprintf(
 					/* translators: 1: start tag 2: end tag */                        esc_html__(
 						'Please click %1$s here %2$s to start upgrade.',
-						'swedbank-pay-woocommerce-payments'
+						'swedbank-pay-woocommerce-checkout'
 					),
 						'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::ADMIN_UPGRADE_PAGE_SLUG ) ) . '">',
 						'</a>'
@@ -598,5 +615,35 @@ class WC_Swedbank_Plugin {
 			</p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Check if WooCommerce is missing, and deactivate the plugin if needs
+	 */
+	public static function missing_woocommerce_notice() {
+		?>
+        <div id="message" class="error">
+            <p class="main">
+                <strong><?php echo esc_html__( 'WooCommerce is inactive or missing.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
+            </p>
+            <p>
+				<?php
+				echo esc_html__( 'WooCommerce plugin is inactive or missing. Please install and active it.', 'swedbank-pay-woocommerce-checkout' );
+				echo '<br />';
+				echo sprintf(
+				    /* translators: 1: plugin name */                        esc_html__(
+					    '%1$s will be deactivated.',
+					    'swedbank-pay-woocommerce-checkout'
+				    ),
+					self::PLUGIN_NAME
+				);
+
+				?>
+            </p>
+        </div>
+		<?php
+
+		// Deactivate the plugin
+		deactivate_plugins( self::PLUGIN_PATH, true );
 	}
 }
