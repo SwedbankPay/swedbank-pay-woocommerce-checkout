@@ -83,6 +83,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $checkin = 'yes';
 
 	/**
+	 * Checkout method
+	 * @var string
+	 */
+	public $method = 'seamless';
+
+	/**
 	 * Checkin Country
 	 * @var string
 	 */
@@ -199,6 +205,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->instant_checkout = isset( $this->settings['instant_checkout'] ) ? $this->settings['instant_checkout'] : $this->instant_checkout;
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
 		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
+		$this->method           = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->terms_url        = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 		$this->save_cc          = 'no';
 		$this->use_payer_info   = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
@@ -389,7 +396,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 				'sanitize_callback' => function( $value ) {
 					if ( empty( $value ) ) {
-						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-checkout' ) );
 					}
 
 					return $value;
@@ -405,7 +412,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 				'sanitize_callback' => function( $value ) {
 					if ( empty( $value ) ) {
-						throw new Exception( __( '"Payee Id" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+						throw new Exception( __( '"Payee Id" field can\'t be empty.', 'swedbank-pay-woocommerce-checkout' ) );
 					}
 
 					return $value;
@@ -477,6 +484,17 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 				'description' => __( 'Checkin country', 'swedbank-pay-woocommerce-checkout' ),
 				'default'     => $this->checkin_country,
+			),
+			'method'                 => array(
+				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-checkout' ),
+				'type'        => 'select',
+				'options'     => array(
+					'seamless'   => __( 'Seamless View', 'swedbank-pay-woocommerce-checkout' ),
+					'redirect'   => __( 'Redirect', 'swedbank-pay-woocommerce-checkout' ),
+				),
+				'description' => __( 'Checkout Method. It won\'t work if Checkin option is enabled.', 'swedbank-pay-woocommerce-checkout' ),
+				'desc_tip'    => true,
+				'default'     => $this->method,
 			),
 			'terms_url'              => array(
 				'title'       => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-checkout' ),
@@ -665,6 +683,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$translation_array = array(
 				'culture'                      => $this->culture,
 				'instant_checkout'             => ( 'yes' === $this->instant_checkout ),
+				'redirect_method'              => 'redirect' === $this->method && 'no' === $this->checkin,
 				'needs_shipping_address'       => WC()->cart->needs_shipping(),
 				'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
 				'checkin'                      => ( 'yes' === $this->checkin ),
@@ -799,7 +818,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 			$payment_id = $this->core->getPaymentIdByPaymentOrder( $payment_order_id );
 			if ( ! $payment_id ) {
-				throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
+				throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-checkout' ) );
 			}
 
 			$verifications = $this->core->fetchVerificationList( $payment_id );
@@ -880,6 +899,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					'redirect'                 => '#!swedbank-pay-checkout',
 					'is_swedbank_pay_checkout' => true,
 					'js_url'                   => $js_url,
+					'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
 					'payment_id'               => $result['paymentOrder']['id'],
 				);
 			}
@@ -892,6 +912,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'redirect'                 => '#!swedbank-pay-checkout',
 				'is_swedbank_pay_checkout' => true,
 				'js_url'                   => $result->getOperationByRel( 'view-paymentorder' ),
+				'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
 				'payment_id'               => $result['paymentOrder']['id'],
 			);
 		}
@@ -1170,6 +1191,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			'redirect'                 => '#!swedbank-pay-checkout',
 			'is_swedbank_pay_checkout' => true,
 			'js_url'                   => $js_url,
+			'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
 			'payment_id'               => $result['paymentOrder']['id'],
 		);
 	}

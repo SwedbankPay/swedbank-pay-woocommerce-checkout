@@ -168,9 +168,15 @@ jQuery( function( $ ) {
                             return;
                         }
 
-                        // Load SwedBank Pay Checkout frame
-                        wc_sb_checkout.js_url = response['js_url'];
-                        wc_sb_checkout.initPaymentJS( wc_sb_checkout.js_url );
+                        if ( wc_sb_common.isRedirectMethodEnabled() ) {
+                            // Redirect to the payment gateway page
+                            console.log( 'Redirecting to ' + response['redirect_url'] );
+                            self.location.href = response['redirect_url'];
+                        } else {
+                            // Load SwedBank Pay Checkout frame
+                            wc_sb_checkout.js_url = response['js_url'];
+                            wc_sb_checkout.initPaymentJS( wc_sb_checkout.js_url );
+                        }
                     } );
 
                 return false;
