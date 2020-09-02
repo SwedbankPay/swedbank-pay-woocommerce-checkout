@@ -379,22 +379,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 				'default'     => __( 'Swedbank Pay Checkout', 'swedbank-pay-woocommerce-checkout' ),
 			),
-			'merchant_token'         => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
-				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
-				'default'     => $this->merchant_token,
-				'custom_attributes' => array(
-					'required' => 'required'
-				),
-				'sanitize_callback' => function( $value ) {
-					if ( empty( $value ) ) {
-						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
-					}
-
-					return $value;
-				},
-			),
 			'payee_id'               => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-checkout' ),
 				'type'        => 'text',
@@ -406,6 +390,22 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'sanitize_callback' => function( $value ) {
 					if ( empty( $value ) ) {
 						throw new Exception( __( '"Payee Id" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+					}
+
+					return $value;
+				},
+			),
+			'merchant_token'         => array(
+				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
+				'default'     => $this->merchant_token,
+				'custom_attributes' => array(
+					'required' => 'required'
+				),
+				'sanitize_callback' => function( $value ) {
+					if ( empty( $value ) ) {
+						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
 					}
 
 					return $value;
