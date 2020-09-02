@@ -18,6 +18,14 @@ jQuery( function( $ ) {
         },
 
         /**
+         * Check if the redirect method is active
+         * @return {boolean}
+         */
+        isRedirectMethodEnabled() {
+            return WC_Gateway_Swedbank_Pay_Checkout.redirect_method;
+        },
+
+        /**
          * Load JS
          * @param js
          * @param callback
