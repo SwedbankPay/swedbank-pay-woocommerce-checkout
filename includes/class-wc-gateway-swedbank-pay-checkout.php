@@ -1542,6 +1542,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$amount = $order->get_total();
 		}
 
+		if ( 0 === absint( $amount ) ) {
+			return new WP_Error( 'refund', __( 'Amount must be positive.', 'swedbank-pay-woocommerce-checkout' ) );
+		}
+
 		try {
 			// Disable status change hook
 			remove_action(
@@ -1555,23 +1559,29 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			$items = [
-				[
-					OrderItemInterface::FIELD_REFERENCE => 'refund',
-					OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
-					OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
-					OrderItemInterface::FIELD_DESCRIPTION => __( 'Refund', 'woocommerce' ),
-					OrderItemInterface::FIELD_CLASS => 'ProductGroup1',
-					OrderItemInterface::FIELD_QTY => 1,
-					OrderItemInterface::FIELD_QTY_UNIT => 'abstract',
-					OrderItemInterface::FIELD_UNITPRICE => round( $amount * 100 ),
-					OrderItemInterface::FIELD_VAT_PERCENT => 0,
-					OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
-					OrderItemInterface::FIELD_VAT_AMOUNT => 0,
-				]
-			];
+			if ( $order->get_total() != $amount ) {
+				// Partial refund
+				$items = [
+					[
+						OrderItemInterface::FIELD_REFERENCE => 'refund',
+						OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
+						OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
+						OrderItemInterface::FIELD_DESCRIPTION => __( 'Refund', 'woocommerce' ),
+						OrderItemInterface::FIELD_CLASS => 'ProductGroup1',
+						OrderItemInterface::FIELD_QTY => 1,
+						OrderItemInterface::FIELD_QTY_UNIT => 'abstract',
+						OrderItemInterface::FIELD_UNITPRICE => round( $amount * 100 ),
+						OrderItemInterface::FIELD_VAT_PERCENT => 0,
+						OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
+						OrderItemInterface::FIELD_VAT_AMOUNT => 0,
+					]
+				];
 
-			$this->core->refundCheckout( $order->get_id(), $amount, 0, $items );
+				$this->core->refundCheckout( $order->get_id(), $amount, 0, $items );
+			} else {
+				// Full refund
+				$this->core->refundCheckout( $order->get_id(), null );
+			}
 
 			return true;
 		} catch ( \Exception $e ) {
