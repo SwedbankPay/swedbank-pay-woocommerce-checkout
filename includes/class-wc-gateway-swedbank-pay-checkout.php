@@ -386,22 +386,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 				'default'     => __( 'Swedbank Pay Checkout', 'swedbank-pay-woocommerce-checkout' ),
 			),
-			'merchant_token'         => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
-				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
-				'default'     => $this->merchant_token,
-				'custom_attributes' => array(
-					'required' => 'required'
-				),
-				'sanitize_callback' => function( $value ) {
-					if ( empty( $value ) ) {
-						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-checkout' ) );
-					}
-
-					return $value;
-				},
-			),
 			'payee_id'               => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-checkout' ),
 				'type'        => 'text',
@@ -412,7 +396,23 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 				'sanitize_callback' => function( $value ) {
 					if ( empty( $value ) ) {
-						throw new Exception( __( '"Payee Id" field can\'t be empty.', 'swedbank-pay-woocommerce-checkout' ) );
+						throw new Exception( __( '"Payee Id" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+					}
+
+					return $value;
+				},
+			),
+			'merchant_token'         => array(
+				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
+				'default'     => $this->merchant_token,
+				'custom_attributes' => array(
+					'required' => 'required'
+				),
+				'sanitize_callback' => function( $value ) {
+					if ( empty( $value ) ) {
+						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
 					}
 
 					return $value;
@@ -1564,6 +1564,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$amount = $order->get_total();
 		}
 
+		if ( 0 === absint( $amount ) ) {
+			return new WP_Error( 'refund', __( 'Amount must be positive.', 'swedbank-pay-woocommerce-checkout' ) );
+		}
+
 		try {
 			// Disable status change hook
 			remove_action(
@@ -1577,23 +1581,29 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			$items = [
-				[
-					OrderItemInterface::FIELD_REFERENCE => 'refund',
-					OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
-					OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
-					OrderItemInterface::FIELD_DESCRIPTION => __( 'Refund', 'woocommerce' ),
-					OrderItemInterface::FIELD_CLASS => 'ProductGroup1',
-					OrderItemInterface::FIELD_QTY => 1,
-					OrderItemInterface::FIELD_QTY_UNIT => 'abstract',
-					OrderItemInterface::FIELD_UNITPRICE => round( $amount * 100 ),
-					OrderItemInterface::FIELD_VAT_PERCENT => 0,
-					OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
-					OrderItemInterface::FIELD_VAT_AMOUNT => 0,
-				]
-			];
+			if ( $order->get_total() != $amount ) {
+				// Partial refund
+				$items = [
+					[
+						OrderItemInterface::FIELD_REFERENCE => 'refund',
+						OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
+						OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
+						OrderItemInterface::FIELD_DESCRIPTION => __( 'Refund', 'woocommerce' ),
+						OrderItemInterface::FIELD_CLASS => 'ProductGroup1',
+						OrderItemInterface::FIELD_QTY => 1,
+						OrderItemInterface::FIELD_QTY_UNIT => 'abstract',
+						OrderItemInterface::FIELD_UNITPRICE => round( $amount * 100 ),
+						OrderItemInterface::FIELD_VAT_PERCENT => 0,
+						OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
+						OrderItemInterface::FIELD_VAT_AMOUNT => 0,
+					]
+				];
 
-			$this->core->refundCheckout( $order->get_id(), $amount, 0, $items );
+				$this->core->refundCheckout( $order->get_id(), $amount, 0, $items );
+			} else {
+				// Full refund
+				$this->core->refundCheckout( $order->get_id(), null );
+			}
 
 			return true;
 		} catch ( \Exception $e ) {
