@@ -4,6 +4,9 @@ namespace SwedbankPay\Checkout\WooCommerce;
 
 defined( 'ABSPATH' ) || exit;
 
+use WP_Error;
+use Exception;
+
 class WC_Swedbank_Pay_Transactions {
 	/**
 	 * The single instance of the class.
@@ -73,7 +76,7 @@ class WC_Swedbank_Pay_Transactions {
 		global $wpdb;
 
 		// phpcs:disable
-		$wpdb->query( "
+		$result = $wpdb->query( "
 CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
   `transaction_id` int(11) NOT NULL AUTO_INCREMENT,
   `transaction_data` text,
@@ -95,6 +98,12 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 ) ENGINE=INNODB DEFAULT CHARSET={$wpdb->charset};
 		" );
 		// phpcs:enable
+
+		if ( false === $result ) {
+			throw new Exception(
+				__( 'Failed to install the transaction table.', 'swedbank-pay-woocommerce-checkout' )
+			);
+		}
 	}
 
 	/**
@@ -102,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 *
 	 * @param $fields
 	 *
-	 * @return bool|int
+	 * @return int|WP_Error
 	 */
 	public function add( $fields ) {
 		global $wpdb;
@@ -112,7 +121,10 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			return $wpdb->insert_id;
 		}
 
-		return false;
+		return new WP_Error(
+			'insert_failed',
+			__( 'Failed to insert the transaction to the table.', 'swedbank-pay-woocommerce-checkout' )
+		);
 	}
 
 	/**
@@ -120,15 +132,24 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 *
 	 * @param $transaction_id
 	 *
-	 * @return false|int
+	 * @return int|WP_Error
 	 */
 	public function delete( $transaction_id ) {
 		global $wpdb;
 
-		return $wpdb->delete(
+		$result = $wpdb->delete(
 			$wpdb->prefix . 'payex_transactions',
 			array( 'id' => (int) $transaction_id )
 		);
+
+		if ( false === $result ) {
+			return new WP_Error(
+				'delete_failed',
+				__( 'Failed to delete the transaction from the table.', 'swedbank-pay-woocommerce-checkout' )
+			);
+		}
+
+		return $result;
 	}
 
 	/**
@@ -137,18 +158,27 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @param $transaction_id
 	 * @param $fields
 	 *
-	 * @return false|int
+	 * @return int|WP_Error
 	 */
 	public function update( $transaction_id, $fields ) {
 		global $wpdb;
 
-		return $wpdb->update(
+		$result = $wpdb->update(
 			$wpdb->prefix . 'payex_transactions',
 			$fields,
 			array(
 				'transaction_id' => (int) $transaction_id,
 			)
 		);
+
+		if ( false === $result ) {
+			return new WP_Error(
+				'update_failed',
+				__( 'Failed to update the transaction in the table.', 'swedbank-pay-woocommerce-checkout' )
+			);
+		}
+
+		return $result;
 	}
 
 	/**
@@ -262,18 +292,27 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @param $order_id
 	 *
 	 * @return bool|int|mixed
+	 *
+	 * @throws Exception
 	 */
 	public function import( $data, $order_id ) {
 		$id    = $data['id'];
 		$saved = $this->get_by( 'id', $id );
 		if ( ! $saved ) {
-			$data = $this->prepare( $data, $order_id );
-
-			return $this->add( $data );
+			$data   = $this->prepare( $data, $order_id );
+			$row_id = $this->add( $data );
+			if ( is_wp_error( $row_id ) ) {
+				/** @var WP_Error $row_id */
+				throw new Exception( $row_id->get_error_message( ) );
+			}
 		} else {
 			// Data is should be updated
-			$data = $this->prepare( $data, $order_id );
-			$this->update( $saved['transaction_id'], $data );
+			$data   = $this->prepare( $data, $order_id );
+			$result = $this->update( $saved['transaction_id'], $data );
+			if ( is_wp_error( $result ) ) {
+				/** @var WP_Error $row_id */
+				throw new Exception( $row_id->get_error_message( ) );
+			}
 		}
 
 		return $saved['transaction_id'];
@@ -286,6 +325,8 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @param $order_id
 	 *
 	 * @return array
+	 *
+	 * @throws Exception
 	 */
 	public function import_transactions( $transactions, $order_id ) {
 		$result = array();
