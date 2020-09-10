@@ -1246,7 +1246,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$transactions = $this->core->fetchTransactionsList( $payment_id );
 
 				foreach ($transactions as $transaction) {
-					if ( $transaction->getType() === 'Authorization' ) {
+					if ( in_array( $transaction->getType(), ['Authorization', 'Sale'] ) ) {
 						switch ( $transaction->getState() ) {
 							case 'Completed':
 								// Transaction has found: update the order state
