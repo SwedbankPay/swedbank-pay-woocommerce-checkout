@@ -1231,6 +1231,54 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 		$this->adapter->log( LogLevel::INFO, __METHOD__ );
 
+		if ( 'failed' === $order->get_status() ) {
+			// Wait for "Completed" transaction state
+			// Current payment can be changed
+			$attempts = 0;
+			while ( true ) {
+				sleep( 1 );
+				$attempts++;
+				if ($attempts > 60) {
+					break;
+				}
+
+				$payment_id = $this->core->getPaymentIdByPaymentOrder( $payment_order );
+				$transactions = $this->core->fetchTransactionsList( $payment_id );
+
+				foreach ($transactions as $transaction) {
+					if ( $transaction->getType() === 'Authorization' ) {
+						switch ( $transaction->getState() ) {
+							case 'Completed':
+								// Transaction has found: update the order state
+								$order->update_meta_data( '_payex_payment_id', $payment_id );
+								$order->save();
+								clean_post_cache( $order->get_id() );
+
+								$this->core->fetchTransactionsAndUpdateOrder( $order_id, $transaction->getNumber() );
+
+								break 3;
+							case 'Failed':
+								// Log failed transaction
+								$this->adapter->log(
+									LogLevel::WARNING,
+									sprintf( 'Failed transaction: (%s), (%s), (%s), (%s), (%s), (%s), (%s)',
+										$order_id,
+										$payment_id,
+										$transaction->getId(),
+										$transaction->getData('failedReason'),
+										$transaction->getData('failedActivityName'),
+										$transaction->getData('failedErrorCode'),
+										$transaction->getData('failedErrorDescription')
+									)
+								);
+
+								break;
+						}
+					}
+				}
+			}
+		}
+
 		try {
 			$result = $this->core->fetchPaymentInfo( $payment_order, 'currentPayment,payeeInfo' );
 		} catch ( Exception $e ) {
