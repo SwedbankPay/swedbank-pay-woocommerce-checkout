@@ -555,6 +555,15 @@ class WC_Swedbank_Plugin {
 		) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
+
+		// Check the decimal settings
+        if ( 0 === wc_get_price_decimals() ) {
+	        add_action( 'admin_notices', __CLASS__ . '::wrong_decimals_notice' );
+	        remove_action(
+	            'admin_notices',
+                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::wrong_decimals_notice'
+            );
+        }
 	}
 
 	/**
@@ -645,5 +654,30 @@ class WC_Swedbank_Plugin {
 
 		// Deactivate the plugin
 		deactivate_plugins( self::PLUGIN_PATH, true );
+	}
+
+	/**
+	 * Check if "Number of decimals" of WooCommerce is configured incorrectly
+	 */
+	public static function wrong_decimals_notice() {
+		?>
+        <div id="message" class="error">
+            <p class="main">
+                <strong><?php echo esc_html__( 'Invalid value of "Number of decimals" detected.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
+            </p>
+            <p>
+				<?php
+				echo sprintf(
+					/* translators: 1: start tag 2: end tag */                        esc_html__(
+						'"Number of decimals" is configured with zero value. It creates problems with rounding and checkout. Please change it to "2" on %1$sSettings page%2$s.',
+						'swedbank-pay-woocommerce-checkout'
+					),
+						'<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=general' ) ) . '">',
+						'</a>'
+					);
+				?>
+            </p>
+        </div>
+		<?php
 	}
 }
