@@ -27,9 +27,13 @@ If you don’t have a special solution you want to check the box “Use Swedbank
 
 ![image4](https://user-images.githubusercontent.com/6286270/63705382-44828a00-c82d-11e9-9940-b5632c76dd4d.png)
 
-To connect your module to the Swedbank Pay system you need to navigate to https://admin.stage.payex.com/psp/login for test and https://admin.externalintegration.payex.com/ for production accounts and generate tokens:
+To connect your module to the Swedbank Pay system you need to navigate to https://admin.externalintegration.payex.com/psp/login for test and https://admin.payex.com/psp/login/ for production accounts and generate tokens:
 
 ![image5](https://user-images.githubusercontent.com/6286270/63705424-5e23d180-c82d-11e9-8f8d-f332594a444a.png)
+
+If you use the beta environment then use follow urls:
+* Test (beta): https://admin.externalintegration.payex.com/psp/beta
+* Production (beta): https://admin.payex.com/psp/beta
 
 Navigate to **Merchant->New Token** and mark the methods you intend to use. For more information about each method contact your Swedbank Pay Sales representative.
 Copy the Token and insert it in the appropriate field in your WooCommerce Payment Method setting.
