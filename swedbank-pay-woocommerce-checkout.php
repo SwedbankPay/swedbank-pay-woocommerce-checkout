@@ -2,16 +2,16 @@
 	/*
 	 * Plugin Name: Swedbank Pay Checkout
 	 * Plugin URI: https://www.swedbankpay.com/
-	 * Description: (Preview). Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
+	 * Description: Provides the Swedbank Pay Checkout for WooCommerce.
 	 * Author: Swedbank Pay
 	 * Author URI: https://profiles.wordpress.org/swedbankpay/
 	 * License: Apache License 2.0
 	 * License URI: http://www.apache.org/licenses/LICENSE-2.0
-	 * Version: 3.0.0-beta.1
+	 * Version: 4.0.0
 	 * Text Domain: swedbank-pay-woocommerce-checkout
 	 * Domain Path: /languages
 	 * WC requires at least: 3.0.0
-	 * WC tested up to: 4.1.1
+	 * WC tested up to: 4.5.2
 	 */
 
 	use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin;
