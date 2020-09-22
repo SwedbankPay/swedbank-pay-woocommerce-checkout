@@ -9,18 +9,27 @@ Version 4.0.0
 * Fix partial refund
 * Add phone formatting
 * Fix problem with missing shippingAddress
-* Add option "Send payer information"
-* Make Checkin optional
-* Add Logo Url to options
-* Add "AutoCapture" parameter
-* Implemented "Add Payment Method" feature
-* Implement WC Subscription support and tokenization
 * Fix the db upgrade
 * Fix PaymentOrder.Payer.BillingAddress.Msisdn: The Msisdn is not valid
-* Show hint if composer dependencies weren't installed
 * Replace fullname parser to adci/full-name-parser.
 * Fix subsite bug
 * Fixed: unitPrice must include VAT
+
+Version 3.1.1
+* Fixed refund issue
+* Fixed problem with missing shippingAddress
+
+Version 3.1.0
+* Add option "Send payer information"
+* Make Checkin optional
+* Add Logo Url to options
+* Validate credentials in the admin backend
+* Add "AutoCapture" parameter
+* "Add Payment Method" dialog
+* Implement WC Subscription support and tokenization
+* Add a key protection for callbackUrl
+* Show hint if composer dependencies weren't installed
+* Update WC tested metadata
 
 Version 3.0.0
 * Updates for Swedbank Pay
