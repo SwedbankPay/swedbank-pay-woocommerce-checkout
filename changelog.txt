@@ -1,3 +1,36 @@
+Version 4.0.0
+* Add validation of "Number of decimals" settings and warning of that
+* Fixed the problem with failed orders
+* Fix missing vat amount in reversal
+* Add Checkout method option
+* Add error message "WooCommerce is inactive or missing"
+* Switch positions of Token and Payee ID in settings
+* Update cart hash on order update
+* Fix partial refund
+* Add phone formatting
+* Fix problem with missing shippingAddress
+* Fix the db upgrade
+* Fix PaymentOrder.Payer.BillingAddress.Msisdn: The Msisdn is not valid
+* Replace fullname parser to adci/full-name-parser.
+* Fix subsite bug
+* Fixed: unitPrice must include VAT
+
+Version 3.1.1
+* Fixed refund issue
+* Fixed problem with missing shippingAddress
+
+Version 3.1.0
+* Add option "Send payer information"
+* Make Checkin optional
+* Add Logo Url to options
+* Validate credentials in the admin backend
+* Add "AutoCapture" parameter
+* "Add Payment Method" dialog
+* Implement WC Subscription support and tokenization
+* Add a key protection for callbackUrl
+* Show hint if composer dependencies weren't installed
+* Update WC tested metadata
+
 Version 3.0.0
 * Updates for Swedbank Pay
 * Disallow some special characters in product reference
