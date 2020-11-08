@@ -520,7 +520,7 @@ class WC_Swedbank_Plugin {
 				$country_code = '45';
 				break;
 			default:
-				$country_code = '46';
+				return '+' . ltrim( $billing_phone, '+' );
 		}
 
 		if ( isset( $matches[3] ) && isset( $matches[5]) ) { // country code present
