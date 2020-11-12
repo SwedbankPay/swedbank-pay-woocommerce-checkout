@@ -1262,7 +1262,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 		$this->adapter->log( LogLevel::INFO, __METHOD__ );
 
-		$this->core->updateTransactionsOnFailure( $order_id );
+		$this->core->updateTransactionsOnFailure( $order->get_id() );
 
 		try {
 			$result = $this->core->fetchPaymentInfo( $payment_order, 'currentPayment,payeeInfo' );
