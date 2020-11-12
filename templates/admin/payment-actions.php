@@ -13,14 +13,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div>
 	<strong><?php _e( 'Payment Info', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
 	<br />
-	<strong><?php _e( 'Number', 'swedbank-pay-woocommerce-checkout' ); ?>:</strong> <?php echo esc_html( $info['payment']['number'] ); ?>
-	<br />
-	<strong><?php _e( 'Instrument', 'swedbank-pay-woocommerce-checkout' ); ?>: </strong> <?php echo esc_html( $info['payment']['instrument'] ); ?>
-	<br />
-	<strong><?php _e( 'Intent', 'swedbank-pay-woocommerce-checkout' ); ?>: </strong> <?php echo esc_html( $info['payment']['intent'] ); ?>
-	<br />
-	<strong><?php _e( 'State', 'swedbank-pay-woocommerce-checkout' ); ?>: </strong> <?php echo esc_html( $info['payment']['state'] ); ?>
-	<br />
+	<?php if ( isset( $info['payment']['number'] ) ) : ?>
+        <strong><?php _e( 'Number', 'swedbank-pay-woocommerce-checkout' ); ?>
+            :</strong> <?php echo esc_html( $info['payment']['number'] ); ?>
+        <br/>
+	<?php endif; ?>
+	<?php if ( isset( $info['payment']['instrument'] ) ) : ?>
+        <strong><?php _e( 'Instrument', 'swedbank-pay-woocommerce-checkout' ); ?>
+            : </strong> <?php echo esc_html( $info['payment']['instrument'] ); ?>
+        <br/>
+	<?php endif; ?>
+	<?php if ( isset( $info['payment']['intent'] ) ) : ?>
+        <strong><?php _e( 'Intent', 'swedbank-pay-woocommerce-checkout' ); ?>
+            : </strong> <?php echo esc_html( $info['payment']['intent'] ); ?>
+        <br/>
+	<?php endif; ?>
+	<?php if ( isset( $info['payment']['state'] ) ) : ?>
+        <strong><?php _e( 'State', 'swedbank-pay-woocommerce-checkout' ); ?>
+            : </strong> <?php echo esc_html( $info['payment']['state'] ); ?>
+        <br/>
+	<?php endif; ?>
 	<?php if ( $gateway->core->canCapture( $order->get_id() ) ) : ?>
 		<button id="swedbank_pay_capture"
 				data-nonce="<?php echo wp_create_nonce( 'swedbank_pay' ); ?>"
