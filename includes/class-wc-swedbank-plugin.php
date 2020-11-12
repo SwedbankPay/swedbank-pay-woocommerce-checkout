@@ -520,7 +520,7 @@ class WC_Swedbank_Plugin {
 				$country_code = '45';
 				break;
 			default:
-				$country_code = '46';
+				return '+' . ltrim( $billing_phone, '+' );
 		}
 
 		if ( isset( $matches[3] ) && isset( $matches[5]) ) { // country code present
@@ -549,6 +549,9 @@ class WC_Swedbank_Plugin {
 		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
 		}
+
+		// Check dependencies
+		add_action( 'admin_notices', __CLASS__ . '::check_dependencies' );
 
 		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
 		     current_user_can( 'manage_woocommerce' )
@@ -654,6 +657,47 @@ class WC_Swedbank_Plugin {
 
 		// Deactivate the plugin
 		deactivate_plugins( self::PLUGIN_PATH, true );
+	}
+
+
+	/**
+	 * Check dependencies
+	 */
+	public static function check_dependencies() {
+		$dependencies = array( 'curl', 'bcmath', 'json' );
+
+		$errors = array();
+		foreach ($dependencies as $dependency) {
+			if ( ! extension_loaded( $dependency ) ) {
+				$errors[] = sprintf( esc_html__( 'Extension %s is missing.', 'swedbank-pay-woocommerce-checkout' ), $dependency );
+			}
+		}
+
+		if ( count( $errors ) > 0 ):
+			?>
+            <div id="message" class="error">
+                <p class="main">
+                    <strong><?php echo esc_html__( 'Required extensions are missing.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
+                </p>
+                <p>
+					<?php
+					foreach ( $errors as $error ) {
+						echo $error;
+					}
+					echo '<br />';
+					echo sprintf(
+					/* translators: 1: plugin name */                        esc_html__(
+						'%1$s requires that. Please configure PHP or contact the server administrator.',
+						'swedbank-pay-woocommerce-checkout'
+					),
+						self::PLUGIN_NAME
+					);
+
+					?>
+                </p>
+            </div>
+		<?php
+		endif;
 	}
 
 	/**
