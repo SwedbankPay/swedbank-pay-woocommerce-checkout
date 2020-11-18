@@ -1,3 +1,10 @@
+Version 4.1.0
+* Use logging by the core
+* Fix notices in the admin backend
+* Add dependencies checking
+* Use `updateTransactionsOnFailure()` of the core library
+* Implemented autocapture
+
 Version 4.0.0
 * Add validation of "Number of decimals" settings and warning of that
 * Fixed the problem with failed orders
