@@ -1260,7 +1260,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			return;
 		}
 
-		$this->adapter->log( LogLevel::INFO, __METHOD__ );
+		$this->core->log( LogLevel::INFO, __METHOD__ );
 
 		$this->core->updateTransactionsOnFailure( $order->get_id() );
 
@@ -1387,7 +1387,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public function return_handler() {
 		$raw_body = file_get_contents( 'php://input' );
 
-		$this->adapter->log(
+		$this->core->log(
 			LogLevel::INFO,
 			sprintf(
 				'Incoming Callback: Initialized %s from %s',
@@ -1395,7 +1395,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$_SERVER['REMOTE_ADDR']
 			)
 		);
-		$this->adapter->log(
+		$this->core->log(
 			LogLevel::INFO,
 			sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, true ) )
 		);
@@ -1486,12 +1486,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			);
 			$background_process->save();
 
-			$this->adapter->log(
+			$this->core->log(
 				LogLevel::INFO,
 				sprintf( 'Incoming Callback: Task enqueued. Transaction ID: %s', $data['transaction']['number'] )
 			);
 		} catch ( \Exception $e ) {
-			$this->adapter->log( LogLevel::INFO, sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
+			$this->core->log( LogLevel::INFO, sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
 
 			return;
 		}
@@ -1561,7 +1561,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					10
 				);
 			} catch ( \Exception $e ) {
-				$this->adapter->log(
+				$this->core->log(
 					LogLevel::INFO,
 					sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
 				);
@@ -1746,7 +1746,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$name   = $parser->parse( $result['payer']['shippingAddress']['addressee'] );
 			} catch ( Exception $e ) {
 				// Ignore errors from the parser
-				$this->adapter->log( LogLevel::INFO, 'Nameparser error: ' . $e->getMessage() );
+				$this->core->log( LogLevel::INFO, 'Nameparser error: ' . $e->getMessage() );
 
 				return;
 			}
@@ -2167,7 +2167,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$data = $decoded;
 		}
 
-		$this->adapter->log(
+		$this->core->log(
 			LogLevel::INFO,
 			sprintf(
 				'[FRONTEND]: [%s]: [%s]: %s',
