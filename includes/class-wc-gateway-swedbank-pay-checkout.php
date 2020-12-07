@@ -713,6 +713,16 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				);
 			}
 
+			wp_register_script(
+				'swedbank-pay-cehckout-invoice-fee',
+				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice-fee' . $suffix . '.js',
+				array(
+					'wc-gateway-swedbank-pay-checkout',
+				),
+				false,
+				true
+			);
+
 			// Localize the script with new data
 			$translation_array = array(
 				'culture'                      => $this->culture,
@@ -749,6 +759,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			wp_enqueue_script( 'wc-sb-common' );
 			wp_enqueue_script( 'wc-sb-checkin' );
 			wp_enqueue_script( 'wc-gateway-swedbank-pay-checkout' );
+			wp_enqueue_script( 'swedbank-pay-cehckout-invoice-fee' );
 		}
 	}
 
