@@ -1,3 +1,8 @@
+Version 4.2.0
+* Implemented Invoice fee feature
+* Partial refund with specific order items
+* Update the background queue processor
+
 Version 4.1.0
 * Use logging by the core
 * Fix notices in the admin backend
