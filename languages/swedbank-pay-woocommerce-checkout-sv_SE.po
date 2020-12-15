@@ -55,8 +55,8 @@ msgstr "Detta styr den beskrivning som användaren ser vid utcheckningen."
 #: ../includes/class-wc-gateway-payex-checkout.php:258
 #: ../includes/class-wc-gateway-payex-checkout.php:260
 #, fuzzy
-msgid "Merchant Token"
-msgstr "Merchant Token"
+msgid "Access Token"
+msgstr "Access Token"
 
 #: ../includes/class-wc-gateway-payex-checkout.php:264
 #: ../includes/class-wc-gateway-payex-checkout.php:266
