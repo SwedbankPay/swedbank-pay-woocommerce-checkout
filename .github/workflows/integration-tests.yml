@@ -37,7 +37,6 @@ jobs:
           composer install
 
       - name: Run tests
-        uses: php-actions/phpunit@v1
         env:
           MERCHANT_TOKEN: ${{ secrets.MERCHANT_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
