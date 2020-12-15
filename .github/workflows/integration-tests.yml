@@ -38,7 +38,7 @@ jobs:
 
       - name: Run tests
         env:
-          MERCHANT_TOKEN: ${{ secrets.MERCHANT_TOKEN }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
         run: |
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
