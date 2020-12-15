@@ -204,6 +204,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		// Load the settings.
 		$this->init_settings();
 
+		// Update access_token if merchant_token is exists
+		if ( empty( $this->settings['access_token'] ) && ! empty( $this->settings['merchant_token'] ) ) {
+			$this->settings['access_token'] = $this->settings['merchant_token'];
+			$this->update_option( 'access_token', $this->settings['access_token'] );
+		}
+
 		// Define user set variables
 		$this->enabled          = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
 		$this->title            = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
