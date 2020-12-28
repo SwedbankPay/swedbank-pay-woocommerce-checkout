@@ -63,4 +63,5 @@ jobs:
       - name: Run PHPCS inspection
         run: |
           composer global require "wp-coding-standards/wpcs"
-          phpcs --standard=~/.composer/vendor/wp-coding-standards/wpcs/WordPress-Core/ruleset.xml --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
+          phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+          phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
