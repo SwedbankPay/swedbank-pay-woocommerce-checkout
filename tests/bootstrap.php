@@ -17,6 +17,12 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 // Give access to tests_add_filter() function.
 require_once $_tests_dir . '/includes/functions.php';
 
+$woocommerce_dir = getenv( 'WOOCOMMERCE_DIR' );
+if ( ! file_exists( $woocommerce_dir ) ) {
+	echo "Could not find $woocommerce_dir" . PHP_EOL; // WPCS: XSS ok.
+	exit( 1 );
+}
+
 /**
  * Manually load the plugin being tested.
  */
@@ -26,12 +32,10 @@ function _manually_load_plugin() {
 		$_core_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress';
 	}
 
-	require $_core_dir . '/wp-content/plugins/swedbank-pay-woocommerce-payments/swedbank-pay-woocommerce-payments.php';
-	require dirname( dirname( __FILE__ ) ) . '/swedbank-pay-woocommerce-checkout.php';
+	require $_core_dir . '/wp-content/plugins/swedbank-pay-woocommerce-checkout/swedbank-pay-woocommerce-checkout.php';
 }
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WP testing environment.
-//require $_tests_dir . '/includes/bootstrap.php';
-require $_tests_dir . '/../woocommerce/tests/bootstrap.php';
+require $woocommerce_dir . '/tests/bootstrap.php';
