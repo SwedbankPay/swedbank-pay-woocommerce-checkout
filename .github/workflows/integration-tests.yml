@@ -32,7 +32,7 @@ jobs:
           php-version: '7.3'
           extension: intl, mbstring, json, bcmath
           coverage: xdebug
-          tools: composer, php-cs-fixer, phpunit, phpcpd, phpmd
+          tools: composer, php-cs-fixer, phpunit:7.5.19, phpcpd, phpmd
 
       - name: Set up MySQL
         run: sudo systemctl start mysql.service
