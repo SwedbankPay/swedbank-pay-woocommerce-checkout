@@ -53,7 +53,6 @@ jobs:
           php wp-cli.phar plugin install /tmp/swedbank-pay-woocommerce-checkout.zip --activate
 
       - name: Run tests
-        uses: php-actions/phpunit@v1
         env:
           MERCHANT_TOKEN: ${{ secrets.MERCHANT_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
@@ -62,8 +61,6 @@ jobs:
           WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit
 
       - name: Run PHPCS inspection
-        uses: rtCamp/action-phpcs-code-review@v2.0.2
-        env:
-          SKIP_FOLDERS: "woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js"
-        with:
-          args: "WordPress-Core"
+        run: |
+          composer global require "wp-coding-standards/wpcs"
+          phpcs --standard=~/.composer/vendor/wp-coding-standards/wpcs/WordPress-Core/ruleset.xml --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
