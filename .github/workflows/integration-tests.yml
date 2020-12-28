@@ -32,7 +32,7 @@ jobs:
           php-version: '7.3'
           extension: intl, mbstring, json, bcmath
           coverage: xdebug
-          tools: composer, php-cs-fixer, phpunit, phpcpd, phpmd
+          tools: composer, php-cs-fixer, phpunit:7.5.19, phpcpd, phpmd
 
       - name: Set up MySQL
         run: sudo systemctl start mysql.service
@@ -61,8 +61,7 @@ jobs:
           WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit
 
       - name: Run PHPCS inspection
-        uses: rtCamp/action-phpcs-code-review@v2.0.2
-        env:
-          SKIP_FOLDERS: "woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js"
-        with:
-          args: "WordPress-Core"
+        run: |
+          composer global require "wp-coding-standards/wpcs"
+          phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+          phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
