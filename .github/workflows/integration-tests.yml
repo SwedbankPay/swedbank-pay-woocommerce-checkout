@@ -11,7 +11,7 @@ on:
 jobs:
   test:
     name: Run tests
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
 
     steps:
       - name: Checkout
@@ -25,6 +25,14 @@ jobs:
           repository: woocommerce/woocommerce
           ref: 4.8.0
           path: woocommerce
+
+      - name: Install dependencies
+        uses: shivammathur/setup-php@master
+        with:
+          php-version: '7.3'
+          extension: intl, mbstring, json, bcmath
+          coverage: xdebug
+          tools: composer, php-cs-fixer, phpunit, phpcpd, phpmd
 
       - name: Set up MySQL
         run: sudo systemctl start mysql.service
