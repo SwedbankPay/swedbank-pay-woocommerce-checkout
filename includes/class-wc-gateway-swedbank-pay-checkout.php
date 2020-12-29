@@ -30,10 +30,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $core;
 
 	/**
-	 * Merchant Token
+	 * Access Token
 	 * @var string
 	 */
-	public $merchant_token = '';
+	public $access_token = '';
 
 	/**
 	 * Payee Id
@@ -204,11 +204,17 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		// Load the settings.
 		$this->init_settings();
 
+		// Update access_token if merchant_token is exists
+		if ( empty( $this->settings['access_token'] ) && ! empty( $this->settings['merchant_token'] ) ) {
+			$this->settings['access_token'] = $this->settings['merchant_token'];
+			$this->update_option( 'access_token', $this->settings['access_token'] );
+		}
+
 		// Define user set variables
 		$this->enabled          = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
 		$this->title            = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
 		$this->description      = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token   = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->access_token     = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
 		$this->payee_id         = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
 		$this->subsite          = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
@@ -262,6 +268,9 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 		// Payment confirmation
 		add_action( 'the_post', array( $this, 'payment_confirm' ) );
+
+		// Save order items on refund
+		add_action( 'woocommerce_create_refund', array( $this, 'save_refund_parameters', ), 10, 2 );
 
 		// Ajax Actions
 		foreach (
@@ -417,17 +426,17 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					return $value;
 				},
 			),
-			'merchant_token'         => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
+			'access_token'         => array(
+				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-checkout' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-checkout' ),
-				'default'     => $this->merchant_token,
+				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-checkout' ),
+				'default'     => $this->access_token,
 				'custom_attributes' => array(
 					'required' => 'required'
 				),
 				'sanitize_callback' => function( $value ) {
 					if ( empty( $value ) ) {
-						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+						throw new Exception( __( '"Access Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
 					}
 
 					return $value;
@@ -738,6 +747,16 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				);
 			}
 
+			wp_register_script(
+				'swedbank-pay-cehckout-invoice-fee',
+				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice-fee' . $suffix . '.js',
+				array(
+					'wc-gateway-swedbank-pay-checkout',
+				),
+				false,
+				true
+			);
+
 			// Localize the script with new data
 			$translation_array = array(
 				'culture'                      => $this->culture,
@@ -774,6 +793,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			wp_enqueue_script( 'wc-sb-common' );
 			wp_enqueue_script( 'wc-sb-checkin' );
 			wp_enqueue_script( 'wc-gateway-swedbank-pay-checkout' );
+			wp_enqueue_script( 'swedbank-pay-cehckout-invoice-fee' );
 		}
 	}
 
@@ -1609,6 +1629,11 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		return $result;
 	}
 
+	public function save_refund_parameters( $refund, $args ) {
+		// Save refund parameters to perform refund with specified products and amounts
+		WC()->session->set( 'swedbank_refund_parameters', $args );
+	}
+
 	/**
 	 * Process Refund
 	 *
@@ -1649,10 +1674,123 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
+			// Partial refund
 			if ( $order->get_total() != $amount ) {
-				// Partial refund
-				$items = [
-					[
+				$args = (array) WC()->session->get( 'swedbank_refund_parameters' );
+				$lines = isset( $args['line_items'] ) ? $args['line_items'] : [];
+				$items = [];
+
+				if ( count( $lines ) > 0 ) {
+					// Partial refund with specific items
+					// Build order items list
+					foreach ($lines as $item_id => $line) {
+						/** @var WC_Order_Item_Product $item */
+						$item = $order->get_item( $item_id );
+						$reference = null;
+						$product_name = trim( $item->get_name() );
+						if ( empty( $product_name ) ) {
+							$product_name = '-';
+						}
+
+						$type          = OrderItemInterface::TYPE_PRODUCT;
+						$qty           = (int) $line['qty'];
+						$refund_total  = (float) $line['refund_total'];
+						$refund_tax    = (float) array_shift( $line['refund_tax'] );
+						$tax_percent   = ( $refund_tax > 0 ) ? round( 100 / ( $refund_total / $refund_tax ) ) : 0;
+						$unit_price    = ( $refund_total + $refund_tax ) / $qty;
+						$refund_amount = $refund_total + $refund_tax;
+
+						if ( empty( $refund_total ) ) {
+							// Skip zero items
+							continue;
+						}
+
+						if (method_exists($item, 'get_product_id')) {
+							$product = $item->get_product();
+
+							// Get Product Sku
+							$reference = trim(
+								str_replace(
+									array( ' ', '.', ',' ),
+									'-',
+									$item->get_product()->get_sku()
+								)
+							);
+
+							if ( empty( $reference ) ) {
+								$reference = wp_generate_password( 12, false );
+							}
+
+							$image = wp_get_attachment_image_src( $product->get_image_id(), 'full' );
+							if ( $image ) {
+								$image = array_shift( $image );
+							} else {
+								$image = wc_placeholder_img_src( 'full' );
+							}
+
+							if (null === parse_url( $image, PHP_URL_SCHEME ) &&
+							    mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
+							) {
+								$image = wp_guess_url() . $image;
+							}
+
+							// Get Product Class
+							$product_class = get_post_meta(
+								$product->get_id(),
+								'_sb_product_class',
+								true
+							);
+
+							if ( empty( $product_class ) ) {
+								$product_class = 'ProductGroup1';
+							}
+
+							$items[] = array(
+								// The field Reference must match the regular expression '[\\w-]*'
+								OrderItemInterface::FIELD_REFERENCE   => $reference,
+								OrderItemInterface::FIELD_NAME        => $product_name,
+								OrderItemInterface::FIELD_TYPE        => $type,
+								OrderItemInterface::FIELD_CLASS       => $product_class,
+								OrderItemInterface::FIELD_ITEM_URL    => $product->get_permalink(),
+								OrderItemInterface::FIELD_IMAGE_URL   => $image,
+								OrderItemInterface::FIELD_DESCRIPTION => $product_name,
+								OrderItemInterface::FIELD_QTY         => $qty,
+								OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
+								OrderItemInterface::FIELD_UNITPRICE   => round( $unit_price * 100 ),
+								OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
+								OrderItemInterface::FIELD_AMOUNT      => round( $refund_amount * 100 ),
+								OrderItemInterface::FIELD_VAT_AMOUNT  => round( $refund_tax * 100 ),
+							);
+						} else {
+							if ( $item instanceof WC_Order_Item_Product ) {
+								$type = OrderItemInterface::TYPE_PRODUCT;
+							} elseif ( $item instanceof WC_Order_Item_Shipping ) {
+								$type = OrderItemInterface::TYPE_SHIPPING;
+								$reference = 'shipping';
+							} else {
+								$type = OrderItemInterface::TYPE_OTHER;
+								$reference = 'other';
+							}
+
+							$items[] = array(
+								// The field Reference must match the regular expression '[\\w-]*'
+								OrderItemInterface::FIELD_REFERENCE   => $reference,
+								OrderItemInterface::FIELD_NAME        => $product_name,
+								OrderItemInterface::FIELD_TYPE        => $type,
+								OrderItemInterface::FIELD_CLASS       => 'ProductGroup1',
+								OrderItemInterface::FIELD_DESCRIPTION => $product_name,
+								OrderItemInterface::FIELD_QTY         => 1,
+								OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
+								OrderItemInterface::FIELD_UNITPRICE   => round( $unit_price * 100 ),
+								OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
+								OrderItemInterface::FIELD_AMOUNT      => round( $refund_amount * 100 ),
+								OrderItemInterface::FIELD_VAT_AMOUNT  => round( $refund_tax * 100 ),
+							);
+						}
+					}
+				} else {
+					// Partial refund without specific items
+					$items[] = [
 						OrderItemInterface::FIELD_REFERENCE => 'refund',
 						OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
 						OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
@@ -1664,10 +1802,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 						OrderItemInterface::FIELD_VAT_PERCENT => 0,
 						OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
 						OrderItemInterface::FIELD_VAT_AMOUNT => 0,
-					]
-				];
+					];
+				}
 
-				$this->core->refundCheckout( $order->get_id(), $amount, 0, $items );
+				// Unset
+				WC()->session->__unset( 'swedbank_refund_parameters' );
+
+				// Calculate VAT amount
+				$vat_amount = array_sum(
+					array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT )
+				) / 100;
+
+				$this->core->refundCheckout( $order->get_id(), $amount, $vat_amount, $items );
 			} else {
 				// Full refund
 				$this->core->refundCheckout( $order->get_id(), null );
@@ -2703,10 +2849,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		$items = array();
-		foreach ( $order->get_items() as $item ) {
+		foreach ( $order->get_items() as $order_item ) {
 			/** @var WC_Order_Item_Product $order_item */
 			/** @var WC_Product $product */
-			$product        = $item->get_product();
+			$product        = $order_item->get_product();
 			$price          = $order->get_line_subtotal( $order_item, false, false );
 			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
 			$tax            = $price_with_tax - $price;
@@ -2908,8 +3054,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->adapter->log( LogLevel::INFO, __METHOD__, [ $items ] );
 
 		if ( count( $items ) > 0 ) {
-			$amount     = array_sum( array_column( $items, OrderItemInterface::FIELD_AMOUNT ) );
-			$vat_amount = array_sum( array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT ) );
+			$amount     = array_sum( array_column( $items, OrderItemInterface::FIELD_AMOUNT ) ) / 100;
+			$vat_amount = array_sum( array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT ) ) / 100;
 
 			try {
 				// Disable status change hook

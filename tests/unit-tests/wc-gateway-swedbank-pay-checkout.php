@@ -108,4 +108,26 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$result = $this->gateway->process_refund( $order->get_id(), $order->get_total(), 'Test' );
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}
+
+	public function test_partial_refund() {
+		/** @var WC_Order $order */
+		$order  = WC_Helper_Order::create_order();
+
+		$args = array(
+			'line_items' => array()
+		);
+
+		foreach ( $order->get_items() as $order_item ) {
+			/** @var WC_Order_Item_Product $order_item */
+			$args['line_items'][$order_item->get_id()] = array(
+				'qty' => 1,
+				'refund_total' => $order_item->get_total(),
+				'refund_tax' => 0,
+			);
+		}
+
+		WC()->session->set( 'swedbank_refund_parameters', $args );
+		$result = $this->gateway->process_refund( $order->get_id(), 1, 'Test' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+	}
 }
