@@ -605,6 +605,34 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Processes and saves options.
+	 * If there is an error thrown, will continue to save and validate fields, but will leave the erroring field out.
+	 *
+	 * @return bool was anything saved?
+	 */
+	public function process_admin_options() {
+		$result = parent::process_admin_options();
+
+		// Reload settings
+		$this->init_settings();
+		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+
+		// Test API Credentials
+		try {
+			new SwedbankPay\Api\Service\Paymentorder\Request\Test(
+				$this->merchant_token,
+				$this->payee_id,
+				$this->testmode === 'yes'
+			);
+		} catch (\Exception $e) {
+			WC_Admin_Settings::add_error( $e->getMessage() );
+		}
+
+		return $result;
+	}
+
+	/**
 	 * payment_scripts function.
 	 *
 	 * Outputs scripts used for payment
