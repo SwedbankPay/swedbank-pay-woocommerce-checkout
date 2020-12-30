@@ -1,3 +1,7 @@
+Version 4.2.1
+* Rename Merchant Token to Access Token
+* Improve Instant capture
+
 Version 4.2.0
 * Implemented Invoice fee feature
 * Partial refund with specific order items
