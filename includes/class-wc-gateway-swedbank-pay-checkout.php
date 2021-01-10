@@ -762,6 +762,9 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'ajax_url'                     => admin_url( 'admin-ajax.php' ),
 				'paymentMenuStyle'             => null,
 				'checkInStyle'                 => null,
+				'terms_error'                  => __(
+					'Please read and accept the terms and conditions to proceed with your order.', 'woocommerce'
+				)
 			);
 
 			// Add PM styles
