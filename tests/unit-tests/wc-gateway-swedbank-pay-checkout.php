@@ -65,6 +65,9 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
 		$order->set_currency( 'SEK' );
+		$order->set_customer_user_agent(
+			'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87 Safari/537'
+		);
 		$order->save();
 
 		$result = $this->gateway->process_payment( $order->get_id() );
