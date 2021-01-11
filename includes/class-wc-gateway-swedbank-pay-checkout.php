@@ -637,7 +637,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			return;
 		}
 
-		if ( ! is_cart() && ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page() && ! is_product() ) {
+		if ( ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page() ) {
 			return;
 		}
 
@@ -664,16 +664,19 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				true
 			);
 
+			// This script uses for Instant and non-instant checkout
+			// Non-instant checkout uses featherlight
 			wp_register_script(
-				'wc-sb-checkin',
-				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkin' . $suffix . '.js',
+				'wc-gateway-swedbank-pay-checkout',
+				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/instant-checkout' . $suffix . '.js',
 				array(
+					'jquery',
+					'wc-checkout',
 					'wc-sb-common',
 				),
 				false,
 				true
 			);
-
 
 			if ( 'yes' === $this->instant_checkout ) {
 				// Instant Checkout
@@ -684,21 +687,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					false,
 					'all'
 				);
+			}
 
-				wp_register_script(
-					'wc-gateway-swedbank-pay-checkout',
-					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/instant-checkout' . $suffix . '.js',
-					array(
-						'jquery',
-						'wc-checkout',
-						'wc-sb-common',
-						'wc-sb-checkin'
-					),
-					false,
-					true
-				);
-			} else {
-				// Non-Instant Checkout
+			if ( 'no' === $this->instant_checkout ) {
+				// Add featherlight for Non-Instant Checkout
 				wp_enqueue_script(
 					'featherlight',
 					untrailingslashit(
@@ -724,31 +716,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					'1.7.13',
 					'all'
 				);
-
-				wp_register_script(
-					'wc-gateway-swedbank-pay-checkout',
-					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/instant-checkout' . $suffix . '.js',
-					array(
-						'jquery',
-						'wc-checkout',
-						'wc-sb-common',
-						'wc-sb-checkin',
-						'featherlight',
-					),
-					false,
-					true
-				);
 			}
-
-			wp_register_script(
-				'swedbank-pay-cehckout-invoice-fee',
-				untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice-fee' . $suffix . '.js',
-				array(
-					'wc-gateway-swedbank-pay-checkout',
-				),
-				false,
-				true
-			);
 
 			// Localize the script with new data
 			$translation_array = array(
@@ -763,8 +731,13 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'paymentMenuStyle'             => null,
 				'checkInStyle'                 => null,
 				'terms_error'                  => __(
-					'Please read and accept the terms and conditions to proceed with your order.', 'woocommerce'
-				)
+					'Please read and accept the terms and conditions to proceed with your order.',
+					'woocommerce'
+				),
+				'checkin_error'                => __(
+					'Please sign in to continue payment.',
+					'swedbank-pay-woocommerce-checkout'
+				),
 			);
 
 			// Add PM styles
@@ -785,14 +758,25 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$translation_array
 			);
 
+			if ( 'yes' === $this->checkin ) {
+				wp_register_script(
+					'wc-sb-checkin',
+					untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/checkin' . $suffix . '.js',
+					array(
+						'wc-sb-common',
+					),
+					false,
+					true
+				);
+
+				wp_enqueue_script( 'wc-sb-checkin' );
+			}
+
 			// Enqueued script with localized data.
 			wp_enqueue_script( 'wc-sb-common' );
-			wp_enqueue_script( 'wc-sb-checkin' );
 			wp_enqueue_script( 'wc-gateway-swedbank-pay-checkout' );
-			wp_enqueue_script( 'swedbank-pay-cehckout-invoice-fee' );
 		}
 	}
-
 
 	/**
 	 * If There are no payment fields show the description if set.
@@ -2329,10 +2313,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function lock_checkout_fields( $fieldset ) {
-		if ( 'yes' === $this->enabled && 'yes' === $this->instant_checkout ) {
+		if ( 'yes' === $this->enabled && 'yes' === $this->instant_checkout && 'yes' === $this->checkin ) {
 			// Fill form with these data
 			foreach ( $fieldset as $section => &$fields ) {
 				foreach ( $fields as $key => &$field ) {
+					if ( isset( $field['type'] ) && 'password' === $field['type'] ) {
+						continue;
+					}
+
+					if ( isset( $field['class'] ) && in_array( 'notes', $field['class'] ) ) {
+						continue;
+					}
+
 					$field['default'] = $this->checkout_get_value( null, $key );
 
 					$field['custom_attributes']['readonly'] = 'readonly';
