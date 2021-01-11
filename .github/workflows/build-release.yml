@@ -1,0 +1,50 @@
+name: Deploy to WordPress.org
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  pull_request:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Build
+        run: |
+          composer install
+          npm install
+          gulp js:build
+          gulp css:build
+          rm -rf ./node_modules
+          rm -rf ./.git
+          rm -rf ./vendor/swedbank-pay/swedbank-pay-sdk-php/.git
+          rm -rf ./vendor/swedbank-pay/swedbank-pay-woocommerce-core/.git
+          rm -rf ./.github
+          rm -f ./composer.lock
+          rm -f ./package-lock.json
+
+      - name: WordPress Plugin Deploy
+        uses: nk-o/action-wordpress-plugin-deploy@master
+        env:
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SLUG: swedbank-pay-checkout
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: true
+          prerelease: false
