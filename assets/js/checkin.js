@@ -58,7 +58,7 @@ jQuery( function( $ ) {
                 // Destroy JS
                 $( "script[src*='px.consumer.client']" ).remove();
                 $( '#swedbank-pay-checkin iframe' ).remove();
-                wc_sb_checkin.loadJs( data.data, function () {
+                wc_sb_common.loadJs( data.data, function () {
                     wc_sb_checkin.initCheckIn();
                 } );
             } );

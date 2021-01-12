@@ -22,7 +22,7 @@ gulp.task(
 				}
 			)
 		)
-		.pipe( sourcemaps.write() )
+		.pipe( sourcemaps.write('.') )
 		.pipe( gulp.dest( './assets/css' ) );
 	}
 );
@@ -47,7 +47,7 @@ gulp.task(
 				}
 			)
 		)
-		.pipe( sourcemaps.write() )
+		.pipe( sourcemaps.write('.') )
 		.pipe( gulp.dest( './assets/js' ) );
 	}
 );

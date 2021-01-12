@@ -1,0 +1,1 @@
+{"version":3,"sources":["instant-checkout.scss"],"names":[],"mappings":"AAAA,6BACI,QAAS","file":"instant-checkout.min.css","sourcesContent":["#payment .wc_payment_methods {\n    display: none;\n}\n"]}
