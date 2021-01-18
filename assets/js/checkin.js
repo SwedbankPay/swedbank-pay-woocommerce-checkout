@@ -7,23 +7,36 @@ jQuery( function( $ ) {
          * Initialize
          */
         init: function() {
-            if ( wc_sb_common.isCheckinEnabled() ) {
-                $( document.body ).on( 'change', '#checkin_country', function () {
-                    wc_sb_checkin.loadCheckIn( $(this).val() );
+            if ( this.isCheckinEnabled() ) {
+                var self = this;
+                $( document.body ).on( 'click change', '#checkin_country', function () {
+                    self.loadCheckIn( $( this ).val() );
                 } );
 
-                $( document.body ).on( 'click', '#change-shipping-info', function () {
-                    // Hide "Change shipping info" button
-                    $( '#change-shipping-info' ).hide();
+                // Select the first item
+                let checkin = $( '#checkin_country' );
+                if ( checkin.length > 0 ) {
+                    self.loadCheckIn( checkin.val() );
+                }
+
+                $( document.body ).on( 'click', '#change-address-info', function ( event ) {
+                    event.preventDefault();
 
                     // Show Address Fields
-                    wc_sb_checkin.showAddressFields();
+                    self.showAddressFields();
                 } );
 
-                wc_sb_checkin.hideAddressFields();
-                wc_sb_checkin.initCheckIn();
+                self.hideAddressFields();
+                self.initCheckIn();
             }
+        },
 
+        /**
+         * Check if the Checkin is active
+         * @return {boolean}
+         */
+        isCheckinEnabled() {
+            return WC_Gateway_Swedbank_Pay_Checkin.enabled;
         },
 
         /**
@@ -34,10 +47,10 @@ jQuery( function( $ ) {
         loadCheckIn: function( country ) {
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkin.ajax_url,
                 data: {
                     action: 'swedbank_pay_checkin',
-                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
+                    nonce: WC_Gateway_Swedbank_Pay_Checkin.nonce,
                     country: country
                 },
                 dataType: 'json'
@@ -81,8 +94,8 @@ jQuery( function( $ ) {
                 // Init PayEx hostedView
                 window.payex.hostedView.consumer( {
                     container: 'swedbank-pay-checkin',
-                    culture: WC_Gateway_Swedbank_Pay_Checkout.culture,
-                    style: WC_Gateway_Swedbank_Pay_Checkout.checkInStyle ? JSON.parse( WC_Gateway_Swedbank_Pay_Checkout.checkInStyle ) : null,
+                    culture: WC_Gateway_Swedbank_Pay_Checkin.culture,
+                    style: WC_Gateway_Swedbank_Pay_Checkin.checkInStyle ? JSON.parse( WC_Gateway_Swedbank_Pay_Checkin.checkInStyle ) : null,
                     onConsumerIdentified: function( data ) {
                         console.log( 'hostedView: onConsumerIdentified' );
                         wc_sb_checkin.onConsumerIdentified( data );
@@ -93,13 +106,14 @@ jQuery( function( $ ) {
                     },
                     onConsumerRemoved: function( data ) {
                         console.log( 'hostedView: onConsumerRemoved' );
+                        console.log ( data );
                     },
                     onBillingDetailsAvailable: function( data ) {
                         wc_sb_checkin.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
-                        if ( WC_Gateway_Swedbank_Pay_Checkout.needs_shipping_address ||
-                            WC_Gateway_Swedbank_Pay_Checkout.ship_to_billing_address_only
+                        if ( WC_Gateway_Swedbank_Pay_Checkin.needs_shipping_address ||
+                            WC_Gateway_Swedbank_Pay_Checkin.ship_to_billing_address_only
                         ) {
                             wc_sb_checkin.onAddressDetailsAvailable( 'billing', data );
                         }
@@ -121,28 +135,31 @@ jQuery( function( $ ) {
          */
         onConsumerIdentified: function ( data ) {
             console.log( 'onConsumerIdentified', data );
-            $( '#change-shipping-info' ).show();
 
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkin.ajax_url,
                 data: {
                     action: 'swedbank_pay_checkout_customer_profile',
-                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
+                    nonce: WC_Gateway_Swedbank_Pay_Checkin.nonce,
                     consumerProfileRef: data.consumerProfileRef
                 },
                 dataType: 'json'
             } ).always( function ( response ) {
                 //
             } ).done( function ( response) {
-                console.log(response);
                 if (!response.success) {
                     alert(response.data.message);
                     return;
                 }
 
-                // Initiate Checkout if active
-                if ( wc_sb_common.isInstantCheckout ) {
+                // Add the reference to the checkout form
+                let checkout_form = $( "form.checkout, form#order_review, form#add_payment_method" );
+                checkout_form.find( '.swedbank_pay_customer_reference' ).remove();
+                checkout_form.append( "<input type='hidden' class='swedbank_pay_customer_reference' name='swedbank_pay_customer_reference' value='" + data.consumerProfileRef + "'/>" );
+
+                // Initiate Instant Checkout if active
+                if ( wc_sb_common.isInstantCheckout() ) {
                     wc_sb_checkout.initCheckout( data.consumerProfileRef );
                 }
             } );
@@ -157,56 +174,54 @@ jQuery( function( $ ) {
         onAddressDetailsAvailable: function( type, data ) {
             console.log( 'onAddressDetailsAvailable', type, data );
 
-            $( '#change-shipping-info' ).show();
-
             wc_sb_common.block();
             return $.ajax( {
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkin.ajax_url,
                 data: {
                     action: 'swedbank_pay_checkout_get_address',
-                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce,
+                    nonce: WC_Gateway_Swedbank_Pay_Checkin.nonce,
                     type: type,
                     url: data.url
                 },
                 dataType: 'json'
-            } ).always( function ( response ) {
+            } ).always( function () {
                 wc_sb_common.unblock();
-            } ).done( function ( response) {
-                console.log(response);
-                if (!response.success) {
-                    wc_sb_common.logError('sb-address-details', response);
-                    alert(response.data.message);
+            } ).done( function ( response ) {
+                console.log( response );
+                if ( ! response.success ) {
+                    wc_sb_common.logError( 'sb-address-details', response );
+                    alert( response.data.message );
                     return;
                 }
 
                 // Process address
                 let data = response.data;
-                $.each(data, function (key, value) {
-                    [type].forEach(function(section) {
-                        let el = $('input[name="' + section + '_' + key + '"]');
-                        if (el.length === 0) {
+                $.each( data, function ( key, value ) {
+                    [type].forEach( function( section ) {
+                        let el = $( 'input[name="' + section + '_' + key + '"]' );
+                        if ( el.length === 0 ) {
                             return;
                         }
 
-                        el.prop('readonly', false);
-                        el.closest('.form-row').removeClass('swedbank-pay-locked');
-                        el.val(value).change();
+                        el.prop( 'readonly', false );
+                        el.closest( '.form-row' ).removeClass( 'swedbank-pay-locked' );
+                        el.val( value ).change();
 
-                        if (key === 'country' || key === 'state') {
-                            let el1 = $('#' + section + '_' + key);
-                            if (typeof window.Select2 !== 'undefined') {
+                        if ( key === 'country' || key === 'state' ) {
+                            let el1 = $( '#' + section + '_' + key );
+                            if ( typeof window.Select2 !== 'undefined' ) {
                                 el1.select2('val', value);
-                            } else if (typeof $.fn.chosen !== 'undefined') {
+                            } else if ( typeof $.fn.chosen !== 'undefined' ) {
                                 // Chosen
-                                el1.val(value).trigger('chosen:updated');
+                                el1.val( value ).trigger( 'chosen:updated' );
                                 //el1.chosen().change();
                             } else {
                                 el1.change();
                             }
                         }
-                    });
-                });
+                    } );
+                } );
 
                 $( document.body ).trigger( 'update_checkout' );
             } );
@@ -225,7 +240,7 @@ jQuery( function( $ ) {
         }
     }
 
-    $(document).ready( function () {
+    $( document ).ready( function () {
         wc_sb_checkin.init( $( "form.checkout, form#order_review, form#add_payment_method" ) );
     } );
 } );

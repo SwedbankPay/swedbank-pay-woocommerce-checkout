@@ -13,6 +13,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		'enabled' => 'yes',
 		'testmode' => 'yes',
 		'debug' => 'yes',
+		'method' => 'redirect',
 		'instant_checkout' => 'no'
 	);
 
