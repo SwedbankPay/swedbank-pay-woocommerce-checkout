@@ -57,6 +57,14 @@ class WC_Swedbank_Pay_Invoice_Fee {
 	public function enqueue_scripts() {
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
+		wp_register_script(
+			'swedbank-pay-checkout-invoice-fee',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice-fee' . $suffix . '.js',
+			array(),
+			false,
+			true
+		);
+
 		// Localize the script with new data
 		$translation_array = array(
 			'nonce'    => wp_create_nonce( 'swedbank_pay_checkout_invoice' ),
@@ -64,19 +72,9 @@ class WC_Swedbank_Pay_Invoice_Fee {
 		);
 
 		wp_localize_script(
-			'wc-sb-checkout-invoice',
+			'swedbank-pay-checkout-invoice-fee',
 			'WC_Gateway_Swedbank_Pay_Checkout_Invoice',
 			$translation_array
-		);
-
-		wp_register_script(
-			'swedbank-pay-checkout-invoice-fee',
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice-fee' . $suffix . '.js',
-			array(
-				'wc-sb-checkout-invoice',
-			),
-			false,
-			true
 		);
 
 		wp_enqueue_script( 'swedbank-pay-checkout-invoice-fee' );

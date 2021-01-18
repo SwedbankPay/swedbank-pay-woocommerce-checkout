@@ -42,21 +42,9 @@ jQuery( function( $ ) {
          */
         initInstantCheckout: function () {
             console.log( 'Initialization of Instant Checkout...' );
-
-            if ( wc_sb_common.isCheckinEnabled() ) {
-                // Use saved consumerProfileRef
-                let consumerProfileElm = $( '#swedbank-pay-consumer-profile' );
-                if ( consumerProfileElm.length > 0 ) {
-                    let reference = consumerProfileElm.data( 'reference' );
-                    console.log( 'Initiate consumerProfileRef', reference );
-                }
-            }
         },
 
         initCheckout: function( reference ) {
-            // Show "Change shipping info" button
-            $( '#change-shipping-info' ).show();
-
             wc_sb_checkout.form.find( '.swedbank_pay_customer_reference' ).remove();
             wc_sb_checkout.form.append( "<input type='hidden' class='swedbank_pay_customer_reference' name='swedbank_pay_customer_reference' value='" + reference + "'/>" );
             wc_sb_checkout.onSubmit(
@@ -65,7 +53,7 @@ jQuery( function( $ ) {
                         obj: window.wc_sb_checkout
                     }
                 }
-           );
+            );
         },
 
         isPaymentMethodChosen: function() {
@@ -132,7 +120,7 @@ jQuery( function( $ ) {
                 if ( ! wc_sb_common.validateForm() ) {
                     console.log( 'The checkout form validation is failed.' );
 
-                    if ( wc_sb_common.isCheckinEnabled() ) {
+                    if ( self.isCheckinEnabled() ) {
                         self.submit_error( '<div class="woocommerce-error">' + WC_Gateway_Swedbank_Pay_Checkout.checkin_error + '</div>' );
                     }
 
@@ -196,6 +184,18 @@ jQuery( function( $ ) {
         },
 
         /**
+         * Check if Checkin is enabled
+         * @return {boolean}
+         */
+        isCheckinEnabled: function () {
+            if ( window.hasOwnProperty( 'wc_sb_checkin' ) ) {
+                return window.wc_sb_checkin.isCheckinEnabled();
+            }
+
+            return false;
+        },
+
+        /**
          * Initiate Payment Javascript
          * @param url
          * @param callback
@@ -231,7 +231,7 @@ jQuery( function( $ ) {
                     // Initiate the payment menu in the frame
                     console.log( 'non-instant checkout' );
                     $.featherlight( '<div id="swedbank-pay-paymentmenu">&nbsp;</div>', {
-                        variant: 'featherlight-swedbank-pay',
+                        variant: 'featherlight-swedbank-seamless',
                         persist: true,
                         closeOnClick: false,
                         closeOnEsc: false,
@@ -431,7 +431,7 @@ jQuery( function( $ ) {
                     }
 
                     // Trigger update in case we need a fresh nonce
-                    if ( true === response.result.refresh ) {
+                    if ( response.hasOwnProperty( 'result' ) && true === response.result.refresh ) {
                         $( document.body ).trigger( 'update_checkout' );
                     }
 
@@ -439,7 +439,7 @@ jQuery( function( $ ) {
                     //wc_sb_checkout.onError( response.messages );
                 } );
 
-                return  wc_sb_checkout.xhr;
+                return wc_sb_checkout.xhr;
         },
 
         /**

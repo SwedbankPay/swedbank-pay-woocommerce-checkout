@@ -60,16 +60,17 @@ jobs:
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
           WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          path: /tmp/wordpress/wp-content/uploads/wc-logs/*.log
+
       - name: Run PHPCS inspection
         run: |
           composer global require "wp-coding-standards/wpcs"
           phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
           phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          path: /tmp/wordpress/wp-content/uploads/wc-logs/*.log
 
       - name: Upload code coverage report to Codecov
         env:
