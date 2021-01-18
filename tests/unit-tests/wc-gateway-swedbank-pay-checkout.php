@@ -71,6 +71,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		);
 		$order->save();
 
+		$_POST[ 'wc-' . $this->gateway->id . '-payment-token' ] = 'new';
 		$result = $this->gateway->process_payment( $order->get_id() );
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'result', $result );
