@@ -41,7 +41,7 @@ defined( 'ABSPATH' ) || exit;
 
 <?php if ( 'yes' === $checkin_edit ) : ?>
     <div style="clear: both;">&nbsp;</div>
-    <div id="swedbank-pay-checkin-edit">
+    <div id="swedbank-pay-checkin-edit" style="display: none;">
         <button type="button" id="change-address-info">
 	        <?php _e( 'Change the address', 'swedbank-pay-woocommerce-checkout' ); ?>
         </button>

@@ -154,6 +154,9 @@ jQuery( function( $ ) {
                     return;
                 }
 
+                // Show button witch allows to edit the address
+                $('#swedbank-pay-checkin-edit').show();
+
                 // Add the reference to the checkout form
                 let checkout_form = $( "form.checkout, form#order_review, form#add_payment_method" );
                 checkout_form.find( '.swedbank_pay_customer_reference' ).remove();
