@@ -227,7 +227,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 					'woocommerce'
 				),
 				'checkin_error'                => __(
-					'Please sign in to continue payment.',
+					'Validation is failed. Please check entered data on the form.',
 					'swedbank-pay-woocommerce-checkout'
 				),
 			);

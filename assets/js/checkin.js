@@ -17,6 +17,8 @@ jQuery( function( $ ) {
                 let checkin = $( '#checkin_country' );
                 if ( checkin.length > 0 ) {
                     self.loadCheckIn( checkin.val() );
+                } else {
+                    self.loadCheckIn( WC_Gateway_Swedbank_Pay_Checkin.checkin_country );
                 }
 
                 $( document.body ).on( 'click', '#change-address-info', function ( event ) {
@@ -27,7 +29,6 @@ jQuery( function( $ ) {
                 } );
 
                 self.hideAddressFields();
-                self.initCheckIn();
             }
         },
 
@@ -152,6 +153,9 @@ jQuery( function( $ ) {
                     alert(response.data.message);
                     return;
                 }
+
+                // Show button witch allows to edit the address
+                $('#swedbank-pay-checkin-edit').show();
 
                 // Add the reference to the checkout form
                 let checkout_form = $( "form.checkout, form#order_review, form#add_payment_method" );

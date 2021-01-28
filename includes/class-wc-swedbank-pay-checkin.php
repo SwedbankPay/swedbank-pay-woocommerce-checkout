@@ -217,6 +217,7 @@ class WC_Swedbank_Pay_Checkin {
 			'enabled'                      => ( 'yes' === $this->checkin ),
 			'culture'                      => $this->culture,
 			'checkin_edit'                 => ( 'yes' === $this->checkin_edit ),
+			'checkin_country'              => apply_filters( 'swedbank_pay_checkin_default_country', 'SE' ),
 			'needs_shipping_address'       => WC()->cart->needs_shipping(),
 			'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
 			'nonce'                        => wp_create_nonce( 'swedbank_pay_checkout' ),

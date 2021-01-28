@@ -665,7 +665,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					'woocommerce'
 				),
 				'checkin_error'                => __(
-					'Please sign in to continue payment.',
+					'Validation is failed. Please check entered data on the form.',
 					'swedbank-pay-woocommerce-checkout'
 				),
 			)
@@ -888,7 +888,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		// Process the saved payment method in "Redirect" checkout method
-		if ( $token_id && 'no' === $this->instant_checkout ) {
+		if ( 'no' === $this->instant_checkout ) {
 			if ( absint( $token_id ) > 0 ) {
 				$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
 				if ( ! $token->get_id() ) {
