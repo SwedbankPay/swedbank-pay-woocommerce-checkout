@@ -254,7 +254,9 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			'woocommerce_update_options_payment_gateways_' . $this->id,
 			array( $this, 'process_admin_options' )
 		);
-		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
+		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
+		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
@@ -268,6 +270,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		// Ajax Actions
 		add_action( 'wp_ajax_swedbank_pay_checkout_log_error', array( $this, 'ajax_swedbank_pay_checkout_log_error' ) );
 		add_action( 'wp_ajax_nopriv_swedbank_pay_checkout_log_error', array( $this, 'ajax_swedbank_pay_checkout_log_error' ) );
+
+		// Action for "Check payment"
+		add_action( 'wp_ajax_swedbank_checkout_check_payment', array( $this, 'ajax_check_payment' ) );
+		add_action( 'wp_ajax_nopriv_swedbank_checkout_check_payment', array( $this, 'ajax_check_payment' ) );
 
 		// Subscriptions
 		add_action( 'woocommerce_payment_complete', array( $this, 'add_subscription_card_id' ), 10, 1 );
@@ -821,6 +827,185 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Override "checkout/thankyou.php" template
+	 *
+	 * @param $located
+	 * @param $template_name
+	 * @param $args
+	 * @param $template_path
+	 * @param $default_path
+	 *
+	 * @return string
+	 */
+	public function override_template( $located, $template_name, $args, $template_path, $default_path ) {
+		if ( strpos( $located, 'checkout/thankyou.php' ) !== false ) {
+			$order = wc_get_order( $args['order'] );
+			if ( $this->id !== $order->get_payment_method() ) {
+				return $located;
+			}
+
+			$located = wc_locate_template(
+				'checkout/thankyou.php',
+				$template_path,
+				dirname( __FILE__ ) . '/../templates/'
+			);
+		}
+
+		return $located;
+	}
+
+	/**
+	 * thankyou_scripts function.
+	 *
+	 * Outputs scripts used for "thankyou" page
+	 *
+	 * @return void
+	 */
+	public function thankyou_scripts() {
+		if ( ! is_order_received_page() || 'no' === $this->enabled ) {
+			return;
+		}
+
+		global $wp;
+
+		$order_id  = absint( $wp->query_vars['order-received'] );
+		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : ''; // WPCS: input var ok, CSRF ok.
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
+			return;
+		}
+
+		if ( $this->id !== $order->get_payment_method() ) {
+			return;
+		}
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-checkout-order-status-check',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/order-status' . $suffix . '.js',
+			array(
+				'jquery',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-checkout-order-status-check',
+			'WC_Gateway_Swedbank_Pay_Checkout_Order_Status',
+			array(
+				'order_id'      => $order_id,
+				'order_key'     => $order_key,
+				'nonce'         => wp_create_nonce( 'swedbank_pay' ),
+				'ajax_url'      => admin_url( 'admin-ajax.php' ),
+				'check_message' => __(
+					'Please wait. We\'re checking the order status.',
+					'swedbank-pay-woocommerce-payments'
+				)
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-checkout-order-status-check' );
+	}
+
+	/**
+	 * Ajax: Check the payment
+	 */
+	public function ajax_check_payment() {
+		check_ajax_referer( 'swedbank_pay', 'nonce' );
+
+		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
+		$order_key  = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+			return;
+		}
+
+		$paymentorder_id = $order->get_meta( '_payex_paymentorder_id' );
+		if ( empty( $paymentorder_id ) ) {
+			wp_send_json_error( 'Invalid payment order' );
+			return;
+		}
+
+		try {
+			// Try to update order status if order has 'failure' status.
+			if ( 'failure' === $order->get_status() ) {
+				$this->core->fetchTransactionsAndUpdateOrder( $order->get_id() );
+			}
+
+			$payment_info = $this->core->fetchPaymentInfo( $paymentorder_id );
+
+			// The aborted-payment operation means that the merchant has aborted the payment before
+			// the payer has fulfilled the payment process.
+			// You can see this under abortReason in the response.
+			$aborted = $payment_info->getOperationByRel( 'aborted-payment', false );
+			if ( ! empty( $aborted ) ) {
+				$result = $this->core->request( $aborted['method'], $aborted['href'] );
+
+				// Abort reason
+				$message = $result['aborted']['abortReason'];
+
+				wp_send_json_success( array(
+					'state' => 'aborted',
+					'message' => $message
+				) );
+			}
+
+			// The failed-paymentorder operation means that something went wrong during the payment process, the transaction
+			// was not authorized, and no further transactions can be created if the payment is in this state.
+			$failed = $payment_info->getOperationByRel( 'failed-paymentorder', false );
+			if ( ! empty( $failed ) ) {
+				$result = $this->core->request( $failed['method'], $failed['href'] );
+
+				// Extract the problem details
+				$message = $result['title'];
+				if ( count( $result['problem']['problems'] ) > 0 ) {
+					$problems = array_column( $result['problem']['problems'], 'description' );
+					$message = implode(', ', $problems );
+				}
+
+				wp_send_json_success( array(
+					'state' => 'failed',
+					'message' => $message
+				) );
+
+				return;
+			}
+
+			// The paid-paymentorder operation confirms that the transaction has been successful
+			// and that the payment is completed.
+			$paid = $payment_info->getOperationByRel( 'paid-paymentorder', false );
+			if ( ! empty( $paid ) ) {
+				$result = $this->core->request( $paid['method'], $paid['href'] );
+
+				wp_send_json_success( array(
+					'state' => 'paid',
+					'message' => 'Order has been paid'
+				) );
+
+				return;
+			}
+
+			// No any information
+			wp_send_json_success( array(
+				'state' => 'unknown',
+			) );
+		} catch ( \SwedbankPay\Core\Exception $exception ) {
+			wp_send_json_success( array(
+				'state' => 'failed',
+				'message' => $exception->getMessage()
+			) );
+
+			return;
+		}
+	}
+
+	/**
 	 * Process Payment
 	 *
 	 * @param int $order_id
@@ -1051,8 +1236,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		$this->core->log( LogLevel::INFO, __METHOD__ );
-
-		$this->core->updateTransactionsOnFailure( $order->get_id() );
 
 		try {
 			$result = $this->core->fetchPaymentInfo( $payment_order, 'currentPayment,payeeInfo' );
