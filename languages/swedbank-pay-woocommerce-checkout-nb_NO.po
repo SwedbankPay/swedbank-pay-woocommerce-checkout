@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
-"POT-Creation-Date: 2021-01-26 13:53+0600\n"
-"PO-Revision-Date: 2021-01-26 13:55+0600\n"
+"POT-Creation-Date: 2021-01-31 15:05+0600\n"
+"PO-Revision-Date: 2021-01-31 15:07+0600\n"
 "Last-Translator: main <main@localhost>\n"
 "Language-Team: \n"
 "Language: nb_NO\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.3\n"
-"X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf\n"
+"X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf;esc_html_e\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -90,7 +90,6 @@ msgid "Language"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:441
-#| msgid "Language of pages displayed by PayEx during payment."
 msgid "Language of pages displayed by Swedbank Pay during payment."
 msgstr ""
 
@@ -174,7 +173,6 @@ msgid "Logo Url should use https scheme."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:504
-#| msgid "Your information"
 msgid "Send payer information"
 msgstr ""
 
@@ -210,7 +208,7 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:668
 #: ../includes/class-wc-swedbank-pay-instant-checkout.php:230
-msgid "Please sign in to continue payment."
+msgid "Validation is failed. Please check entered data on the form."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:744
@@ -237,12 +235,10 @@ msgid "Payment method was updated."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1148
-#| msgid "Payment method"
 msgid "Payment failed."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1155
-#| msgid "Payment method"
 msgid "Payment canceled."
 msgstr ""
 
@@ -383,7 +379,7 @@ msgstr ""
 
 #: ../includes/class-wc-swedbank-plugin.php:416
 msgid "Please wait..."
-msgstr ""
+msgstr "Vennligst vent..."
 
 #: ../includes/class-wc-swedbank-plugin.php:443
 msgid "Capture success."
@@ -399,18 +395,15 @@ msgstr ""
 
 #: ../templates/admin/action-buttons.php:16
 #: ../templates/admin/payment-actions.php:41
-#| msgid "Payment"
 msgid "Capture Payment"
 msgstr ""
 
 #: ../templates/admin/action-buttons.php:25
 #: ../templates/admin/payment-actions.php:50
-#| msgid "Payment"
 msgid "Cancel Payment"
 msgstr ""
 
 #: ../templates/admin/payment-actions.php:14
-#| msgid "Payment"
 msgid "Payment Info"
 msgstr ""
 
@@ -430,16 +423,36 @@ msgstr ""
 msgid "State"
 msgstr ""
 
+#: ../templates/checkout/swedbank-pay/checkin.php:17
+msgid "Your information"
+msgstr "din informasjon"
+
 #: ../templates/checkout/swedbank-pay/checkin.php:20
 msgid "Choose your country"
 msgstr ""
 
 #: ../templates/checkout/swedbank-pay/checkin.php:46
 msgid "Change the address"
+msgstr "Bytt adresse"
+
+#: ../templates/checkout/swedbank-pay/form-billing.php:43
+msgid "Create an account?"
 msgstr ""
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:11
 msgid "You must be logged in to checkout."
+msgstr ""
+
+#: ../templates/checkout/swedbank-pay/form-checkout.php:39
+msgid "Your order"
+msgstr ""
+
+#: ../templates/checkout/swedbank-pay/form-shipping.php:26
+msgid "Ship to a different address?"
+msgstr ""
+
+#: ../templates/checkout/swedbank-pay/form-shipping.php:57
+msgid "Additional information"
 msgstr ""
 
 #: ../templates/checkout/swedbank-pay/payment.php:8
