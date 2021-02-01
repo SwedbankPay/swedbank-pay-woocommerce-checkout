@@ -3,6 +3,8 @@ jQuery( function( $ ) {
     'use strict';
 
     window.wc_sb_checkin = {
+        customer_identified: false,
+
         /**
          * Initialize
          */
@@ -37,7 +39,23 @@ jQuery( function( $ ) {
          * @return {boolean}
          */
         isCheckinEnabled() {
-            return WC_Gateway_Swedbank_Pay_Checkin.enabled;
+            return 'yes' === WC_Gateway_Swedbank_Pay_Checkin.enabled;
+        },
+
+        /**
+         * Check if the Checkin is required
+         * @return {boolean}
+         */
+        isCheckinRequired() {
+            return this.isCheckinEnabled() && 'yes' === WC_Gateway_Swedbank_Pay_Checkin.checkin_required;
+        },
+
+        /**
+         * Check if customer was identified
+         * @return {boolean}
+         */
+        isCustomerIdentified() {
+            return this.customer_identified === true;
         },
 
         /**
@@ -64,14 +82,14 @@ jQuery( function( $ ) {
 
                 // Destroy
                 if ( window.hasOwnProperty( 'payex' ) && window.payex.hasOwnProperty( 'hostedView' ) ) {
-                    if ( typeof window.payex.hostedView.consumer !== 'undefined' ) {
-                        window.payex.hostedView.consumer().close();
-                    }
+                    //if ( typeof window.payex.hostedView.consumer !== 'undefined' ) {
+                        //window.payex.hostedView.consumer().close();
+                    //}
                 }
 
                 // Destroy JS
-                $( "script[src*='px.consumer.client']" ).remove();
-                $( '#swedbank-pay-checkin iframe' ).remove();
+                //$( "script[src*='px.consumer.client']" ).remove();
+                //$( '#swedbank-pay-checkin iframe' ).remove();
                 wc_sb_common.loadJs( data.data, function () {
                     wc_sb_checkin.initCheckIn();
                 } );
@@ -137,6 +155,8 @@ jQuery( function( $ ) {
         onConsumerIdentified: function ( data ) {
             console.log( 'onConsumerIdentified', data );
 
+            var self = this;
+
             return $.ajax( {
                 type: 'POST',
                 url: WC_Gateway_Swedbank_Pay_Checkin.ajax_url,
@@ -153,6 +173,8 @@ jQuery( function( $ ) {
                     alert(response.data.message);
                     return;
                 }
+
+                self.customer_identified = true;
 
                 // Show button witch allows to edit the address
                 $('#swedbank-pay-checkin-edit').show();
