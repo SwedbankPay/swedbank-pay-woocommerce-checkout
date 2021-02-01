@@ -209,7 +209,7 @@ msgstr ""
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:668
 #: ../includes/class-wc-swedbank-pay-instant-checkout.php:230
 msgid "Validation is failed. Please check entered data on the form."
-msgstr ""
+msgstr "Validering feilet. Vennligst gå gjennom skjemaet og sjekk at alt er korrekt utfylt."
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:744
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:878
@@ -429,7 +429,7 @@ msgstr "din informasjon"
 
 #: ../templates/checkout/swedbank-pay/checkin.php:20
 msgid "Choose your country"
-msgstr ""
+msgstr "Velg land"
 
 #: ../templates/checkout/swedbank-pay/checkin.php:46
 msgid "Change the address"
@@ -437,27 +437,27 @@ msgstr "Bytt adresse"
 
 #: ../templates/checkout/swedbank-pay/form-billing.php:43
 msgid "Create an account?"
-msgstr ""
+msgstr "Opprett konto?"
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:11
 msgid "You must be logged in to checkout."
-msgstr ""
+msgstr "Du må være inlogget for å fullføre ordren."
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:39
 msgid "Your order"
-msgstr ""
+msgstr "Din ordre"
 
 #: ../templates/checkout/swedbank-pay/form-shipping.php:26
 msgid "Ship to a different address?"
-msgstr ""
+msgstr "Send til en annen adresse"
 
 #: ../templates/checkout/swedbank-pay/form-shipping.php:57
 msgid "Additional information"
-msgstr ""
+msgstr "Øvrig informasjon"
 
 #: ../templates/checkout/swedbank-pay/payment.php:8
 msgid "Payment"
-msgstr ""
+msgstr "Betaling"
 
 #: ../vendor/swedbank-pay/swedbank-pay-woocommerce-core/src/SwedbankPay/Core/Adapter/WC_Adapter.php:372
 #, php-format
