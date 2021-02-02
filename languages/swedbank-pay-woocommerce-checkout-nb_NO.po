@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
 "POT-Creation-Date: 2021-01-31 15:05+0600\n"
-"PO-Revision-Date: 2021-01-31 15:07+0600\n"
+"PO-Revision-Date: 2021-02-02 12:31+0600\n"
 "Last-Translator: main <main@localhost>\n"
 "Language-Team: \n"
 "Language: nb_NO\n"
@@ -102,9 +102,7 @@ msgid "Enable Auto Capture Intent"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:450
-msgid ""
-"A one phase option that enable capture of funds automatically after "
-"authorization."
+msgid "A one phase option that enable capture of funds automatically after authorization."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:455
@@ -113,8 +111,8 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:456
 msgid ""
-"Capture payment automatically depends on the product type. It's working when "
-"Auto Capture Intent is off."
+"Capture payment automatically depends on the product type. It's working when Auto Capture "
+"Intent is off."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:460
@@ -160,8 +158,8 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:488
 msgid ""
-"The URL that will be used for showing the customer logo. Must be a picture "
-"with maximum 50px height and 400px width. Require https."
+"The URL that will be used for showing the customer logo. Must be a picture with maximum "
+"50px height and 400px width. Require https."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:494
@@ -202,8 +200,7 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:664
 #: ../includes/class-wc-swedbank-pay-instant-checkout.php:226
-msgid ""
-"Please read and accept the terms and conditions to proceed with your order."
+msgid "Please read and accept the terms and conditions to proceed with your order."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:668
@@ -367,8 +364,7 @@ msgstr ""
 msgid "Cheatin&#8217; huh?"
 msgstr ""
 
-#: ../includes/class-wc-swedbank-plugin.php:260
-#: ../includes/class-wc-swedbank-plugin.php:277
+#: ../includes/class-wc-swedbank-plugin.php:260 ../includes/class-wc-swedbank-plugin.php:277
 #, php-format
 msgid "Order status rollback. %1$s"
 msgstr ""
@@ -393,13 +389,11 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: ../templates/admin/action-buttons.php:16
-#: ../templates/admin/payment-actions.php:41
+#: ../templates/admin/action-buttons.php:16 ../templates/admin/payment-actions.php:41
 msgid "Capture Payment"
 msgstr ""
 
-#: ../templates/admin/action-buttons.php:25
-#: ../templates/admin/payment-actions.php:50
+#: ../templates/admin/action-buttons.php:25 ../templates/admin/payment-actions.php:50
 msgid "Cancel Payment"
 msgstr ""
 
