@@ -108,6 +108,14 @@ jQuery( function( $ ) {
                 return false;
             }
 
+            // Verify the checkin
+            if ( window.hasOwnProperty( 'wc_sb_checkin' ) && window.wc_sb_checkin.isCheckinEnabled() ) {
+                if ( window.wc_sb_checkin.isCheckinRequired() && ! window.wc_sb_checkin.isCustomerIdentified() ) {
+                    self.submit_error( '<div class="woocommerce-error">' + WC_Gateway_Swedbank_Pay_Checkin.needs_checkin + '</div>' );
+                    return false;
+                }
+            }
+
             if ( self.form_submit ) {
                 return true;
             }

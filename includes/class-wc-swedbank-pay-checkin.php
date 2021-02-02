@@ -51,6 +51,13 @@ class WC_Swedbank_Pay_Checkin {
 	public $checkin_country = 'SE';
 
 	/**
+	 * Require checkin
+	 *
+	 * @var string
+	 */
+	public $checkin_required = 'no';
+
+	/**
 	 * Allow to edit checkout fields.
 	 *
 	 * @var string
@@ -92,6 +99,7 @@ class WC_Swedbank_Pay_Checkin {
 		// Checkin settings
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
 		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
+		$this->checkin_required = isset( $this->settings['checkin_required'] ) ? $this->settings['checkin_required'] : $this->checkin_required;
 		$this->checkin_edit     = isset( $this->settings['checkin_edit'] ) ? $this->settings['checkin_edit'] : $this->checkin_edit;
 
 		// Styles
@@ -167,6 +175,13 @@ class WC_Swedbank_Pay_Checkin {
 			'default'     => $this->checkin_country,
 		);
 
+		$form_fields['checkin_required'] = array(
+			'title'   => __( 'Require checkin', 'swedbank-pay-woocommerce-checkout' ),
+			'type'    => 'checkbox',
+			'label'   => __( 'Require checkin', 'swedbank-pay-woocommerce-checkout' ),
+			'default' => $this->checkin_required,
+		);
+
 		$form_fields['checkin_edit'] = array(
 			'title'   => __( 'Allow to edit the address after Checkin.', 'swedbank-pay-woocommerce-checkout' ),
 			'type'    => 'checkbox',
@@ -214,8 +229,9 @@ class WC_Swedbank_Pay_Checkin {
 
 		// Localize the script with new data
 		$translation_array = array(
-			'enabled'                      => ( 'yes' === $this->checkin ),
+			'enabled'                      => $this->checkin,
 			'culture'                      => $this->culture,
+			'checkin_required'             => $this->checkin_required,
 			'checkin_edit'                 => ( 'yes' === $this->checkin_edit ),
 			'checkin_country'              => apply_filters( 'swedbank_pay_checkin_default_country', 'SE' ),
 			'needs_shipping_address'       => WC()->cart->needs_shipping(),
@@ -223,6 +239,10 @@ class WC_Swedbank_Pay_Checkin {
 			'nonce'                        => wp_create_nonce( 'swedbank_pay_checkout' ),
 			'ajax_url'                     => admin_url( 'admin-ajax.php' ),
 			'checkInStyle'                 => null,
+			'needs_checkin'                => __(
+				'You must check in to be able to pay.',
+				'swedbank-pay-woocommerce-checkout'
+			)
 		);
 
 		// Add CheckIn Styles
