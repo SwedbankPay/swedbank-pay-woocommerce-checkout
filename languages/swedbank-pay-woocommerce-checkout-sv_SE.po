@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
 "POT-Creation-Date: 2021-01-31 14:41+0600\n"
-"PO-Revision-Date: 2021-02-02 12:30+0600\n"
+"PO-Revision-Date: 2021-02-04 14:35+0600\n"
 "Last-Translator: main <main@localhost>\n"
 "Language-Team: \n"
 "Language: sv_SE\n"
@@ -328,7 +328,7 @@ msgstr ""
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:105
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:154
 msgid "Invoice Fee"
-msgstr "Faktura avgift"
+msgstr "Fakturaavgift"
 
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:110
 msgid "Invoice fee. Set 0 to disable."
@@ -441,7 +441,7 @@ msgstr ""
 
 #: ../templates/checkout/swedbank-pay/checkin.php:46
 msgid "Change the address"
-msgstr "Din information"
+msgstr "Byt adress"
 
 #: ../templates/checkout/swedbank-pay/form-billing.php:43
 msgid "Create an account?"
@@ -449,7 +449,7 @@ msgstr ""
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:11
 msgid "You must be logged in to checkout."
-msgstr ""
+msgstr "Du måste checka in för att kunna checka ut"
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:39
 msgid "Your order"
@@ -476,88 +476,3 @@ msgstr ""
 #: ../vendor/swedbank-pay/swedbank-pay-woocommerce-core/src/SwedbankPay/Core/Adapter/WC_Adapter.php:766
 msgid "Payment Token class is undefined."
 msgstr ""
-
-#~ msgid "Failed to process payment"
-#~ msgstr "Din betalning kunde inte behandlas"
-
-#~ msgid "Change shipping information"
-#~ msgstr "Byt leveransadress"
-
-#~ msgid "Transaction failed."
-#~ msgstr "Transaktionen misslyckades"
-
-#~ msgid "Factoring Fee"
-#~ msgstr "Fakturaavgift"
-
-#~ msgid "PayEx Add-Ons"
-#~ msgstr "Personnummer"
-
-#~ msgid "Private"
-#~ msgstr "Privat"
-
-#~ msgid "Social Security Number"
-#~ msgstr "Personnummer"
-
-#~ msgid "Corporate"
-#~ msgstr "Organisation"
-
-#~ msgid "Organization Number"
-#~ msgstr "Organisations nummer"
-
-#~ msgid "Please select invoice method."
-#~ msgstr "Välj betalsätt"
-
-#~ msgid "Please enter your Social Security Number and confirm your order."
-#~ msgstr "Var god och skriv in ditt personnummer och godkänn ordern"
-
-#~ msgid "Invalid Social Security Number"
-#~ msgstr "Ogiltigt Personnummer"
-
-#~ msgid "Please enter your Organization Number and confirm your order."
-#~ msgstr "Var god och skriv in ditt organisations nummer och godkänn ordern"
-
-#~ msgid "Invalid Organization Number"
-#~ msgstr "Ogiltigt organisations nummer"
-
-#~ msgid ""
-#~ "You will be redirected to <a target=\"_blank\" href=\"%s\">PayEx</a> "
-#~ "website when you place an order."
-#~ msgstr ""
-#~ "Du kommer att skickas till <a target=\"_blank\" href=\"%s\">PayEx</a> "
-#~ "hemsida när du har placerat din order"
-
-#~ msgid "Financing Invoice"
-#~ msgstr "Faktura"
-
-#~ msgid "Social Security Number:"
-#~ msgstr "Personnummer:"
-
-#~ msgid "Order refunded."
-#~ msgstr "Beställningen har återbetalats"
-
-#~ msgid "Select other payment method"
-#~ msgstr "Välj betalsätt"
-
-#~ msgid "Social Security Number Field"
-#~ msgstr "Personnummersfält"
-
-#~ msgid "Add Social Security Number Field to Checkout"
-#~ msgstr "Personnummersfält"
-
-#~ msgid "Get Profile"
-#~ msgstr "Hämta uppgifter"
-
-#~ msgid "Please select country"
-#~ msgstr "Välj land"
-
-#~ msgid "Please enter postcode"
-#~ msgstr "Fyll i postnummer"
-
-#~ msgid "General Options"
-#~ msgstr "Allmänna Alternativ"
-
-#~ msgid "Add SSN field to checkout"
-#~ msgstr "Lägg till Personnummersfält i kassan"
-
-#~ msgid "Save Changes"
-#~ msgstr "Spara ändringar"
