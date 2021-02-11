@@ -40,6 +40,14 @@ jQuery( function( $ ) {
                 return false;
             }
 
+            // Verify the checkin
+            if ( window.hasOwnProperty( 'wc_sb_checkin' ) && window.wc_sb_checkin.isCheckinEnabled() ) {
+                if ( window.wc_sb_checkin.isCheckinRequired() && ! window.wc_sb_checkin.isCustomerIdentified() ) {
+                    event.data.obj.submit_error( '<div class="woocommerce-error">' + WC_Gateway_Swedbank_Pay_Checkin.needs_checkin + '</div>' );
+                    return false;
+                }
+            }
+
             console.log(this.js_url);
             event.data.obj.waitForJsUrl();
         },
@@ -170,6 +178,31 @@ jQuery( function( $ ) {
             }
 
             return script;
+        },
+
+        /**
+         * Submit Error
+         * @param error_message
+         */
+        submit_error: function( error_message ) {
+            $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
+            this.form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' );
+            this.form.removeClass( 'processing' ).unblock();
+            this.form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
+            this.scroll_to_notices();
+            $( document.body ).trigger( 'checkout_error' );
+        },
+
+        /**
+         * Scroll to notices
+         */
+        scroll_to_notices: function() {
+            let scrollElement = $( '.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout' );
+            if ( ! scrollElement.length ) {
+                scrollElement = $( '.form.checkout' );
+            }
+
+            $.scroll_to_notices( scrollElement );
         },
     }
 } );

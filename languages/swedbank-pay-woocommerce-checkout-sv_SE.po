@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
-"POT-Creation-Date: 2021-01-26 13:49+0600\n"
-"PO-Revision-Date: 2021-01-26 13:51+0600\n"
+"POT-Creation-Date: 2021-01-31 14:41+0600\n"
+"PO-Revision-Date: 2021-02-04 14:35+0600\n"
 "Last-Translator: main <main@localhost>\n"
 "Language-Team: \n"
 "Language: sv_SE\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.3\n"
-"X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf\n"
+"X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf;esc_html_e\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -23,40 +23,33 @@ msgid "Swedbank Pay Checkout"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:359
-#, fuzzy
 msgid "Enable/Disable"
-msgstr "Aktivera/Inaktivera"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:361
-#, fuzzy
 msgid "Enable plugin"
-msgstr "Aktivera plugin"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:365
-#, fuzzy
 msgid "Title"
-msgstr "Titel"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:368
-#, fuzzy
 msgid "This controls the title which the user sees during checkout."
-msgstr "Detta reglerar titeln som användaren ser vid utcheckningen."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:374
-#, fuzzy
 msgid "Description"
-msgstr "Beskrivning"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:377
-#, fuzzy
 msgid "This controls the description which the user sees during checkout."
-msgstr "Detta styr den beskrivning som användaren ser vid utcheckningen."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:383
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:385
-#, fuzzy
 msgid "Payee Id"
-msgstr "Payee Id"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:392
 msgid "\"Payee Id\" field can't be empty."
@@ -64,9 +57,8 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:399
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:401
-#, fuzzy
 msgid "Access Token"
-msgstr "Access Token"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:408
 msgid "\"Access Token\" field can't be empty."
@@ -78,34 +70,29 @@ msgid "Subsite"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:421
-#, fuzzy
 msgid "Test Mode"
-msgstr "Övningsläge"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:423
-#, fuzzy
 msgid "Enable Swedbank Pay Test Mode"
-msgstr "Aktivera Swedbank Pay testläge"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:427
-#, fuzzy
 msgid "Debug"
-msgstr "Debug"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:429
-#, fuzzy
 msgid "Enable logging"
-msgstr "Aktivera loggning"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:433
 msgid "Language"
 msgstr "Språk"
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:441
-#, fuzzy
 #| msgid "Language of pages displayed by PayEx during payment."
 msgid "Language of pages displayed by Swedbank Pay during payment."
-msgstr "Språk sidor visas av Swedbank Pay under betalning."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:447
 msgid "Auto Capture Intent"
@@ -148,9 +135,8 @@ msgid "Fees"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:469
-#, fuzzy
 msgid "Checkout Method"
-msgstr "Betalmetod"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:472
 msgid "Seamless View"
@@ -188,10 +174,9 @@ msgid "Logo Url should use https scheme."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:504
-#, fuzzy
 #| msgid "Your information"
 msgid "Send payer information"
-msgstr "Din information"
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:506
 msgid "Send billing/delivery addresses of payer to Swedbank Pay"
@@ -225,7 +210,7 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:668
 #: ../includes/class-wc-swedbank-pay-instant-checkout.php:230
-msgid "Please sign in to continue payment."
+msgid "Validation is failed. Please check entered data on the form."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:744
@@ -238,14 +223,12 @@ msgstr "Kunden har skickats till Swedbank Pay."
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:805
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:815
 #: ../vendor/swedbank-pay/swedbank-pay-woocommerce-core/src/SwedbankPay/Core/Adapter/WC_Adapter.php:783
-#, fuzzy
 msgid "There was a problem adding the card."
-msgstr "Det gick inte att lägga till kortet."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:810
-#, fuzzy
 msgid "Payment method successfully added."
-msgstr "Betalningsmetoden har lagts till."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:855
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1105
@@ -254,16 +237,14 @@ msgid "Payment method was updated."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1148
-#, fuzzy
 #| msgid "Payment method"
 msgid "Payment failed."
-msgstr "Betalningen misslyckades."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1155
-#, fuzzy
 #| msgid "Payment method"
 msgid "Payment canceled."
-msgstr "Betalningen avbröts."
+msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1386
 msgid "Amount must be positive."
@@ -285,9 +266,9 @@ msgid "Via %1$s card ending in %2$s/%3$s"
 msgstr ""
 
 #: ../includes/class-wc-payment-token-swedbank-pay.php:196
-#, fuzzy, php-format
+#, php-format
 msgid "%1$s ending in %2$s"
-msgstr "%1$s slutar i %2$s"
+msgstr ""
 
 #: ../includes/class-wc-swedbank-pay-checkin.php:152
 #: ../includes/class-wc-swedbank-pay-checkin.php:154
@@ -347,7 +328,7 @@ msgstr ""
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:105
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:154
 msgid "Invoice Fee"
-msgstr "Faktura avgift"
+msgstr "Fakturaavgift"
 
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:110
 msgid "Invoice fee. Set 0 to disable."
@@ -355,17 +336,14 @@ msgstr ""
 
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:115
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:117
-#| msgid "Invoice Fee"
 msgid "Invoice Fee is Taxable"
 msgstr ""
 
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:122
-#| msgid "Invoice Fee"
 msgid "Tax class of Invoice Fee"
 msgstr ""
 
 #: ../includes/class-wc-swedbank-pay-invoice-fee.php:125
-#| msgid "Invoice Fee"
 msgid "Tax class of Invoice Fee."
 msgstr ""
 
@@ -408,14 +386,12 @@ msgid "Please wait..."
 msgstr "Vänligen vänta..."
 
 #: ../includes/class-wc-swedbank-plugin.php:443
-#, fuzzy
 msgid "Capture success."
-msgstr "Capture framgång."
+msgstr ""
 
 #: ../includes/class-wc-swedbank-plugin.php:469
-#, fuzzy
 msgid "Cancel success."
-msgstr "Avbryt framgång."
+msgstr ""
 
 #: ../swedbank-pay-woocommerce-checkout.php:69
 msgid "Settings"
@@ -423,43 +399,41 @@ msgstr ""
 
 #: ../templates/admin/action-buttons.php:16
 #: ../templates/admin/payment-actions.php:41
-#, fuzzy
 #| msgid "Payment"
 msgid "Capture Payment"
-msgstr "Capture Payment"
+msgstr ""
 
 #: ../templates/admin/action-buttons.php:25
 #: ../templates/admin/payment-actions.php:50
-#, fuzzy
 #| msgid "Payment"
 msgid "Cancel Payment"
-msgstr "Avbryt Betalning"
+msgstr ""
 
 #: ../templates/admin/payment-actions.php:14
-#, fuzzy
 #| msgid "Payment"
 msgid "Payment Info"
-msgstr "Betalinformation"
+msgstr ""
 
 #: ../templates/admin/payment-actions.php:17
-#, fuzzy
 msgid "Number"
-msgstr "Siffra"
+msgstr ""
 
 #: ../templates/admin/payment-actions.php:22
-#, fuzzy
 msgid "Instrument"
-msgstr "Instrument"
+msgstr ""
 
 #: ../templates/admin/payment-actions.php:27
-#, fuzzy
 msgid "Intent"
-msgstr "Avsikt"
+msgstr ""
 
 #: ../templates/admin/payment-actions.php:32
-#, fuzzy
 msgid "State"
-msgstr "Tillstånd"
+msgstr ""
+
+#: ../templates/checkout/swedbank-pay/checkin.php:17
+#| msgid "Your information"
+msgid "Your information"
+msgstr "Din information"
 
 #: ../templates/checkout/swedbank-pay/checkin.php:20
 msgid "Choose your country"
@@ -467,10 +441,27 @@ msgstr ""
 
 #: ../templates/checkout/swedbank-pay/checkin.php:46
 msgid "Change the address"
+msgstr "Byt adress"
+
+#: ../templates/checkout/swedbank-pay/form-billing.php:43
+msgid "Create an account?"
 msgstr ""
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:11
 msgid "You must be logged in to checkout."
+msgstr "Du måste checka in för att kunna checka ut"
+
+#: ../templates/checkout/swedbank-pay/form-checkout.php:39
+msgid "Your order"
+msgstr ""
+
+#: ../templates/checkout/swedbank-pay/form-shipping.php:26
+msgid "Ship to a different address?"
+msgstr ""
+
+#: ../templates/checkout/swedbank-pay/form-shipping.php:57
+#| msgid "Your information"
+msgid "Additional information"
 msgstr ""
 
 #: ../templates/checkout/swedbank-pay/payment.php:8
@@ -478,95 +469,10 @@ msgid "Payment"
 msgstr "Betalsätt"
 
 #: ../vendor/swedbank-pay/swedbank-pay-woocommerce-core/src/SwedbankPay/Core/Adapter/WC_Adapter.php:372
-#, fuzzy, php-format
+#, php-format
 msgid "Order #%1$s"
-msgstr "Beställ %s"
+msgstr ""
 
 #: ../vendor/swedbank-pay/swedbank-pay-woocommerce-core/src/SwedbankPay/Core/Adapter/WC_Adapter.php:766
 msgid "Payment Token class is undefined."
 msgstr ""
-
-#~ msgid "Failed to process payment"
-#~ msgstr "Din betalning kunde inte behandlas"
-
-#~ msgid "Change shipping information"
-#~ msgstr "Byt leveransadress"
-
-#~ msgid "Transaction failed."
-#~ msgstr "Transaktionen misslyckades"
-
-#~ msgid "Factoring Fee"
-#~ msgstr "Fakturaavgift"
-
-#~ msgid "PayEx Add-Ons"
-#~ msgstr "Personnummer"
-
-#~ msgid "Private"
-#~ msgstr "Privat"
-
-#~ msgid "Social Security Number"
-#~ msgstr "Personnummer"
-
-#~ msgid "Corporate"
-#~ msgstr "Organisation"
-
-#~ msgid "Organization Number"
-#~ msgstr "Organisations nummer"
-
-#~ msgid "Please select invoice method."
-#~ msgstr "Välj betalsätt"
-
-#~ msgid "Please enter your Social Security Number and confirm your order."
-#~ msgstr "Var god och skriv in ditt personnummer och godkänn ordern"
-
-#~ msgid "Invalid Social Security Number"
-#~ msgstr "Ogiltigt Personnummer"
-
-#~ msgid "Please enter your Organization Number and confirm your order."
-#~ msgstr "Var god och skriv in ditt organisations nummer och godkänn ordern"
-
-#~ msgid "Invalid Organization Number"
-#~ msgstr "Ogiltigt organisations nummer"
-
-#~ msgid ""
-#~ "You will be redirected to <a target=\"_blank\" href=\"%s\">PayEx</a> "
-#~ "website when you place an order."
-#~ msgstr ""
-#~ "Du kommer att skickas till <a target=\"_blank\" href=\"%s\">PayEx</a> "
-#~ "hemsida när du har placerat din order"
-
-#~ msgid "Financing Invoice"
-#~ msgstr "Faktura"
-
-#~ msgid "Social Security Number:"
-#~ msgstr "Personnummer:"
-
-#~ msgid "Order refunded."
-#~ msgstr "Beställningen har återbetalats"
-
-#~ msgid "Select other payment method"
-#~ msgstr "Välj betalsätt"
-
-#~ msgid "Social Security Number Field"
-#~ msgstr "Personnummersfält"
-
-#~ msgid "Add Social Security Number Field to Checkout"
-#~ msgstr "Personnummersfält"
-
-#~ msgid "Get Profile"
-#~ msgstr "Hämta uppgifter"
-
-#~ msgid "Please select country"
-#~ msgstr "Välj land"
-
-#~ msgid "Please enter postcode"
-#~ msgstr "Fyll i postnummer"
-
-#~ msgid "General Options"
-#~ msgstr "Allmänna Alternativ"
-
-#~ msgid "Add SSN field to checkout"
-#~ msgstr "Lägg till Personnummersfält i kassan"
-
-#~ msgid "Save Changes"
-#~ msgstr "Spara ändringar"

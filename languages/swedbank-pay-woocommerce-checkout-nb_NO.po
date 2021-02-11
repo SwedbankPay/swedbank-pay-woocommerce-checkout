@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
-"POT-Creation-Date: 2021-01-26 13:53+0600\n"
-"PO-Revision-Date: 2021-01-26 13:55+0600\n"
+"POT-Creation-Date: 2021-01-31 15:05+0600\n"
+"PO-Revision-Date: 2021-02-02 12:31+0600\n"
 "Last-Translator: main <main@localhost>\n"
 "Language-Team: \n"
 "Language: nb_NO\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.3\n"
-"X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf\n"
+"X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf;esc_html_e\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -90,7 +90,6 @@ msgid "Language"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:441
-#| msgid "Language of pages displayed by PayEx during payment."
 msgid "Language of pages displayed by Swedbank Pay during payment."
 msgstr ""
 
@@ -103,9 +102,7 @@ msgid "Enable Auto Capture Intent"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:450
-msgid ""
-"A one phase option that enable capture of funds automatically after "
-"authorization."
+msgid "A one phase option that enable capture of funds automatically after authorization."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:455
@@ -114,8 +111,8 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:456
 msgid ""
-"Capture payment automatically depends on the product type. It's working when "
-"Auto Capture Intent is off."
+"Capture payment automatically depends on the product type. It's working when Auto Capture "
+"Intent is off."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:460
@@ -161,8 +158,8 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:488
 msgid ""
-"The URL that will be used for showing the customer logo. Must be a picture "
-"with maximum 50px height and 400px width. Require https."
+"The URL that will be used for showing the customer logo. Must be a picture with maximum "
+"50px height and 400px width. Require https."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:494
@@ -174,7 +171,6 @@ msgid "Logo Url should use https scheme."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:504
-#| msgid "Your information"
 msgid "Send payer information"
 msgstr ""
 
@@ -204,14 +200,13 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:664
 #: ../includes/class-wc-swedbank-pay-instant-checkout.php:226
-msgid ""
-"Please read and accept the terms and conditions to proceed with your order."
+msgid "Please read and accept the terms and conditions to proceed with your order."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:668
 #: ../includes/class-wc-swedbank-pay-instant-checkout.php:230
-msgid "Please sign in to continue payment."
-msgstr ""
+msgid "Validation is failed. Please check entered data on the form."
+msgstr "Validering feilet. Vennligst gå gjennom skjemaet og sjekk at alt er korrekt utfylt."
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:744
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:878
@@ -237,12 +232,10 @@ msgid "Payment method was updated."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1148
-#| msgid "Payment method"
 msgid "Payment failed."
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-checkout.php:1155
-#| msgid "Payment method"
 msgid "Payment canceled."
 msgstr ""
 
@@ -371,8 +364,7 @@ msgstr ""
 msgid "Cheatin&#8217; huh?"
 msgstr ""
 
-#: ../includes/class-wc-swedbank-plugin.php:260
-#: ../includes/class-wc-swedbank-plugin.php:277
+#: ../includes/class-wc-swedbank-plugin.php:260 ../includes/class-wc-swedbank-plugin.php:277
 #, php-format
 msgid "Order status rollback. %1$s"
 msgstr ""
@@ -383,7 +375,7 @@ msgstr ""
 
 #: ../includes/class-wc-swedbank-plugin.php:416
 msgid "Please wait..."
-msgstr ""
+msgstr "Vennligst vent..."
 
 #: ../includes/class-wc-swedbank-plugin.php:443
 msgid "Capture success."
@@ -397,20 +389,15 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: ../templates/admin/action-buttons.php:16
-#: ../templates/admin/payment-actions.php:41
-#| msgid "Payment"
+#: ../templates/admin/action-buttons.php:16 ../templates/admin/payment-actions.php:41
 msgid "Capture Payment"
 msgstr ""
 
-#: ../templates/admin/action-buttons.php:25
-#: ../templates/admin/payment-actions.php:50
-#| msgid "Payment"
+#: ../templates/admin/action-buttons.php:25 ../templates/admin/payment-actions.php:50
 msgid "Cancel Payment"
 msgstr ""
 
 #: ../templates/admin/payment-actions.php:14
-#| msgid "Payment"
 msgid "Payment Info"
 msgstr ""
 
@@ -430,21 +417,41 @@ msgstr ""
 msgid "State"
 msgstr ""
 
+#: ../templates/checkout/swedbank-pay/checkin.php:17
+msgid "Your information"
+msgstr "din informasjon"
+
 #: ../templates/checkout/swedbank-pay/checkin.php:20
 msgid "Choose your country"
-msgstr ""
+msgstr "Velg land"
 
 #: ../templates/checkout/swedbank-pay/checkin.php:46
 msgid "Change the address"
-msgstr ""
+msgstr "Bytt adresse"
+
+#: ../templates/checkout/swedbank-pay/form-billing.php:43
+msgid "Create an account?"
+msgstr "Opprett konto?"
 
 #: ../templates/checkout/swedbank-pay/form-checkout.php:11
 msgid "You must be logged in to checkout."
-msgstr ""
+msgstr "Du må være inlogget for å fullføre ordren."
+
+#: ../templates/checkout/swedbank-pay/form-checkout.php:39
+msgid "Your order"
+msgstr "Din ordre"
+
+#: ../templates/checkout/swedbank-pay/form-shipping.php:26
+msgid "Ship to a different address?"
+msgstr "Send til en annen adresse"
+
+#: ../templates/checkout/swedbank-pay/form-shipping.php:57
+msgid "Additional information"
+msgstr "Øvrig informasjon"
 
 #: ../templates/checkout/swedbank-pay/payment.php:8
 msgid "Payment"
-msgstr ""
+msgstr "Betaling"
 
 #: ../vendor/swedbank-pay/swedbank-pay-woocommerce-core/src/SwedbankPay/Core/Adapter/WC_Adapter.php:372
 #, php-format
