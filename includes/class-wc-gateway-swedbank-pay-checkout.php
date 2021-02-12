@@ -159,6 +159,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $payment_token_class = '\SwedbankPay\Checkout\WooCommerce\WC_Payment_Token_Swedbank_Pay';
 
 	/**
+	 * Swedbank Pay ip addresses
+	 * @var array
+	 */
+	public $gateway_ip_addresses = [ '82.115.146.1' ];
+
+	/**
 	 * @var WC_Swedbank_Pay_Checkin
 	 */
 	private $checkin_instance;
@@ -1350,6 +1356,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * IPN Callback
 	 * @return void
 	 * @throws \Exception
+	 * @SuppressWarnings(PHPMD.Superglobals)
 	 */
 	public function return_handler() {
 		$raw_body = file_get_contents( 'php://input' );
@@ -1378,14 +1385,20 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$order_id  = absint(  wc_clean( $_GET['order_id'] ) ); // WPCS: input var ok, CSRF ok.
 			$order_key = empty( $_GET['key'] ) ? '' : wc_clean( wp_unslash( $_GET['key'] ) ); // WPCS: input var ok, CSRF ok.
 
-			if ( empty( $order_id ) || empty( $order_key ) ) {
-				if ( ! in_array( $_SERVER['REMOTE_ADDR'], [ '82.115.146.1' ] ) ) {
-					throw new Exception( 'An order ID or order key wasn\'t provided' );
-				}
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				throw new Exception( 'Unable to load an order.' );
 			}
 
-			$order = wc_get_order( $order_id );
-			if ( ! $order || ! hash_equals( $order->get_order_key(), $order_key ) ) {
+			if ( empty( $order_key ) ) {
+				if ( ! in_array( $_SERVER['REMOTE_ADDR'], $this->gateway_ip_addresses ) ) {
+					throw new Exception( 'An order key wasn\'t provided' );
+				}
+
+				$order_key = $order->get_order_key();
+			}
+
+			if ( ! hash_equals( $order->get_order_key(), $order_key ) ) {
 				throw new Exception( 'A provided order key has been invalid.' );
 			}
 
