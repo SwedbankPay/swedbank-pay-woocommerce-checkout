@@ -167,8 +167,9 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			}
 
 			// Get Order by Payment Id
-			$payment_id = $data['payment']['id'];
-			$order_id   = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
+			$transaction_id = $data['transaction']['number'];
+			$payment_id     = $data['payment']['id'];
+			$order_id       = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
 			if ( ! $order_id ) {
 				throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
 			}
@@ -178,6 +179,15 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			if ( ! $order ) {
 				throw new \Exception( sprintf( 'Error: Failed to get order by Id %s', $order_id ) );
 			}
+
+			$transactions = (array) $order->get_meta( '_sb_transactions' );
+			if ( in_array( $transaction_id, $transactions) ) {
+				$this->log( sprintf( 'Transaction #%s was processed before.', $transaction_id ) );
+
+				// Remove from queue
+				return false;
+			}
+
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: Validation error: %s', $e->getMessage() ) );
 
@@ -213,7 +223,12 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			);
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
+
+			// Remove from queue
+			return false;
 		}
+
+		$this->log( sprintf( 'Transaction #%s has been processed.', $transaction_id ) );
 
 		// Remove from queue
 		return false;
