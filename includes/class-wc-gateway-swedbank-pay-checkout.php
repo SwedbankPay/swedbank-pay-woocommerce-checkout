@@ -257,6 +257,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
 		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
+		add_filter( 'woocommerce_order_get_payment_method_title', array( $this, 'payment_method_title' ), 2, 10 );
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
@@ -2406,5 +2407,45 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Override payment method title.
+	 *
+	 * @param string $value
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public function payment_method_title( $value, $order ) {
+		if ( ! is_order_received_page() && ! is_account_page() ) {
+			return $value;
+		}
+
+		if ( $this->id !== $order->get_payment_method() ) {
+			return $value;
+		}
+
+		$instrument = $order->get_meta( '_sb_payment_instrument' );
+		if ( empty( $instrument ) ) {
+			$payment_id = $order->get_meta( '_payex_payment_id' );
+			if ( empty( $payment_id ) ) {
+				return $value;
+			}
+
+			// Fetch payment info
+			try {
+				$result = $this->core->fetchPaymentInfo( $payment_id );
+			} catch ( \Exception $e ) {
+				// Request failed
+				return $value;
+			}
+
+			$instrument = $result['payment']['instrument'];
+			$order->update_meta_data( '_sb_payment_instrument', $instrument );
+			$order->save_meta_data();
+		}
+
+		return sprintf( '%s (%s)', $value, $instrument );
 	}
 }
