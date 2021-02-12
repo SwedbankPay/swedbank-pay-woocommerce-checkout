@@ -111,6 +111,10 @@ class WC_Swedbank_Plugin {
 		}
 
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-checkin.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-checkout.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-capture.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-invoice-fee.php' );
 	}
 
 	/**
