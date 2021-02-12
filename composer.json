@@ -9,6 +9,6 @@
         "php": ">=7.0",
         "adci/full-name-parser": "^0.2.4",
         "ramsey/uuid": "^3.7",
-        "swedbank-pay/swedbank-pay-woocommerce-core": "~3.0.0"
+        "swedbank-pay/swedbank-pay-woocommerce-core": "~3.0.1"
     }
 }

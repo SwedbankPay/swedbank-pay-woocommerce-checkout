@@ -1,6 +1,14 @@
-Version 4.2.1
+Version 4.3.0
 * Rename Merchant Token to Access Token
 * Improve Instant capture
+* Check if Terms and conditions checkbox is ticked before checkout
+* Fixed checkout when "Allow customers to place orders without an account" = No
+* Fixed checkout problem when no any saved card and Instant checkout is off
+* Show "Change the address" button after checkin
+* Improved Seamless View
+* Improved payment confirmation page (order-received page)
+* Implemented option: Require checkin
+* Update translations
 
 Version 4.2.0
 * Implemented Invoice fee feature
