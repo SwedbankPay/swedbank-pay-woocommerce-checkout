@@ -1,8 +1,8 @@
-.featherlight-swedbank-pay .featherlight-content {
+.featherlight-swedbank-seamless .featherlight-content {
   width: 50%; }
 
 @media (max-width: 767px) {
-  .featherlight-swedbank-pay .featherlight-content {
+  .featherlight-swedbank-seamless .featherlight-content {
     width: 100%;
     width: -moz-available;
     width: -webkit-fill-available;

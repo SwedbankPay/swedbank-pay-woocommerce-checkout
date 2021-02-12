@@ -24,6 +24,11 @@ class WC_Swedbank_Pay_Invoice_Fee {
 
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 
+		// JS Scrips
+		if ( 'yes' === $settings['enabled'] && SB_INVOICE_FEE > 0 ) {
+			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		}
+
 		// Add settings
 		add_action( 'woocommerce_after_register_post_type', array( $this, 'register_post_type' ), 100 );
 
@@ -44,6 +49,35 @@ class WC_Swedbank_Pay_Invoice_Fee {
 		if ( session_status() === PHP_SESSION_NONE && ! headers_sent() ) {
 			session_start();
 		}
+	}
+
+	/**
+	 * Enqueue scripts
+	 */
+	public function enqueue_scripts() {
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'swedbank-pay-checkout-invoice-fee',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice-fee' . $suffix . '.js',
+			array(),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		$translation_array = array(
+			'nonce'    => wp_create_nonce( 'swedbank_pay_checkout_invoice' ),
+			'ajax_url' => admin_url( 'admin-ajax.php' ),
+		);
+
+		wp_localize_script(
+			'swedbank-pay-checkout-invoice-fee',
+			'WC_Gateway_Swedbank_Pay_Checkout_Invoice',
+			$translation_array
+		);
+
+		wp_enqueue_script( 'swedbank-pay-checkout-invoice-fee' );
 	}
 
 	/**
@@ -129,6 +163,8 @@ class WC_Swedbank_Pay_Invoice_Fee {
 	 * Ajax: Add invoice fee.
 	 */
 	public function ajax_sb_invoice_apply_fee() {
+		check_ajax_referer( 'swedbank_pay_checkout_invoice', 'nonce' );
+
 		$this->log( __METHOD__ . ': Set invoice fee.' );
 
 		$_SESSION['sb_invoice_fee_apply'] = 'yes';
@@ -140,6 +176,8 @@ class WC_Swedbank_Pay_Invoice_Fee {
 	 * Ajax: Remove invoice fee.
 	 */
 	public function ajax_sb_invoice_unset_fee() {
+		check_ajax_referer( 'swedbank_pay_checkout_invoice', 'nonce' );
+
 		$this->log( __METHOD__ . ': Remove invoice fee.' );
 
 		$_SESSION['sb_invoice_fee_apply'] = 'no';

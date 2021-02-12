@@ -6,15 +6,7 @@ jQuery( function( $ ) {
          * @return {boolean}
          */
         isInstantCheckout() {
-            return WC_Gateway_Swedbank_Pay_Checkout.instant_checkout;
-        },
-
-        /**
-         * Check if the Checkin is active
-         * @return {boolean}
-         */
-        isCheckinEnabled() {
-            return WC_Gateway_Swedbank_Pay_Checkout.checkin;
+            return 'yes' === WC_Gateway_Swedbank_Pay_Checkout.instant_checkout;
         },
 
         /**
@@ -22,7 +14,7 @@ jQuery( function( $ ) {
          * @return {boolean}
          */
         isRedirectMethodEnabled() {
-            return WC_Gateway_Swedbank_Pay_Checkout.redirect_method;
+            return 'redirect' === WC_Gateway_Swedbank_Pay_Checkout.redirect_method;
         },
 
         /**

@@ -21,7 +21,7 @@ jQuery( function( $ ) {
             $( this.form )
             // We need to bind directly to the click (and not checkout_place_order_payex_checkout) to avoid popup blockers
             // especially on mobile devices (like on Chrome for iOS) from blocking payex_checkout(payment_id, {}, 'open'); from opening a tab
-                .on( 'click', '#place_order', this.onSubmit )
+                .on( 'click', '#place_order', {'obj': window.wc_sb_checkout}, this.onSubmit )
 
                 // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
                 .on( 'submit checkout_place_order_payex_checkout' );
@@ -42,39 +42,18 @@ jQuery( function( $ ) {
          */
         initInstantCheckout: function () {
             console.log( 'Initialization of Instant Checkout...' );
-
-            if ( wc_sb_common.isCheckinEnabled() ) {
-                // Checkout will be loaded after checkin
-            } else {
-                //wc_sb_checkout.initCheckout( data.consumerProfileRef );
-            }
-
-            if ( wc_sb_common.isCheckinEnabled() ) {
-                ////wc_sb_common.hideAddressFields();
-
-                // Use saved consumerProfileRef
-                let consumerProfileElm = $( '#swedbank-pay-consumer-profile' );
-                if ( consumerProfileElm.length > 0 ) {
-                    let reference = consumerProfileElm.data( 'reference' );
-                    console.log( 'Initiate consumerProfileRef', reference );
-                    //wc_sb_checkout.initCheckout( reference );
-                    ////wc_sb_checkin.initCheckIn();
-                } else {
-                    // Initiate checkin
-                    ////wc_sb_checkin.initCheckIn();
-                }
-            }
         },
 
         initCheckout: function( reference ) {
-            // Show "Change shipping info" button
-            $( '#change-shipping-info' ).show();
-
             wc_sb_checkout.form.find( '.swedbank_pay_customer_reference' ).remove();
             wc_sb_checkout.form.append( "<input type='hidden' class='swedbank_pay_customer_reference' name='swedbank_pay_customer_reference' value='" + reference + "'/>" );
-
-            //wc_sb_checkout.form.submit();
-            wc_sb_checkout.onSubmit();
+            wc_sb_checkout.onSubmit(
+                {
+                    data: {
+                        obj: window.wc_sb_checkout
+                    }
+                }
+            );
         },
 
         isPaymentMethodChosen: function() {
@@ -119,36 +98,59 @@ jQuery( function( $ ) {
             wc_sb_checkout.updateOrder();
         },
 
-        onSubmit: function( e ) {
-            if ( wc_sb_checkout.form_submit ) {
+        onSubmit: function( event ) {
+            var self = event.data.obj;
+            let terms = $( '#terms' );
+
+            // Validate "terms and conditions" if exists
+            if ( terms.length > 0 && ! terms.prop( 'checked' ) ) {
+                self.submit_error( '<div class="woocommerce-error">' + WC_Gateway_Swedbank_Pay_Checkout.terms_error + '</div>' );
+                return false;
+            }
+
+            // Verify the checkin
+            if ( window.hasOwnProperty( 'wc_sb_checkin' ) && window.wc_sb_checkin.isCheckinEnabled() ) {
+                if ( window.wc_sb_checkin.isCheckinRequired() && ! window.wc_sb_checkin.isCustomerIdentified() ) {
+                    self.submit_error( '<div class="woocommerce-error">' + WC_Gateway_Swedbank_Pay_Checkin.needs_checkin + '</div>' );
+                    return false;
+                }
+            }
+
+            if ( self.form_submit ) {
                 return true;
             }
 
-            if ( wc_sb_checkout.isPaymentMethodChosen() ) {
+            if ( self.isPaymentMethodChosen() ) {
                 if ( typeof e !== 'undefined' ) {
                     e.preventDefault();
                 }
 
                 if ( ! wc_sb_common.validateForm() ) {
+                    console.log( 'The checkout form validation is failed.' );
+
+                    if ( self.isCheckinEnabled() ) {
+                        self.submit_error( '<div class="woocommerce-error">' + WC_Gateway_Swedbank_Pay_Checkout.checkin_error + '</div>' );
+                    }
+
                     return false;
                 }
 
                 console.log( 'onSubmit' );
 
-                if ( wc_sb_checkout.form.is( '.processing' ) ) {
+                if ( self.form.is( '.processing' ) ) {
                     return false;
                 }
 
                 $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-                wc_sb_checkout.form.addClass( 'processing' );
+                self.form.addClass( 'processing' );
                 wc_sb_common.block();
-                wc_sb_checkout.placeOrder()
+                self.placeOrder()
                     .always( function ( response ) {
-                        wc_sb_checkout.form.removeClass( 'processing' );
+                        self.form.removeClass( 'processing' );
                         wc_sb_common.unblock();
                     } )
                     .fail( function( jqXHR, textStatus ) {
-                        wc_sb_checkout.onError( textStatus );
+                        self.onError( textStatus );
                     } )
                     .done( function ( response) {
                         console.log( response );
@@ -164,18 +166,18 @@ jQuery( function( $ ) {
                                 $( document.body ).trigger( 'update_checkout' );
                             }
 
-                            wc_sb_checkout.onError( response.messages );
+                            self.onError( response.messages );
                             return;
                         }
 
                         if ( wc_sb_common.isRedirectMethodEnabled() ) {
                             // Redirect to the payment gateway page
                             console.log( 'Redirecting to ' + response['redirect_url'] );
-                            self.location.href = response['redirect_url'];
+                            window.location.href = response['redirect_url'];
                         } else {
                             // Load SwedBank Pay Checkout frame
-                            wc_sb_checkout.js_url = response['js_url'];
-                            wc_sb_checkout.initPaymentJS( wc_sb_checkout.js_url );
+                            self.js_url = response['js_url'];
+                            self.initPaymentJS( self.js_url );
                         }
                     } );
 
@@ -189,7 +191,17 @@ jQuery( function( $ ) {
             wc_sb_checkout.form_submit = false;
         },
 
+        /**
+         * Check if Checkin is enabled
+         * @return {boolean}
+         */
+        isCheckinEnabled: function () {
+            if ( window.hasOwnProperty( 'wc_sb_checkin' ) ) {
+                return window.wc_sb_checkin.isCheckinEnabled();
+            }
 
+            return false;
+        },
 
         /**
          * Initiate Payment Javascript
@@ -227,7 +239,7 @@ jQuery( function( $ ) {
                     // Initiate the payment menu in the frame
                     console.log( 'non-instant checkout' );
                     $.featherlight( '<div id="swedbank-pay-paymentmenu">&nbsp;</div>', {
-                        variant: 'featherlight-swedbank-pay',
+                        variant: 'featherlight-swedbank-seamless',
                         persist: true,
                         closeOnClick: false,
                         closeOnEsc: false,
@@ -307,15 +319,12 @@ jQuery( function( $ ) {
          */
         refreshPaymentMenu: function() {
             console.log( 'refreshPaymentMenu' );
-            if ( typeof this.paymentMenu !== 'undefined' &&
-                this.paymentMenu &&
-                this.paymentMenu.hasOwnProperty( 'refresh' ) &&
-                typeof this.paymentMenu.refresh === 'function' )
-            {
-                this.paymentMenu.refresh();
-            } else {
-                console.warn( 'refreshPaymentMenu: refresh workaround' );
-                //wc_sb_checkout.initPaymentJS( wc_sb_checkout.js_url )
+            if ( typeof this.paymentMenu !== 'undefined' && this.paymentMenu ) {
+                if ( this.paymentMenu.hasOwnProperty( 'refresh' ) && typeof this.paymentMenu.refresh === 'function' ) {
+                    this.paymentMenu.refresh();
+                } else {
+                    console.warn( 'refreshPaymentMenu: paymentMenu doesn\'t support refresh' );
+                }
             }
         },
 
@@ -430,7 +439,7 @@ jQuery( function( $ ) {
                     }
 
                     // Trigger update in case we need a fresh nonce
-                    if ( true === response.result.refresh ) {
+                    if ( response.hasOwnProperty( 'result' ) && true === response.result.refresh ) {
                         $( document.body ).trigger( 'update_checkout' );
                     }
 
@@ -438,7 +447,7 @@ jQuery( function( $ ) {
                     //wc_sb_checkout.onError( response.messages );
                 } );
 
-                return  wc_sb_checkout.xhr;
+                return wc_sb_checkout.xhr;
         },
 
         /**

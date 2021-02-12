@@ -21,10 +21,10 @@ jQuery(function ($) {
 
             return $.ajax({
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout_Invoice.ajax_url,
                 data: {
                     action: 'sb_invoice_apply_fee',
-                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout_Invoice.nonce
                 },
                 dataType: 'json'
             }).done(function () {
@@ -39,10 +39,10 @@ jQuery(function ($) {
 
             return $.ajax({
                 type: 'POST',
-                url: WC_Gateway_Swedbank_Pay_Checkout.ajax_url,
+                url: WC_Gateway_Swedbank_Pay_Checkout_Invoice.ajax_url,
                 data: {
                     action: 'sb_invoice_unset_fee',
-                    nonce: WC_Gateway_Swedbank_Pay_Checkout.nonce
+                    nonce: WC_Gateway_Swedbank_Pay_Checkout_Invoice.nonce
                 },
                 dataType: 'json'
             }).done(function () {

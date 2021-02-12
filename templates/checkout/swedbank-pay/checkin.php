@@ -4,6 +4,7 @@ defined( 'ABSPATH' ) || exit;
 
 /** @var string $checkin_country */
 /** @var string $selected_country */
+/** @var string $checkin_edit */
 /** @var array $consumer_data */
 /** @var string $consumer_profile */
 /** @var string $js_view_url */
@@ -36,6 +37,16 @@ defined( 'ABSPATH' ) || exit;
 		<?php endif; ?>
 	</div>
 </div>
+
+
+<?php if ( 'yes' === $checkin_edit ) : ?>
+    <div style="clear: both;">&nbsp;</div>
+    <div id="swedbank-pay-checkin-edit" style="display: none;">
+        <button type="button" id="change-address-info">
+	        <?php _e( 'Change the address', 'swedbank-pay-woocommerce-checkout' ); ?>
+        </button>
+    </div>
+<?php endif; ?>
 
 <div style="clear: both;">&nbsp;</div>
 

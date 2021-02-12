@@ -41,10 +41,10 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/woocommerce
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
-          zip -r /tmp/woocommerce.zip ./
+          zip -q -r /tmp/woocommerce.zip ./
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
           composer install
-          zip -r /tmp/swedbank-pay-woocommerce-checkout.zip ./
+          zip -q -r /tmp/swedbank-pay-woocommerce-checkout.zip ./
           cd /tmp/wordpress
           curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
           php wp-cli.phar core config --dbname=woocommerce_test --dbuser=root --dbpass='root' --dbhost=localhost --dbprefix=wp_
@@ -58,10 +58,21 @@ jobs:
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
         run: |
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
-          WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit
+          WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          path: /tmp/wordpress/wp-content/uploads/wc-logs/*.log
 
       - name: Run PHPCS inspection
         run: |
           composer global require "wp-coding-standards/wpcs"
           phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
           phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
+
+      - name: Upload code coverage report to Codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: bash <(curl -s https://codecov.io/bash)
