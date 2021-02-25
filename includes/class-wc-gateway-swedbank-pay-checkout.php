@@ -1583,150 +1583,165 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				10
 			);
 
-			// Partial refund
-			if ( $order->get_total() != $amount ) {
-				$args = (array) WC()->session->get( 'swedbank_refund_parameters' );
-				$lines = isset( $args['line_items'] ) ? $args['line_items'] : [];
-				$items = [];
+			$args = (array) WC()->session->get( 'swedbank_refund_parameters' );
+			$lines = isset( $args['line_items'] ) ? $args['line_items'] : [];
+			$items = [];
 
-				if ( count( $lines ) > 0 ) {
-					// Partial refund with specific items
-					// Build order items list
-					foreach ($lines as $item_id => $line) {
-						/** @var WC_Order_Item_Product $item */
-						$item = $order->get_item( $item_id );
-						$reference = null;
-						$product_name = trim( $item->get_name() );
-						if ( empty( $product_name ) ) {
-							$product_name = '-';
-						}
+			// Refund without specific items
+			if ( 0 === count( $lines ) ) {
+				$lines = $order->get_items( array( 'line_item', 'shipping', 'fee', 'coupon' ) );
+			}
 
-						$type          = OrderItemInterface::TYPE_PRODUCT;
-						$qty           = (int) $line['qty'];
-						$refund_total  = (float) $line['refund_total'];
-						$refund_tax    = (float) array_shift( $line['refund_tax'] );
-						$tax_percent   = ( $refund_tax > 0 ) ? round( 100 / ( $refund_total / $refund_tax ) ) : 0;
-						$unit_price    = ( $refund_total + $refund_tax ) / $qty;
-						$refund_amount = $refund_total + $refund_tax;
+			// Refund with specific items
+			// Build order items list
+			foreach ($lines as $item_id => $line) {
+				/** @var WC_Order_Item $item */
+				$item = $order->get_item( $item_id );
 
-						if ( empty( $refund_total ) ) {
-							// Skip zero items
-							continue;
-						}
-
-						if (method_exists($item, 'get_product_id')) {
-							$product = $item->get_product();
-
-							// Get Product Sku
-							$reference = trim(
-								str_replace(
-									array( ' ', '.', ',' ),
-									'-',
-									$item->get_product()->get_sku()
-								)
-							);
-
-							if ( empty( $reference ) ) {
-								$reference = wp_generate_password( 12, false );
-							}
-
-							$image = wp_get_attachment_image_src( $product->get_image_id(), 'full' );
-							if ( $image ) {
-								$image = array_shift( $image );
-							} else {
-								$image = wc_placeholder_img_src( 'full' );
-							}
-
-							if (null === parse_url( $image, PHP_URL_SCHEME ) &&
-							    mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
-							) {
-								$image = wp_guess_url() . $image;
-							}
-
-							// Get Product Class
-							$product_class = get_post_meta(
-								$product->get_id(),
-								'_sb_product_class',
-								true
-							);
-
-							if ( empty( $product_class ) ) {
-								$product_class = 'ProductGroup1';
-							}
-
-							$items[] = array(
-								// The field Reference must match the regular expression '[\\w-]*'
-								OrderItemInterface::FIELD_REFERENCE   => $reference,
-								OrderItemInterface::FIELD_NAME        => $product_name,
-								OrderItemInterface::FIELD_TYPE        => $type,
-								OrderItemInterface::FIELD_CLASS       => $product_class,
-								OrderItemInterface::FIELD_ITEM_URL    => $product->get_permalink(),
-								OrderItemInterface::FIELD_IMAGE_URL   => $image,
-								OrderItemInterface::FIELD_DESCRIPTION => $product_name,
-								OrderItemInterface::FIELD_QTY         => $qty,
-								OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-								OrderItemInterface::FIELD_UNITPRICE   => round( $unit_price * 100 ),
-								OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
-								OrderItemInterface::FIELD_AMOUNT      => round( $refund_amount * 100 ),
-								OrderItemInterface::FIELD_VAT_AMOUNT  => round( $refund_tax * 100 ),
-							);
-						} else {
-							if ( $item instanceof WC_Order_Item_Product ) {
-								$type = OrderItemInterface::TYPE_PRODUCT;
-							} elseif ( $item instanceof WC_Order_Item_Shipping ) {
-								$type = OrderItemInterface::TYPE_SHIPPING;
-								$reference = 'shipping';
-							} else {
-								$type = OrderItemInterface::TYPE_OTHER;
-								$reference = 'other';
-							}
-
-							$items[] = array(
-								// The field Reference must match the regular expression '[\\w-]*'
-								OrderItemInterface::FIELD_REFERENCE   => $reference,
-								OrderItemInterface::FIELD_NAME        => $product_name,
-								OrderItemInterface::FIELD_TYPE        => $type,
-								OrderItemInterface::FIELD_CLASS       => 'ProductGroup1',
-								OrderItemInterface::FIELD_DESCRIPTION => $product_name,
-								OrderItemInterface::FIELD_QTY         => 1,
-								OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-								OrderItemInterface::FIELD_UNITPRICE   => round( $unit_price * 100 ),
-								OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
-								OrderItemInterface::FIELD_AMOUNT      => round( $refund_amount * 100 ),
-								OrderItemInterface::FIELD_VAT_AMOUNT  => round( $refund_tax * 100 ),
-							);
-						}
-					}
-				} else {
-					// Partial refund without specific items
-					$items[] = [
-						OrderItemInterface::FIELD_REFERENCE => 'refund',
-						OrderItemInterface::FIELD_NAME => __( 'Refund', 'woocommerce' ),
-						OrderItemInterface::FIELD_TYPE => OrderItemInterface::TYPE_OTHER,
-						OrderItemInterface::FIELD_DESCRIPTION => __( 'Refund', 'woocommerce' ),
-						OrderItemInterface::FIELD_CLASS => 'ProductGroup1',
-						OrderItemInterface::FIELD_QTY => 1,
-						OrderItemInterface::FIELD_QTY_UNIT => 'abstract',
-						OrderItemInterface::FIELD_UNITPRICE => round( $amount * 100 ),
-						OrderItemInterface::FIELD_VAT_PERCENT => 0,
-						OrderItemInterface::FIELD_AMOUNT => round( $amount * 100 ),
-						OrderItemInterface::FIELD_VAT_AMOUNT => 0,
-					];
+				$product_name = trim( $item->get_name() );
+				if ( empty( $product_name ) ) {
+					$product_name = '-';
 				}
 
-				// Unset
-				WC()->session->__unset( 'swedbank_refund_parameters' );
+				$qty = (int) $line['qty'];
+				if ($qty < 1) {
+					$qty = 1;
+				}
 
-				// Calculate VAT amount
-				$vat_amount = array_sum(
-					array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT )
-				) / 100;
+				$refund_total  = (float) $line['refund_total'];
+				$refund_tax    = (float) array_shift( $line['refund_tax'] );
+				$tax_percent   = ( $refund_tax > 0 ) ? round( 100 / ( $refund_total / $refund_tax ) ) : 0;
+				$unit_price    = $qty > 0 ? ( ( $refund_total + $refund_tax ) / $qty ) : 0;
+				$refund_amount = $refund_total + $refund_tax;
 
-				$this->core->refundCheckout( $order->get_id(), $amount, $vat_amount, $items );
-			} else {
-				// Full refund
-				$this->core->refundCheckout( $order->get_id(), null );
+				if ( empty( $refund_total ) ) {
+					// Skip zero items
+					continue;
+				}
+
+				$order_item = array(
+					OrderItemInterface::FIELD_NAME        => $product_name,
+					OrderItemInterface::FIELD_DESCRIPTION => $product_name,
+					OrderItemInterface::FIELD_UNITPRICE   => round( $unit_price * 100 ),
+					OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
+					OrderItemInterface::FIELD_AMOUNT      => round( $refund_amount * 100 ),
+					OrderItemInterface::FIELD_VAT_AMOUNT  => round( $refund_tax * 100 ),
+					OrderItemInterface::FIELD_QTY         => $qty,
+					OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
+				);
+
+				switch ( $item->get_type() ) {
+					case 'line_item':
+						/** @var WC_Order_Item_Product $item */
+
+						/**
+						 * @var WC_Product $product
+						 */
+						$product = $item->get_product();
+
+						// Get Product Sku
+						$reference = trim(
+							str_replace(
+								array( ' ', '.', ',' ),
+								'-',
+								$product->get_sku()
+							)
+						);
+
+						if ( empty( $reference ) ) {
+							$reference = wp_generate_password( 12, false );
+						}
+
+						// Get Product image
+						$image = wp_get_attachment_image_src( $product->get_image_id(), 'full' );
+						if ( $image ) {
+							$image = array_shift( $image );
+						} else {
+							$image = wc_placeholder_img_src( 'full' );
+						}
+
+						if (null === parse_url( $image, PHP_URL_SCHEME ) &&
+						    mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
+						) {
+							$image = wp_guess_url() . $image;
+						}
+
+						// Get Product Class
+						$product_class = get_post_meta(
+							$product->get_id(),
+							'_sb_product_class',
+							true
+						);
+
+						if ( empty( $product_class ) ) {
+							$product_class = apply_filters(
+								'sb_product_class',
+								'ProductGroup1'
+							);
+						}
+
+						// The field Reference must match the regular expression '[\\w-]*'
+						$order_item[OrderItemInterface::FIELD_REFERENCE] = $reference;
+						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_PRODUCT;
+						$order_item[OrderItemInterface::FIELD_CLASS] = $product_class;
+						$order_item[OrderItemInterface::FIELD_ITEM_URL] = $product->get_permalink();
+						$order_item[OrderItemInterface::FIELD_IMAGE_URL] = $image;
+
+						break;
+					case 'shipping':
+						/** @var WC_Order_Item_Shipping $item */
+						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'shipping';
+						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_SHIPPING;
+						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
+							'sb_product_class_shipping',
+							'ProductGroup1'
+						);
+
+						break;
+					case 'fee':
+						/** @var WC_Order_Item_Fee $item */
+						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'fee';
+						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
+						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
+							'sb_product_class_fee',
+							'ProductGroup1'
+						);
+
+						break;
+					case 'coupon':
+						/** @var WC_Order_Item_Coupon $item */
+						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'coupon';
+						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
+						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
+							'sb_product_class_coupon',
+							'ProductGroup1'
+						);
+
+						break;
+					default:
+						/** @var WC_Order_Item $item */
+						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'other';
+						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
+						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
+							'sb_product_class_other',
+							'ProductGroup1'
+						);
+
+						break;
+				}
+
+				$items[] = $order_item;
 			}
+
+			// Unset
+			WC()->session->__unset( 'swedbank_refund_parameters' );
+
+			// Calculate VAT amount
+			$vat_amount = array_sum(
+				array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT )
+			) / 100;
+
+			$this->core->refundCheckout( $order->get_id(), $amount, $vat_amount, $items );
 
 			return true;
 		} catch ( \Exception $e ) {
