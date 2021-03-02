@@ -219,6 +219,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 				'culture'                      => $this->culture,
 				'instant_checkout'             => $this->instant_checkout,
 				'method'                       => $this->method,
+				'payment_url'                  => WC()->session->get( 'sb_payment_url' ),
 				'nonce'                        => wp_create_nonce( 'swedbank_pay_checkout' ),
 				'ajax_url'                     => admin_url( 'admin-ajax.php' ),
 				'paymentMenuStyle'             => null,
@@ -299,6 +300,8 @@ class WC_Swedbank_Pay_Instant_Checkout {
 
 			// Update Order
 			$result = $this->gateway->core->updatePaymentOrder( $update_url, $order->get_id() );
+
+			WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
 
 			return array(
 				'result'                   => 'success',
@@ -445,6 +448,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 
 		// Save JS Url in session
 		WC()->session->set( 'swedbank_pay_checkout_js_url', $js_url );
+		WC()->session->set( 'sb_payment_url', $js_url );
 
 		return array(
 			'result'                   => 'success',
