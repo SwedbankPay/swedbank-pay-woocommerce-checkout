@@ -1,3 +1,9 @@
+Version 4.4.0
+* Implemented paymentUrl
+* Refund with order items
+* Update translations
+* Update Checkin
+
 Version 4.3.0
 * Rename Merchant Token to Access Token
 * Improve Instant capture
