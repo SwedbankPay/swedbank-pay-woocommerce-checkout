@@ -28,6 +28,7 @@ jQuery( function( $ ) {
      */
     window.wc_sb_checkout = {
         xhr: false,
+        payment_url: WC_Gateway_Swedbank_Pay_Checkout.payment_url,
 
         /**
          * Initialize e handlers and UI state.
@@ -43,6 +44,8 @@ jQuery( function( $ ) {
 
                 // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
                 .on( 'submit checkout_place_order_payex_checkout' );
+
+            this.checkPaymentUrl();
         },
 
         /**
