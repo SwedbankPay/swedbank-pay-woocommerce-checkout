@@ -7,9 +7,11 @@ jQuery( function( $ ) {
      */
     window.wc_sb_checkout = {
         js_url: null,
+        payment_url: WC_Gateway_Swedbank_Pay_Checkout.payment_url,
         paymentMenu: null,
         isPaymentMenuLoaded: false,
         xhr: false,
+        isLocked: false,
 
         /**
          * Initialize e handlers and UI state.
@@ -31,10 +33,14 @@ jQuery( function( $ ) {
             $( document.body ).on( 'updated_checkout', this.onUpdatedCheckout );
             $( document.body ).on( 'blur', this.onUpdatedCheckout );
 
-            // Initialize Instant Checkout
-            if ( wc_sb_common.isInstantCheckout() ) {
-                wc_sb_checkout.initInstantCheckout();
-            }
+            this.checkPaymentUrl( function ( loaded ) {
+                if ( ! loaded ) {
+                    // Initialize Instant Checkout
+                    if ( wc_sb_common.isInstantCheckout() ) {
+                        wc_sb_checkout.initInstantCheckout();
+                    }
+                }
+            } );
         },
 
         /**
@@ -365,6 +371,10 @@ jQuery( function( $ ) {
          * @return {JQueryPromise<any>}
          */
         updateOrder: function ( compatibility ) {
+            if ( this.isLocked ) {
+                return wc_sb_checkout.xhr;
+            }
+
             console.log( 'updateOrder' );
             let fields = $('.woocommerce-checkout').serialize();
 
@@ -478,6 +488,35 @@ jQuery( function( $ ) {
             }
 
             $.scroll_to_notices( scrollElement );
+        },
+        /**
+         * Check the payment url.
+         *
+         * @param callback
+         */
+        checkPaymentUrl: function ( callback ) {
+            if ( !! ( new URLSearchParams( document.location.search ) ).get( 'payment_url' ) && this.payment_url ) {
+                this.lockCheckout();
+                this.initPaymentJS( this.payment_url, function () {
+                    console.log( 'Payment url has been loaded.' );
+                    callback( true );
+                } );
+            } else {
+                callback( false );
+            }
+        },
+        /**
+         * Lock the checkout
+         */
+        lockCheckout: function () {
+            this.isLocked = true;
+            $( '.woocommerce-checkout' ).block( {
+                message: null,
+                overlayCSS: {
+                    background: '#fff',
+                    opacity: 0.6
+                }
+            } );
         },
     };
 

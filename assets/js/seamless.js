@@ -204,5 +204,13 @@ jQuery( function( $ ) {
 
             $.scroll_to_notices( scrollElement );
         },
+
+        checkPaymentUrl: function () {
+            if ( !! (new URLSearchParams(document.location.search)).get('payment_url') ) {
+                this.initFrame( this.payment_url, function () {
+                    console.log( 'Payment url has been loaded.' );
+                } );
+            }
+        }
     }
 } );

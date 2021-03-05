@@ -666,6 +666,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'culture' => $this->culture,
 				'instant_checkout'             => $this->instant_checkout,
 				'method'                       => $this->method,
+				'payment_url'                  => WC()->session->get( 'sb_payment_url' ),
 				'paymentMenuStyle'             => null,
 				'terms_error'                  => __(
 					'Please read and accept the terms and conditions to proceed with your order.',
@@ -1121,6 +1122,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					)
 				);
 
+				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
+
 				if ( self::METHOD_SEAMLESS === $this->method ) {
 					return array(
 						'result'   => 'success',
@@ -1166,6 +1169,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				// Save payment ID
 				$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
 				$order->save_meta_data();
+
+				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
 
 				if ( self::METHOD_SEAMLESS === $this->method ) {
 					return array(
