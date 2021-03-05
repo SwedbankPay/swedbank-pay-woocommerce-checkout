@@ -2,8 +2,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-/** @var string $checkin_country */
-/** @var string $selected_country */
 /** @var string $checkin_edit */
 /** @var array $consumer_data */
 /** @var string $consumer_profile */
@@ -15,20 +13,6 @@ defined( 'ABSPATH' ) || exit;
 <?php endif; ?>
 
 <h3>1. <?php esc_html_e( 'Your information', 'swedbank-pay-woocommerce-checkout' ); ?></h3>
-<?php if ( $checkin_country === 'SELECT' ) : ?>
-<label for="checkin_country">
-	<?php _e( 'Choose your country', 'swedbank-pay-woocommerce-checkout' ); ?>
-	<select id="checkin_country" name="checkin_country" class="select">
-		<option <?php echo 'SE' === $selected_country ? 'selected' : ''; ?> value="SE">
-			<?php _e( 'Sweden', 'woocommerce' ); ?>
-		</option>
-		<option <?php echo 'NO' === $selected_country ? 'selected' : ''; ?> value="NO">
-			<?php _e( 'Norway', 'woocommerce' ); ?>
-		</option>
-	</select>
-</label>
-<div style="clear: both;">&nbsp;</div>
-<?php endif; ?>
 
 <div id="swedbank-pay-checkin">
 	<div class="consumer-info">

@@ -45,12 +45,6 @@ class WC_Swedbank_Pay_Checkin {
 	public $checkin = 'yes';
 
 	/**
-	 * Checkin Country
-	 * @var string
-	 */
-	public $checkin_country = 'SE';
-
-	/**
 	 * Require checkin
 	 *
 	 * @var string
@@ -98,7 +92,6 @@ class WC_Swedbank_Pay_Checkin {
 
 		// Checkin settings
 		$this->checkin          = isset( $this->settings['checkin'] ) ? $this->settings['checkin'] : $this->checkin;
-		$this->checkin_country  = isset( $this->settings['checkin_country'] ) ? $this->settings['checkin_country'] : $this->checkin_country;
 		$this->checkin_required = isset( $this->settings['checkin_required'] ) ? $this->settings['checkin_required'] : $this->checkin_required;
 		$this->checkin_edit     = isset( $this->settings['checkin_edit'] ) ? $this->settings['checkin_edit'] : $this->checkin_edit;
 
@@ -163,18 +156,6 @@ class WC_Swedbank_Pay_Checkin {
 			'default' => $this->checkin,
 		);
 
-		$form_fields['checkin_country'] = array(
-			'title'       => __( 'Checkin country', 'swedbank-pay-woocommerce-checkout' ),
-			'type'        => 'select',
-			'options'     => array(
-				'SE'     => __( 'Sweden', 'woocommerce' ),
-				'NO'     => __( 'Norway', 'woocommerce' ),
-				'SELECT' => __( 'Customer can choose', 'swedbank-pay-woocommerce-checkout' ),
-			),
-			'description' => __( 'Checkin country', 'swedbank-pay-woocommerce-checkout' ),
-			'default'     => $this->checkin_country,
-		);
-
 		$form_fields['checkin_required'] = array(
 			'title'   => __( 'Require checkin', 'swedbank-pay-woocommerce-checkout' ),
 			'type'    => 'checkbox',
@@ -233,7 +214,6 @@ class WC_Swedbank_Pay_Checkin {
 			'culture'                      => $this->culture,
 			'checkin_required'             => $this->checkin_required,
 			'checkin_edit'                 => ( 'yes' === $this->checkin_edit ),
-			'checkin_country'              => apply_filters( 'swedbank_pay_checkin_default_country', 'SE' ),
 			'needs_shipping_address'       => WC()->cart->needs_shipping(),
 			'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
 			'nonce'                        => wp_create_nonce( 'swedbank_pay_checkout' ),
@@ -316,7 +296,11 @@ class WC_Swedbank_Pay_Checkin {
 		if ( empty( $profile['reference'] ) ) {
 			// Initiate consumer session
 			try {
-				$result = $this->gateway->core->initiateConsumerSession( $this->checkin_country );
+				$result = $this->gateway->core->initiateConsumerSession(
+					$this->culture,
+					true,
+					array_keys( WC()->countries->get_shipping_countries() )
+				);
 				$js_view_url = $result->getOperationByRel( 'view-consumer-identification' );
 			} catch ( Exception $e ) {
 				$profile['reference'] = null;
@@ -330,8 +314,6 @@ class WC_Swedbank_Pay_Checkin {
 		wc_get_template(
 			'checkout/swedbank-pay/checkin.php',
 			array(
-				'checkin_country'  => $this->checkin_country,
-				'selected_country' => apply_filters( 'swedbank_pay_checkin_default_country', 'SE' ),
 				'checkin_edit'     => $this->checkin_edit,
 				'js_view_url'      => $js_view_url,
 				'consumer_data'    => $profile['billing'],
@@ -526,11 +508,14 @@ class WC_Swedbank_Pay_Checkin {
 	public function ajax_swedbank_pay_checkin() {
 		check_ajax_referer( 'swedbank_pay_checkout', 'nonce' );
 
-		$country = isset( $_POST['country'] ) ? wc_clean( $_POST['country'] ) : '';
-
 		// Initiate consumer session
 		try {
-			$js_url = $this->gateway->core->initiateConsumerSession( $country )->getOperationByRel( 'view-consumer-identification' );
+			$js_url = $this->gateway->core->initiateConsumerSession(
+				$this->culture,
+				true,
+				array_keys( WC()->countries->get_shipping_countries() )
+			)->getOperationByRel( 'view-consumer-identification' );
+
 			wp_send_json_success( $js_url );
 		} catch ( Exception $e ) {
 			wp_send_json_error( $e->getMessage() );

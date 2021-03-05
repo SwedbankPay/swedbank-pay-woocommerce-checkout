@@ -62,7 +62,6 @@ class WC_Swedbank_Pay_Checkin extends WC_Unit_Test_Case {
 		unset( $_REQUEST['section'] );
 
 		$this->assertArrayHasKey( 'checkin', $form_fields );
-		$this->assertArrayHasKey( 'checkin_country', $form_fields );
 		$this->assertArrayHasKey( 'checkin_edit', $form_fields );
 	}
 }
