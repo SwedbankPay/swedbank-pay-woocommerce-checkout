@@ -913,7 +913,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'ajax_url'      => admin_url( 'admin-ajax.php' ),
 				'check_message' => __(
 					'Please wait. We\'re checking the order status.',
-					'swedbank-pay-woocommerce-payments'
+					'swedbank-pay-woocommerce-checkout'
 				)
 			)
 		);

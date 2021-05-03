@@ -2,22 +2,28 @@
 jQuery(function ($) {
     'use strict';
 
-    window.sb_helper = {
+    window.sb_invoice_fee = {
         init: function () {
             $(document.body).on('sb_payment_menu_instrument_selected', function (event, name, instrument) {
                 console.log(name);
 
+                sb_invoice_fee.block();
+
+                var xhr;
                 if (instrument === 'Invoice') {
-                    sb_helper.apply_fee();
+                    xhr = sb_invoice_fee.apply_fee( true );
                 } else {
-                    sb_helper.remove_fee();
+                    xhr = sb_invoice_fee.remove_fee( true );
                 }
+
+                xhr.done( function () {
+                    sb_invoice_fee.unblock();
+                } );
             });
         },
 
-        apply_fee: function () {
+        apply_fee: function ( update_checkout ) {
             console.log('Apply invoice fee');
-            sb_helper.block();
 
             return $.ajax({
                 type: 'POST',
@@ -28,14 +34,15 @@ jQuery(function ($) {
                 },
                 dataType: 'json'
             }).done(function () {
-                sb_helper.unblock();
-                sb_helper.update_checkout();
+                // Update checkout
+                if ( update_checkout ) {
+                    sb_invoice_fee.update_checkout();
+                }
             });
         },
 
-        remove_fee: function () {
+        remove_fee: function ( update_checkout ) {
             console.log('Remove invoice fee');
-            sb_helper.block();
 
             return $.ajax({
                 type: 'POST',
@@ -46,8 +53,10 @@ jQuery(function ($) {
                 },
                 dataType: 'json'
             }).done(function () {
-                sb_helper.unblock();
-                sb_helper.update_checkout();
+                // Update checkout
+                if ( update_checkout ) {
+                    sb_invoice_fee.update_checkout();
+                }
             });
         },
 
@@ -75,7 +84,7 @@ jQuery(function ($) {
     };
 
     $(document).ready(function () {
-        window.sb_helper.init();
+        window.sb_invoice_fee.init();
     });
 });
 
