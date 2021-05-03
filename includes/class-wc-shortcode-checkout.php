@@ -6,8 +6,6 @@ defined( 'ABSPATH' ) || exit;
 
 use WC_Gateway_Swedbank_Pay_Checkout;
 use Exception;
-use SwedbankPay\Core\Log\LogLevel;
-use SwedbankPay\Core\OrderItemInterface;
 
 class WC_Shortcode_Checkout {
 	const SHORTCODE = 'instant_checkout';
@@ -181,7 +179,11 @@ class WC_Shortcode_Checkout {
 	 * Init the gateway instance
 	 */
 	public function plugins_loaded() {
-		$this->gateway = $this->get_gateway();
+		try {
+			$this->gateway = $this->get_gateway();
+		} catch ( Exception $e ) {
+			$this->shortcode_enabled = 'no';
+		}
 	}
 
 	public function add_scripts() {
