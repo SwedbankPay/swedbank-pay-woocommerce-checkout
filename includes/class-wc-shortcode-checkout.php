@@ -82,6 +82,12 @@ class WC_Shortcode_Checkout {
 	public $checkin_style = '';
 
 	/**
+	 * Styles of PaymentMenu
+	 * @var string
+	 */
+	public $payment_menu_style = '';
+
+	/**
 	 * Shortcode is active.
 	 *
 	 * @var string
@@ -116,8 +122,9 @@ class WC_Shortcode_Checkout {
 		$this->checkin_edit     = isset( $this->settings['checkin_edit'] ) ? $this->settings['checkin_edit'] : $this->checkin_edit;
 
 		// Styles
-		$this->custom_styles    = isset( $this->settings['custom_styles'] ) ? $this->settings['custom_styles'] : $this->custom_styles;
-		$this->checkin_style    = isset( $this->settings['checkInStyle'] ) ? $this->settings['checkInStyle'] : $this->checkin_style;
+		$this->custom_styles      = isset( $this->settings['custom_styles'] ) ? $this->settings['custom_styles'] : $this->custom_styles;
+		$this->checkin_style      = isset( $this->settings['checkInStyle'] ) ? $this->settings['checkInStyle'] : $this->checkin_style;
+		$this->payment_menu_style = isset( $this->settings['paymentMenuStyle'] ) ? $this->settings['paymentMenuStyle'] : $this->payment_menu_style;
 
 		if ( 'yes' === $this->shortcode_enabled ) {
 			// JS Scrips
@@ -266,6 +273,18 @@ class WC_Shortcode_Checkout {
 				'swedbank-pay-woocommerce-checkout'
 			),
 		);
+
+		// Add CheckIn Styles
+		$styles = apply_filters( 'swedbank_pay_checkout_checkin_style', $this->checkin_style );
+		if ( $styles ) {
+			$translation_array['checkInStyle'] = $styles;
+		}
+
+		// Add PM styles
+		$styles = apply_filters( 'swedbank_pay_checkout_paymentmenu_style', $this->payment_menu_style );
+		if ( $styles ) {
+			$translation_array['paymentMenuStyle'] = $styles;
+		}
 
 		wp_localize_script(
 			'sb-shortcode-checkout',
