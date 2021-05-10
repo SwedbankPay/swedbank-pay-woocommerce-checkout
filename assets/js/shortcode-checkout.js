@@ -8,11 +8,15 @@ jQuery( function( $ ) {
      */
     window.wc_sb_shortcode_checkout = {
         customer_identified: null,
+        customer_reference: null,
+        billing_address: null,
+        shipping_address: null,
         js_url: null,
         payment_url: WC_Shortcode_Checkout.payment_url,
         paymentMenu: null,
         is_payment_menu_loaded: false,
         xhr: false,
+        updateTimer: null,
 
         /**
          * Initialize e handlers and UI state.
@@ -25,6 +29,11 @@ jQuery( function( $ ) {
             // Init Checkin
             if ( this.isCheckinEnabled() ) {
                 this.loadCheckIn();
+
+                // Hide Place Order
+                if ( this.isCheckinRequired() ) {
+                    this.hidePlaceOrder();
+                }
 
                 $( document.body ).on( 'click', '#change-address-info', function ( event ) {
                     event.preventDefault();
@@ -53,7 +62,7 @@ jQuery( function( $ ) {
                 'updated_checkout',
                 null,
                 {'obj': self},
-                this.onUpdatedCheckout
+                this.onInitOrUpdateCheckout
             );
 
             this.checkPaymentUrl( function ( loaded ) {
@@ -172,12 +181,6 @@ jQuery( function( $ ) {
                         self.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
-                        if ( WC_Shortcode_Checkout.needs_shipping_address ||
-                            WC_Shortcode_Checkout.ship_to_billing_address_only
-                        ) {
-                            self.onAddressDetailsAvailable( 'billing', data );
-                        }
-
                         self.onAddressDetailsAvailable( 'shipping', data );
                     },
                     onError: function ( data ) {
@@ -216,6 +219,8 @@ jQuery( function( $ ) {
                             terms.prop( 'checked', true )
                         }
 
+                        self.showPlaceOrder();
+
                         // Set customer is identified
                         self.customer_identified = true;
 
@@ -229,11 +234,11 @@ jQuery( function( $ ) {
                 function( err, results ) {
                     console.log( 'onConsumerIdentified: loaded', results );
 
-                    // Show button witch allows to edit the address
-                    $('#swedbank-pay-checkin-edit').show();
+                    // Set customer is identified
+                    self.customer_identified = true;
 
-                    // Initiate Checkout
-                    self.initCheckout( data.consumerProfileRef );
+                    // Save customer reference
+                    self.customer_reference = data.consumerProfileRef;
                 }
             );
         },
@@ -337,7 +342,18 @@ jQuery( function( $ ) {
             var self = this;
 
             self.fetchAddress( type, data.url, function ( err ) {
-                //$( document.body ).trigger( 'update_checkout' );
+                if ( err ) {
+                    self.onError( err );
+                    return;
+                }
+
+                self[ type + '_address' ] = data;
+
+                // Show button witch allows to edit the address
+                $('#swedbank-pay-checkin-edit').show();
+
+                // Update checkout to have shipping methods
+                self.enqueueCheckoutUpdate();
             } );
         },
 
@@ -387,7 +403,8 @@ jQuery( function( $ ) {
         },
 
         isPaymentMethodChosen: function() {
-            return $( '[name="payment_method"]' ).is( ':checked' );
+            //return $( '[name="payment_method"]' ).is( ':checked' );
+            return true;
         },
 
         onSubmit: function ( event ) {
@@ -457,7 +474,6 @@ jQuery( function( $ ) {
 
             // Verify the checkin
             if ( self.isCheckinEnabled() ) {
-                console.log(window.wc_sb_shortcode_checkout.customer_identified);
                 if ( self.isCheckinRequired() && ! self.isCustomerIdentified() ) {
                     callback( WC_Shortcode_Checkout.needs_checkin );
                     return;
@@ -687,6 +703,40 @@ jQuery( function( $ ) {
         },
 
         /**
+         * On Init Or Update Checkout.
+         *
+         * @param event
+         * @returns {boolean}
+         */
+        onInitOrUpdateCheckout: function ( event ) {
+            console.log( 'onInitOrUpdateCheckout' );
+
+            var self = this;
+            if ( typeof event !== 'undefined' ) {
+                self = event.data.obj;
+            }
+
+            if ( ! wc_sb_common.validateForm() ) {
+                console.log( 'onInitOrUpdateCheckout: Validation is failed' );
+
+                return false;
+            }
+
+            if ( typeof self.paymentMenu !== 'undefined' && self.paymentMenu ) {
+                self.updateOrder( function () {
+                    console.log( 'Order has been updated' );
+                } );
+            } else {
+                // Init Checkout
+                if ( self.isCheckinRequired() && ! self.customer_reference ) {
+                    console.log( 'Checkin is required.' );
+                } else {
+                    self.initCheckout( self.customer_reference );
+                }
+            }
+        },
+
+        /**
          * Update Order
          * @param callback
          * @return {JQueryPromise<any>}
@@ -730,7 +780,6 @@ jQuery( function( $ ) {
                     // Update is successful
                     if ( response.hasOwnProperty('result') && response.result === 'success' ) {
                         // Refresh Payment Menu
-                        self.js_url = response['js_url'];
                         self.refreshPaymentMenu();
 
                         return;
@@ -764,6 +813,23 @@ jQuery( function( $ ) {
                 } );
 
             return self.xhr;
+        },
+
+        /**
+         * Enqueue Checkout Update.
+         */
+        enqueueCheckoutUpdate: function () {
+            var self = this;
+
+            if ( self.updateTimer ) {
+                window.clearTimeout( self.updateTimer );
+            }
+
+            self.updateTimer = setTimeout( function () {
+                console.log( 'Update checkout...' );
+                //self.onInitOrUpdateCheckout();
+                $( document.body ).trigger( 'update_checkout' );
+            }, 1000 );
         },
 
         /**
@@ -831,6 +897,7 @@ jQuery( function( $ ) {
 
                         // Update checkout
                         $( document.body ).trigger( 'update_checkout' );
+                        //$( document.body ).trigger( 'update' );
                     }
                 }
             );
@@ -935,6 +1002,9 @@ jQuery( function( $ ) {
             }
         },
 
+        /**
+         * Hide "Place order" button.
+         */
         hidePlaceOrder: function () {
             $('#place_order').hide();
             $('.place-order').hide();
@@ -944,6 +1014,14 @@ jQuery( function( $ ) {
             if ( terms.length > 0 && ! terms.prop( 'checked' ) ) {
                 terms.prop( 'checked', true )
             }
+        },
+
+        /**
+         * Show "Place order" button.
+         */
+        showPlaceOrder: function () {
+            $('#place_order').show();
+            $('.place-order').show();
         }
     };
 

@@ -256,8 +256,8 @@ class WC_Shortcode_Checkout {
 			'checkin_edit'                 => ( 'yes' === $this->checkin_edit ),
 			'invoice_fee_enabled'          => $this->invoice_fee > 0.01 ? 'yes' : 'no',
 			'carpay_enabled'               => is_plugin_active( 'aait-sbpay-helper/aait-sbpay-helper.php' )  ? 'yes' : 'no' ,
-			'needs_shipping_address'       => WC()->cart->needs_shipping(),
-			'ship_to_billing_address_only' => wc_ship_to_billing_address_only(),
+			'needs_shipping_address'       => WC()->cart->needs_shipping() ? 'yes' : 'no',
+			'ship_to_billing_address_only' => wc_ship_to_billing_address_only() ? 'yes' : 'no',
 			'checkInStyle'                 => null,
 			'needs_checkin'                => __(
 				'You must check in to be able to pay.',
@@ -309,8 +309,6 @@ class WC_Shortcode_Checkout {
 		remove_all_actions( 'woocommerce_checkout_init', 10 );
 		remove_all_actions( 'woocommerce_checkout_billing', 10 );
 		remove_all_actions( 'woocommerce_checkout_shipping', 10 );
-
-		do_action( 'woocommerce_checkout_billing' );
 
 		// Get saved consumerProfileRef
 		$profile = $this->gateway->get_consumer_profile( get_current_user_id() );

@@ -120,8 +120,8 @@ jQuery( function( $ ) {
                         wc_sb_checkin.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
-                        if ( WC_Gateway_Swedbank_Pay_Checkin.needs_shipping_address ||
-                            WC_Gateway_Swedbank_Pay_Checkin.ship_to_billing_address_only
+                        if ( WC_Gateway_Swedbank_Pay_Checkin.needs_shipping_address === 'yes' ||
+                            WC_Gateway_Swedbank_Pay_Checkin.ship_to_billing_address_only === 'yes'
                         ) {
                             wc_sb_checkin.onAddressDetailsAvailable( 'billing', data );
                         }

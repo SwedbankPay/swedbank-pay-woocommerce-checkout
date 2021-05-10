@@ -80,6 +80,14 @@ if ( ! $checkout->is_registration_enabled() && $checkout->is_registration_requir
     <div id="payment" class="woocommerce-checkout-payment" style="display: none;">
         <input type="radio" name="payment_method" value="payex_checkout" checked="checked" style="display: none;">
     </div>
+    <h3>3. <?php _e( 'Payment', 'swedbank-pay-woocommerce-checkout' ); ?></h3>
+
+    <?php if ( WC()->cart->needs_payment() ) : ?>
+        <div id="payment" class="woocommerce-checkout-payment" style="display: none;">
+            <input id="payment_method_payex_checkout" type="radio" name="payment_method" value="payex_checkout" checked="checked" style="display: none;">
+        </div>
+    <?php endif; ?>
+
     <div id="payment-swedbank-pay-checkout" class="form-row"></div>
     <div style="clear: both;">&nbsp;</div>
 
