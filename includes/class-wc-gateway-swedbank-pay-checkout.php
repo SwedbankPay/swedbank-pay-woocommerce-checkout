@@ -2451,7 +2451,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function payment_method_title( $value, $order ) {
-		if ( ! is_order_received_page() && ! is_account_page() ) {
+		if ( is_admin() ) {
 			return $value;
 		}
 
