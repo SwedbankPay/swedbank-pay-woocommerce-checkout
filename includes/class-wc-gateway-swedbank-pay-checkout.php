@@ -1689,7 +1689,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 						if ( empty( $product_class ) ) {
 							$product_class = apply_filters(
 								'sb_product_class',
-								'ProductGroup1'
+								'ProductGroup1',
+								$product
 							);
 						}
 
@@ -1707,7 +1708,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_SHIPPING;
 						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
 							'sb_product_class_shipping',
-							'ProductGroup1'
+							'ProductGroup1',
+							$order
 						);
 
 						break;
@@ -1717,7 +1719,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
 						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
 							'sb_product_class_fee',
-							'ProductGroup1'
+							'ProductGroup1',
+							$order
 						);
 
 						break;
@@ -1727,7 +1730,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
 						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
 							'sb_product_class_coupon',
-							'ProductGroup1'
+							'ProductGroup1',
+							$order
 						);
 
 						break;
@@ -1737,7 +1741,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
 						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
 							'sb_product_class_other',
-							'ProductGroup1'
+							'ProductGroup1',
+							$order
 						);
 
 						break;
@@ -2446,7 +2451,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function payment_method_title( $value, $order ) {
-		if ( ! is_order_received_page() && ! is_account_page() ) {
+		if ( is_admin() ) {
 			return $value;
 		}
 
