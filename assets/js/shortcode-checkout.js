@@ -765,7 +765,7 @@ jQuery( function( $ ) {
                 dataType: 'json'
             } )
                 .always( function ( response ) {
-                    self.xhr = false;
+                    //self.xhr = false;
                     self.form.removeClass( 'processing' );
                     self.unblock();
                 } )

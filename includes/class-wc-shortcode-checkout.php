@@ -144,7 +144,7 @@ class WC_Shortcode_Checkout {
 		add_action( 'wp_ajax_nopriv_sbp_submit_order', array( $this, 'ajax_sbp_submit_order' ) );
 
 		add_action( 'wp_ajax_sbp_update_order', array( $this, 'ajax_sbp_update_order' ) );
-		add_action( 'wp_ajax_nopriv_update_submit_order', array( $this, 'ajax_sbp_update_order' ) );
+		add_action( 'wp_ajax_nopriv_sbp_update_order', array( $this, 'ajax_sbp_update_order' ) );
 	}
 
 	/**
