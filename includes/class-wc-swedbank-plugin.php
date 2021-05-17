@@ -47,9 +47,6 @@ class WC_Swedbank_Plugin {
 			2
 		);
 
-		// Status Change Actions
-		//add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
-
 		// Add meta boxes
 		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
 
@@ -206,93 +203,6 @@ class WC_Swedbank_Plugin {
 		}
 
 		return $statuses;
-	}
-
-	/**
-	 * Order Status Change: Capture/Cancel
-	 *
-	 * @param $order_id
-	 * @param $from
-	 * @param $to
-	 * @param $order
-	 */
-	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		// We are need "on-hold" only
-		if ( 'on-hold' !== $from ) {
-			return;
-		}
-
-		// Disable status change hook
-		remove_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-		remove_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-
-		$payment_method = $order->get_payment_method();
-		if ( ! in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
-			return;
-		}
-
-		// Get Payment Gateway
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-		/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
-		$gateway = $gateways[ $payment_method ];
-
-		switch ( $to ) {
-			case 'cancelled':
-				// Cancel payment
-				try {
-					$gateway->cancel_payment( $order );
-				} catch ( Exception $e ) {
-					$message = $e->getMessage();
-					WC_Admin_Meta_Boxes::add_error( $message );
-
-					// Rollback
-					$order->update_status(
-						$from,
-						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-checkout' ), $message )
-					);
-				}
-				break;
-			case 'processing':
-			case 'completed':
-				// Capture payment
-				try {
-					// Capture
-					$gateway->capture_payment( $order );
-				} catch ( Exception $e ) {
-					$message = $e->getMessage();
-					WC_Admin_Meta_Boxes::add_error( $message );
-
-					// Rollback
-					$order->update_status(
-						$from,
-						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-checkout' ), $message )
-					);
-				}
-				break;
-			default:
-				// no break
-		}
-
-		// Enable status change hook
-		add_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-		add_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
 	}
 
 	/**
