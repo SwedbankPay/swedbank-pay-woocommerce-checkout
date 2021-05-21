@@ -1782,10 +1782,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$order = wc_get_order( $order );
 		}
 
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
 		try {
 			// Disable status change hook
 			remove_action(
