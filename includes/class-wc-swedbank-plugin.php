@@ -61,6 +61,8 @@ class WC_Swedbank_Plugin {
 
 		add_action( 'wp_ajax_swedbank_pay_cancel', array( $this, 'ajax_swedbank_pay_cancel' ) );
 
+		add_action( 'wp_ajax_swedbank_pay_refund', array( $this, 'ajax_swedbank_pay_refund' ) );
+
 		// Filters
 		add_filter( 'swedbank_pay_generate_uuid', array( $this, 'generate_uuid' ), 10, 1 );
 		add_filter( 'swedbank_pay_payment_description', __CLASS__ . '::payment_description', 10, 2 );
@@ -383,6 +385,36 @@ class WC_Swedbank_Plugin {
 			}
 		}
 	}
+
+	public function ajax_swedbank_pay_refund() {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'swedbank_pay' ) ) {
+			exit( 'No naughty business' );
+		}
+
+		$order_id = (int) $_REQUEST['order_id'];
+		$order    = wc_get_order( $order_id );
+
+		try {
+			// Create the refund object.
+			$refund = wc_create_refund(
+				array(
+					'amount'         => $order->get_total(),
+					'reason'         => __( 'Full refund.', 'swedbank-pay-woocommerce-checkout' ),
+					'order_id'       => $order_id,
+					'refund_payment' => true
+				)
+			);
+
+			if ( is_wp_error( $refund ) ) {
+				throw new Exception( $refund->get_error_message() );
+			}
+
+			wp_send_json_success( __( 'Refund has been successful.', 'swedbank-pay-woocommerce-checkout' ) );
+		} catch ( Exception $e ) {
+			$message = $e->getMessage();
+			wp_send_json_error( $message );
+		}
+    }
 
 	/**
 	 * Generate UUID

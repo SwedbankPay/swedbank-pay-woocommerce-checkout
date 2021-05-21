@@ -1734,10 +1734,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$order = wc_get_order( $order );
 		}
 
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
 		try {
 			$order_data = $this->adapter->getOrderData( $order->get_id() );
 			$this->core->captureCheckout( $order->get_id(), $amount, $vat_amount, $order_data[ OrderInterface::ITEMS ] );
