@@ -196,31 +196,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$gateway->core->fetchTransactionsAndUpdateOrder( $order_id, $data['transaction']['number'] );
-
-			// Enable status change hook
-			add_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-			add_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
 

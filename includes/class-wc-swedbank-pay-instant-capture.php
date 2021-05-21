@@ -101,18 +101,6 @@ class WC_Swedbank_Pay_Instant_Capture {
 			$vat_amount = array_sum( array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT ) ) / 100;
 
 			try {
-				// Disable status change hook
-				remove_action(
-					'woocommerce_order_status_changed',
-					'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-					10
-				);
-				remove_action(
-					'woocommerce_order_status_changed',
-					'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-					10
-				);
-
 				if ( 'payex_psp_invoice' === $order->get_payment_method() ) {
 					$this->gateway->core->captureInvoice( $order->get_id(), $amount, $vat_amount, $items );
 				} else {
