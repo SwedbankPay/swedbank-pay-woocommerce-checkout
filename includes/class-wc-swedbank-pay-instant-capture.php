@@ -348,8 +348,8 @@ class WC_Swedbank_Pay_Instant_Capture {
 	 * @return bool
 	 */
 	private static function wcs_is_subscription_product( $product ) {
-		return class_exists( 'WC_Subscriptions_Product', false ) &&
-		       WC_Subscriptions_Product::is_subscription( $product );
+		return class_exists( '\\WC_Subscriptions_Product', false ) &&
+		       \WC_Subscriptions_Product::is_subscription( $product );
 	}
 }
 
