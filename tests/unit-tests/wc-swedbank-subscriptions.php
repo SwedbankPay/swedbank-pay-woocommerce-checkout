@@ -36,7 +36,8 @@ class WC_Swedbank_Subscriptions extends WC_Unit_Test_Case {
 
 		$payment_meta = Subscriptions::add_subscription_payment_meta( array(), $order );
 		$this->assertIsArray( $payment_meta );
-		$this->assertArrayHasKey( 'swedbankpay_meta', $payment_meta );
+		$this->assertArrayHasKey( 'payex_checkout', $payment_meta );
+		$this->assertArrayHasKey( 'swedbankpay_meta', $payment_meta['payex_checkout'] );
 	}
 
 	public function test_payment_meta_input() {
@@ -46,8 +47,12 @@ class WC_Swedbank_Subscriptions extends WC_Unit_Test_Case {
 		$order->set_payment_method( 'payex_checkout' );
 		$order->save();
 
-		$result = Subscriptions::payment_meta_input( $order, 'field_id', null, null );
+		ob_start();
+		Subscriptions::payment_meta_input( $order, 'field_id', null, null );
+		$result = ob_get_contents();
+		ob_end_clean();
 		$this->assertIsString( $result );
+		$this->assertContains( '</select>', $result );
 	}
 
 	public function test_validate_subscription_payment_meta() {
