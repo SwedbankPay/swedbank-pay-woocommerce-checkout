@@ -663,7 +663,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			'wc-sb-checkout',
 			'WC_Gateway_Swedbank_Pay_Checkout',
 			array(
-				'culture' => $this->culture,
+				'culture'                      => $this->culture,
 				'instant_checkout'             => $this->instant_checkout,
 				'method'                       => $this->method,
 				'payment_url'                  => WC()->session->get( 'sb_payment_url' ),

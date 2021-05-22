@@ -145,6 +145,9 @@ class WC_Shortcode_Checkout {
 
 		add_action( 'wp_ajax_sbp_update_order', array( $this, 'ajax_sbp_update_order' ) );
 		add_action( 'wp_ajax_nopriv_sbp_update_order', array( $this, 'ajax_sbp_update_order' ) );
+
+		add_action( 'wp_ajax_sbp_recalculate', array( $this, 'ajax_sbp_recalculate' ) );
+		add_action( 'wp_ajax_nopriv_sbp_recalculate', array( $this, 'ajax_sbp_recalculate' ) );
 	}
 
 	/**
@@ -548,6 +551,31 @@ class WC_Shortcode_Checkout {
 		$_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce( 'woocommerce-process_checkout' );
 		$_POST['_wpnonce']                              = wp_create_nonce( 'woocommerce-process_checkout' );
 		WC()->checkout()->process_checkout();
+	}
+
+	/**
+	 * Ajax: Calculate totals
+	 *
+	 * @throws Exception
+	 */
+	public function ajax_sbp_recalculate() {
+		check_ajax_referer( 'swedbank_pay_checkout', 'nonce' );
+
+		$cart = WC()->cart;
+		$cart->calculate_totals();
+		$cart->calculate_shipping();
+		$cart->calculate_fees();
+
+		$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
+		if ( $order_id > 0 ) {
+			$order = wc_get_order( $order_id );
+
+			if ( $order ) {
+				// Recalculate order
+				$order->calculate_totals( true );
+				$order->save();
+			}
+		}
 	}
 }
 

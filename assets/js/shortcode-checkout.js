@@ -68,7 +68,7 @@ jQuery( function( $ ) {
             this.checkPaymentUrl( function ( loaded ) {
                 if ( ! loaded ) {
                     // Initialize Instant Checkout
-                    self.initInstantCheckout();
+                    //self.initInstantCheckout();
                 }
             } );
         },
@@ -611,40 +611,57 @@ jQuery( function( $ ) {
                 callback = function () {};
             }
 
+            $( '#' + id ).block({
+                message: null,
+                overlayCSS: {
+                    background: '#fff',
+                    opacity: 0.6
+                }
+            });
+
             // Load SwedBank Pay Checkout frame
             this.paymentMenu = window.payex.hostedView.paymentMenu( {
                 container: id,
                 culture: WC_Shortcode_Checkout.culture,
                 style: WC_Shortcode_Checkout.paymentMenuStyle ? JSON.parse( WC_Shortcode_Checkout.paymentMenuStyle ) : null,
                 onApplicationConfigured: function( data ) {
-                    console.log( 'onApplicationConfigured' );
-                    console.log( data );
+                    // Prevent multiple callback running using is_payment_menu_loaded
+                    if ( ! self.is_payment_menu_loaded ) {
+                        console.log( 'onApplicationConfigured', data );
+                        $( '#' + id ).unblock();
+                        callback( null );
+                    }
+
                     self.is_payment_menu_loaded = true;
-                    callback( null );
                 },
                 onPaymentMenuInstrumentSelected: function ( data ) {
-                    console.log( 'onPaymentMenuInstrumentSelected' );
-                    console.log( data );
+                    console.log( 'onPaymentMenuInstrumentSelected', data );
+                    //$( document.body ).trigger( 'sb_payment_menu_instrument_selected', [ data.name, data.instrument] );
                     self.onPaymentMenuInstrumentSelected( data.name, data.instrument );
                 },
                 onPaymentCreated: function () {
                     console.log( 'onPaymentCreated' );
                 },
                 onPaymentCompleted: function ( data ) {
-                    console.log( 'onPaymentCompleted' );
-                    console.log( data );
+                    console.log( 'onPaymentCompleted', data );
                     window.location.href = data.redirectUrl;
                 },
                 onPaymentCanceled: function ( data ) {
-                    console.log( 'onPaymentCanceled' );
-                    console.log( data );
+                    console.log( 'onPaymentCanceled', data );
                     self.logError( 'payment-menu-cancel', data );
                 },
                 onPaymentFailed: function ( data ) {
-                    console.log( 'onPaymentFailed' );
-                    console.log( data );
+                    console.log( 'onPaymentFailed', data );
                     self.logError( 'payment-menu-failed', data );
                     //self.location.href = data.redirectUrl;
+                },
+                onPaymentToS: function ( data) {
+                    console.log( 'onPaymentToS', data );
+                    window.open( data.openUrl, '_blank' );
+                },
+                onExternalRedirect: function ( data ) {
+                    console.log( 'onExternalRedirect', data );
+                    window.location.href = data.redirectUrl;
                 },
                 onError: function ( data ) {
                     self.logError( 'payment-menu-error', data );
@@ -730,6 +747,7 @@ jQuery( function( $ ) {
                 // Init Checkout
                 if ( self.isCheckinRequired() && ! self.customer_reference ) {
                     console.log( 'Checkin is required.' );
+                    alert( 'Checkin is required.' );
                 } else {
                     self.initCheckout( self.customer_reference );
                 }
@@ -765,7 +783,6 @@ jQuery( function( $ ) {
                 dataType: 'json'
             } )
                 .always( function ( response ) {
-                    //self.xhr = false;
                     self.form.removeClass( 'processing' );
                     self.unblock();
                 } )
@@ -827,7 +844,6 @@ jQuery( function( $ ) {
 
             self.updateTimer = setTimeout( function () {
                 console.log( 'Update checkout...' );
-                //self.onInitOrUpdateCheckout();
                 $( document.body ).trigger( 'update_checkout' );
             }, 1000 );
         },
@@ -838,9 +854,6 @@ jQuery( function( $ ) {
          * @param instrument
          */
         onPaymentMenuInstrumentSelected: function ( name, instrument ) {
-            console.log( 'onPaymentMenuInstrumentSelected', name, instrument );
-            //$( document.body ).trigger( 'sb_payment_menu_instrument_selected', [name, instrument] );
-
             var self = this;
 
             // Apply/remove additional fees
@@ -890,14 +903,34 @@ jQuery( function( $ ) {
                             callback2( null, true );
                         } );
                     },
+                    additional: function( callback2 ) {
+                        callback2( null, true );
+
+                        return;
+
+                        $.ajax( {
+                            type: 'POST',
+                            url: WC_Shortcode_Checkout.ajax_url,
+                            data: {
+                                action: 'sbp_recalculate',
+                                nonce: WC_Shortcode_Checkout.nonce,
+                            },
+                            dataType: 'json'
+                        } ).done( function ( response ) {
+                            callback2( null, true );
+                        });
+                    }
                 },
                 function( err, results ) {
                     if ( results.invoice_fee || results.carpay_discount ) {
-                        self.unblock();
-
                         // Update checkout
-                        $( document.body ).trigger( 'update_checkout' );
+                        //$( document.body ).trigger( 'update_checkout' );
                         //$( document.body ).trigger( 'update' );
+                        //self.enqueueCheckoutUpdate();
+                        self.updateOrder( function () {
+                            console.log( 'Order has been updated' );
+                            self.unblock();
+                        } );
                     }
                 }
             );
