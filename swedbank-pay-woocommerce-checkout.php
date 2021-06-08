@@ -1,26 +1,26 @@
 <?php // phpcs:disable
-	/*
-	 * Plugin Name: Swedbank Pay Checkout
-	 * Plugin URI: https://www.swedbankpay.com/
-	 * Description: Provides the Swedbank Pay Checkout for WooCommerce.
-	 * Author: Swedbank Pay
-	 * Author URI: https://profiles.wordpress.org/swedbankpay/
-	 * License: Apache License 2.0
-	 * License URI: http://www.apache.org/licenses/LICENSE-2.0
-	 * Version: 4.4.0
-	 * Text Domain: swedbank-pay-woocommerce-checkout
-	 * Domain Path: /languages
-	 * WC requires at least: 3.0.0
-	 * WC tested up to: 5.0.0
-	 */
+/*
+ * Plugin Name: Swedbank Pay Checkout
+ * Plugin URI: https://www.swedbankpay.com/
+ * Description: Provides the Swedbank Pay Checkout for WooCommerce.
+ * Author: Swedbank Pay
+ * Author URI: https://profiles.wordpress.org/swedbankpay/
+ * License: Apache License 2.0
+ * License URI: http://www.apache.org/licenses/LICENSE-2.0
+ * Version: 5.0.0
+ * Text Domain: swedbank-pay-woocommerce-checkout
+ * Domain Path: /languages
+ * WC requires at least: 3.0.0
+ * WC tested up to: 5.3.0
+ */
 
-	use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin;
+use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin;
 
-	defined( 'ABSPATH' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
-	include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-plugin.php' );
+include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-plugin.php' );
 
-	class WC_Swedbank_Pay_Checkout extends WC_Swedbank_Plugin {
+class WC_Swedbank_Pay_Checkout extends WC_Swedbank_Plugin {
 	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-checkout';
 	// phpcs:enable
 
@@ -99,4 +99,4 @@
 	}
 }
 
-	new WC_Swedbank_Pay_Checkout();
+new WC_Swedbank_Pay_Checkout();

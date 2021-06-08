@@ -677,7 +677,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$order->update_meta_data( '_payex_generate_token', '1' );
 
 			// Save payment ID
-			$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
+			$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
 			$order->save_meta_data();
 
 			// Redirect
@@ -699,7 +699,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			);
 		}
 
-		WC()->session->set( 'verification_payment_order_id', $result['paymentOrder']['id'] );
+		WC()->session->set( 'verification_payment_order_id', $result['payment_order']['id'] );
 
 		// Redirect
 		wp_redirect( $result->getOperationByRel( 'redirect-paymentorder' ) );
@@ -997,7 +997,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$order->update_meta_data( '_payex_replace_token', '1' );
 
 				// Save payment ID
-				$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
+				$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
 				$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
 				$order->save_meta_data();
 
@@ -1052,7 +1052,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$order->update_meta_data( '_payex_replace_token', '1' );
 
 				// Save payment ID
-				$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
+				$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
 				$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
 				$order->save_meta_data();
 
@@ -1109,7 +1109,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				);
 
 				// Save payment ID
-				$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
+				$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
 				$order->save_meta_data();
 
 				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
@@ -1414,12 +1414,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$token
 		);
 
-		if ( $result['paymentOrder']['state'] !== 'Ready' ) {
+		if ( $result['payment_order']['state'] !== 'Ready' ) {
 			throw new Exception( 'Payment has been failed. A wrong state.' );
 		}
 
 		// Save payment Order ID
-		$paymentOrderId = $result['paymentOrder']['id'];
+		$paymentOrderId = $result['payment_order']['id'];
 		$order->update_meta_data( '_payex_paymentorder_id', $paymentOrderId );
 
 		// Fetch payment id

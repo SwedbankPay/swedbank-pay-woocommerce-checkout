@@ -1,3 +1,12 @@
+Version 5.0.0
+* Updates of WooCommerce Subscriptions
+* Added shortcode which provides checkout page
+* Remove usage of woocommerce_order_status_changed
+* Refund fixes
+* Add payment method name
+* Update product class filters
+* Updated core and sdk libraries
+
 Version 4.4.0
 * Implemented paymentUrl
 * Refund with order items
