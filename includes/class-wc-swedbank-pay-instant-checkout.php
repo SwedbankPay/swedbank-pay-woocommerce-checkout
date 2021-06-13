@@ -551,7 +551,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 		$js_url = WC()->session->get( 'swedbank_pay_checkout_js_url' );
 
 		wc_get_template(
-			'checkout/swedbank-pay/payment.php',
+			'checkout/swedbank-pay/instant-checkout/payment.php',
 			array(
 				//'checkout' => WC()->checkout()
 				'js_url' => $js_url,
