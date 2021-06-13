@@ -1,3 +1,6 @@
+Version 5.0.2
+* Bugfixes
+
 Version 5.0.0
 * Updates of WooCommerce Subscriptions
 * Added shortcode which provides checkout page
