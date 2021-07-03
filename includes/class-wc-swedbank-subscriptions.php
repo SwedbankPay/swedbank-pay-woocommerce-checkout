@@ -93,12 +93,14 @@ class WC_Swedbank_Subscriptions {
 		}
 
 		$order = wc_get_order( $order_id );
-		$tokens = $order->get_payment_tokens();
-		if ( count( $tokens ) > 0 ) {
-			$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
-			foreach ( $subscriptions as $subscription ) {
-				/** @var WC_Subscription $subscription */
+		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
+		foreach ( $subscriptions as $subscription ) {
+			/** @var WC_Subscription $subscription */
+			$subscription->update_meta_data('_payex_payment_id', $order->get_meta('_payex_payment_id'));
+			$subscription->update_meta_data('_payex_paymentorder_id', $order->get_meta('_payex_paymentorder_id'));
 
+			$tokens = $order->get_payment_tokens();
+			if ( count( $tokens ) > 0 ) {
 				foreach ( $tokens as $token_id ) {
 					$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
 					if ( self::PAYMENT_ID !== $token->get_gateway_id() ) {
@@ -108,6 +110,8 @@ class WC_Swedbank_Subscriptions {
 					$subscription->add_payment_token( $token );
 				}
 			}
+
+			$subscription->save();
 		}
 	}
 

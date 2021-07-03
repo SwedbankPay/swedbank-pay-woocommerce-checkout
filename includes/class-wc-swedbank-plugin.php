@@ -286,6 +286,11 @@ class WC_Swedbank_Plugin {
 	 * @param WC_Order $order
 	 */
 	public static function add_action_buttons( $order ) {
+		if (function_exists('wcs_is_subscription') && wcs_is_subscription($order)) {
+		    // Buttons are available for orders only
+		    return;
+		}
+
 		// Get Payment Gateway
 		$payment_method = $order->get_payment_method();
 		if ( in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {

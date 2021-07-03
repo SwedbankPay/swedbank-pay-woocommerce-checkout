@@ -30,7 +30,7 @@ class WC_Swedbank_Pay_Instant_Capture {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'woocommerce_order_status_on-hold', array( $this, 'maybe_capture_instantly' ), 10, 1 );
+		add_action( 'woocommerce_order_status_on-hold', array( $this, 'maybe_capture_instantly' ), 50, 1 );
 	}
 
 	/**
@@ -69,6 +69,7 @@ class WC_Swedbank_Pay_Instant_Capture {
 			     $transaction->isCompleted()
 			) {
 				$hasCaptured = true;
+				break;
 			}
 		}
 
@@ -95,15 +96,19 @@ class WC_Swedbank_Pay_Instant_Capture {
 	private function instant_capture( $order ) {
 		$items = $this->get_instant_capture_items( $order );
 		$this->gateway->adapter->log( LogLevel::INFO, __METHOD__, [ $items ] );
-
 		if ( count( $items ) > 0 ) {
 			$amount     = array_sum( array_column( $items, OrderItemInterface::FIELD_AMOUNT ) ) / 100;
 			$vat_amount = array_sum( array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT ) ) / 100;
 
 			try {
-				if ( 'payex_psp_invoice' === $order->get_payment_method() ) {
+				if ( 'payex_checkout' === $order->get_payment_method() ) {
+					// Capture Checkout
+					$this->gateway->core->captureCheckout( $order->get_id(), $amount, $vat_amount, $items );
+				} elseif ( 'payex_psp_invoice' === $order->get_payment_method() ) {
+					// Capture Invoice
 					$this->gateway->core->captureInvoice( $order->get_id(), $amount, $vat_amount, $items );
 				} else {
+					// Capture Payments
 					$this->gateway->core->capture( $order->get_id(), $amount, $vat_amount );
 				}
 			} catch ( \SwedbankPay\Core\Exception $e ) {
