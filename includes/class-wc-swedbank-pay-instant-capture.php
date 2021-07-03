@@ -146,7 +146,7 @@ class WC_Swedbank_Pay_Instant_Capture {
 	 * @return array
 	 */
 	private function get_instant_capture_items( $order ) {
-		if ( count( $this->gateway->instant_capture ) === 0 ) {
+		if ( ! is_array( $this->gateway->instant_capture ) || count( $this->gateway->instant_capture ) === 0 ) {
 			return array();
 		}
 
