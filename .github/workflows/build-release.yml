@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
 
@@ -28,11 +28,13 @@ jobs:
           rm -f ./package-lock.json
 
       - name: WordPress Plugin Deploy
-        uses: nk-o/action-wordpress-plugin-deploy@master
-        env:
-          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+        uses: varunsridharan/action-wp-org-deploy@master
+        with:
+          WORDPRESS_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          WORDPRESS_USERNAME: ${{ secrets.SVN_USERNAME }}
           SLUG: swedbank-pay-checkout
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         id: create_release
