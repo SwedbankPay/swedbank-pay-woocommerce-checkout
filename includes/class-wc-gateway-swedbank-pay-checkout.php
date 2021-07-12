@@ -726,12 +726,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 			$verifications = $this->core->fetchVerificationList( $payment_id );
 			foreach ( $verifications as $verification ) {
+				$paymentToken = $verification->getPaymentToken();
 				$expiry_date = explode( '/', $verification->getExpireDate() );
+
+				// Token is always required
+				if (empty($paymentToken)) {
+					$paymentToken = 'none';
+				}
 
 				// Create Payment Token
 				$token = new WC_Payment_Token_Swedbank_Pay();
 				$token->set_gateway_id( $this->id );
-				$token->set_token( $verification->getPaymentToken() );
+				$token->set_token( $paymentToken );
 				$token->set_recurrence_token( $verification->getRecurrenceToken() );
 				$token->set_last4( substr( $verification->getMaskedPan(), - 4 ) );
 				$token->set_expiry_year( $expiry_date[1] );
@@ -1177,120 +1183,48 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		WC()->session->__unset( 'swedbank_paymentorder_id' );
 
 		// Check payments list and extract Payment ID
-		$payment_order = $order->get_meta( '_payex_paymentorder_id', true );
+		$paymentOrderId = $order->get_meta( '_payex_paymentorder_id' );
 
 		// Fetch payment order info
-		if ( empty( $payment_order ) ) {
+		if ( empty( $paymentOrderId ) ) {
 			return;
 		}
 
 		$this->core->log( LogLevel::INFO, __METHOD__ );
 
-		try {
-			$result = $this->core->fetchPaymentInfo( $payment_order, 'currentPayment,payeeInfo' );
-		} catch ( Exception $e ) {
-			return;
+		$payment_id = $order->get_meta( '_payex_payment_id' );
+		if ( empty( $payment_id ) ) {
+			// Fetch payment id
+			$payment_id = $this->core->getPaymentIdByPaymentOrder( $paymentOrderId );
+
+			// Save payment ID
+			$order->update_meta_data( '_payex_payment_id', $payment_id );
+			$order->save_meta_data();
 		}
 
-		if ( isset( $result['paymentOrder']['currentPayment'] ) &&
-		     isset( $result['paymentOrder']['currentPayment']['payment']['id'] )
-		) {
-			$payment_id = $result['paymentOrder']['currentPayment']['payment']['id'];
+		// Fetch transactions list
+		$transactions = $this->core->fetchTransactionsList( $payment_id );
+		$this->core->saveTransactions( $order->get_id(), $transactions );
 
-			// Save Payment Id
-			$order->add_meta_data( '_payex_payment_id', $payment_id );
-			$order->save_meta_data();
-
-			// Check payment state
-			switch ( $result['paymentOrder']['currentPayment']['payment']['state'] ) {
-				case 'Ready':
-					// Replace token for:
-					// Change Payment Method
-					// Orders with Zero Amount
-					if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
-						// Save token on Verify operation
-						if ( 'Verify' === $result['paymentOrder']['operation'] ) {
-							$verifications = $this->core->fetchVerificationList( $payment_id );
-							foreach ( $verifications as $verification ) {
-								$expiry_date = explode( '/', $verification->getExpireDate() );
-
-								// Create Payment Token
-								$token = new WC_Payment_Token_Swedbank_Pay();
-								$token->set_gateway_id( $this->id );
-								$token->set_token( $verification->getPaymentToken() );
-								$token->set_recurrence_token( $verification->getRecurrenceToken() );
-								$token->set_last4( substr( $verification->getMaskedPan(), - 4 ) );
-								$token->set_expiry_year( $expiry_date[1] );
-								$token->set_expiry_month( $expiry_date[0] );
-								$token->set_card_type( strtolower( $verification->getCardBrand() ) );
-								$token->set_user_id( get_current_user_id() );
-								$token->set_masked_pan( $verification->getMaskedPan() );
-
-								// Save Credit Card
-								$token->save();
-
-								// Replace token
-								delete_post_meta( $order->get_id(), '_payex_replace_token' );
-								delete_post_meta( $order->get_id(), '_payment_tokens' );
-								$order->add_payment_token( $token );
-
-								wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-checkout' ) );
-
-								// first only
-								break;
-							}
-						} else {
-							// For Authorization operation
-							$authorizations = $this->core->fetchAuthorizationList( $payment_id  );
-							foreach ( $authorizations as $authorization ) {
-								$expiry_date = explode( '/', $authorization->getExpireDate() );
-
-								// Create Payment Token
-								$token = new WC_Payment_Token_Swedbank_Pay();
-								$token->set_gateway_id( $this->id );
-								$token->set_token( $authorization->getPaymentToken() );
-								$token->set_recurrence_token( $authorization->getRecurrenceToken() );
-								$token->set_last4( substr( $authorization->getMaskedPan(), - 4 ) );
-								$token->set_expiry_year( $expiry_date[1] );
-								$token->set_expiry_month( $expiry_date[0] );
-								$token->set_card_type( strtolower( $authorization->getCardBrand() ) );
-								$token->set_user_id( get_current_user_id() );
-								$token->set_masked_pan( $authorization->getMaskedPan() );
-
-								// Save Credit Card
-								$token->save();
-
-								// Replace token
-								delete_post_meta( $order->get_id(), '_payex_replace_token' );
-								delete_post_meta( $order->get_id(), '_payment_tokens' );
-								$order->add_payment_token( $token );
-
-								wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-checkout' ) );
-
-								// first only
-								break;
-							}
-						}
-					}
-
-					return;
-				case 'Failed':
-					$this->core->updateOrderStatus(
-						OrderInterface::STATUS_FAILED,
-						__( 'Payment failed.', 'swedbank-pay-woocommerce-checkout' )
-					);
-
-					return;
-				case 'Aborted':
-					$this->core->updateOrderStatus(
-						OrderInterface::STATUS_CANCELLED,
-						__( 'Payment canceled.', 'swedbank-pay-woocommerce-checkout' )
-					);
-
-					return;
-				default:
-					// Payment state is ok
+		// Process transactions list
+		foreach ( $transactions as $transaction ) {
+			// Process transaction
+			try {
+				$this->core->processTransaction( $order->get_id(), $transaction );
+			} catch ( \Exception $e ) {
+				$this->core->log(
+					LogLevel::INFO,
+					sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
+				);
 			}
+		}
+
+		// Replace token for:
+		// Change Payment Method
+		// Orders with Zero Amount
+		if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
+			// Save token on Verify operation
+			wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-checkout' ) );
 		}
 	}
 
