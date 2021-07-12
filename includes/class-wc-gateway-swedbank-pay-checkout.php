@@ -601,7 +601,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'instant_checkout'             => $this->instant_checkout,
 				'method'                       => $this->method,
 				'payment_url'                  => WC()->session->get( 'sb_payment_url' ),
-				'paymentMenuStyle'             => null,
+				'paymentMenuStyle'             => apply_filters( 'swedbank_pay_checkout_paymentmenu_style', $this->payment_menu_style ),
 				'terms_error'                  => __(
 					'Please read and accept the terms and conditions to proceed with your order.',
 					'woocommerce'
@@ -612,12 +612,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				),
 			)
 		);
-
-		// Add PM styles
-		$styles = apply_filters( 'swedbank_pay_checkout_paymentmenu_style', $this->payment_menu_style );
-		if ( $styles ) {
-			$translation_array['paymentMenuStyle'] = $styles;
-		}
 
 		wp_enqueue_script( 'wc-sb-checkout' );
 	}
@@ -1073,6 +1067,14 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
 
+				// Use redirect method on pay_for_order
+				if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) { // WPCS: input var ok, CSRF ok.
+					return array(
+						'result'   => 'success',
+						'redirect' => $result->getOperationByRel( 'redirect-paymentorder' ),
+					);
+				}
+
 				if ( self::METHOD_SEAMLESS === $this->method ) {
 					return array(
 						'result'   => 'success',
@@ -1120,6 +1122,14 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$order->save_meta_data();
 
 				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
+
+				// Use redirect method on pay_for_order
+				if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) { // WPCS: input var ok, CSRF ok.
+					return array(
+						'result'   => 'success',
+						'redirect' => $result->getOperationByRel( 'redirect-paymentorder' ),
+					);
+				}
 
 				if ( self::METHOD_SEAMLESS === $this->method ) {
 					return array(
