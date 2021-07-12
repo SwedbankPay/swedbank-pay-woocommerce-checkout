@@ -88,9 +88,9 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$order->save();
 
 		$_GET['key'] = $order->get_order_key();
-		$result      = $this->gateway->payment_confirm();
 
-		$this->assertNull( $result );
+		$this->expectException( Exception::class );
+		$this->gateway->payment_confirm();
 	}
 
 	public function test_capture_payment() {
