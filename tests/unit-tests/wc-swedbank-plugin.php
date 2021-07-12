@@ -14,4 +14,15 @@ class WC_Swedbank_Plugin extends WC_Unit_Test_Case {
 
 		$this->assertEquals( '+46739000001', $result );
 	}
+
+	public function test_support_submit()
+	{
+		$_POST['_wpnonce'] = wp_create_nonce( 'support_submit' );
+		$_POST['email'] = '';
+		$_POST['message'] = '';
+		$_POST['_wp_http_referer'] = false;
+
+		$result = \SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::support_submit();
+		$this->assertEquals( null, $result );
+	}
 }
