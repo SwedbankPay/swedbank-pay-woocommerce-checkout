@@ -179,7 +179,8 @@ class WC_Swedbank_Subscriptions {
 			'user_id' => $subscription->get_user_id()
 		) );
 
-		echo '<select class="short" name="' . esc_attr( $field_id ) . '" id="' . esc_attr( $field_id ) . '>';
+		echo '<select class="short" name="' . esc_attr( $field_id ) . '" id="' . esc_attr( $field_id ) . '">';
+		echo '<option value="">' . __( 'Please select', 'swedbank-pay-woocommerce-checkout' ) . '</option>';
 
 		foreach ($tokens as $token):
 			/** @var WC_Payment_Token_Swedbank_Pay $token */
@@ -318,7 +319,12 @@ class WC_Swedbank_Subscriptions {
 
 		$tokens = $subscription->get_payment_tokens();
 		foreach ( $tokens as $token_id ) {
-			$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
+			try {
+				$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
+			} catch ( \Exception $e ) {
+				continue;
+			}
+
 			if ( $token->get_gateway_id() !== self::PAYMENT_ID ) {
 				continue;
 			}
@@ -355,8 +361,8 @@ class WC_Swedbank_Subscriptions {
 			$status = @$doc->loadXML( $html );
 			if ( false !== $status ) {
 				$item = $doc->getElementsByTagName('input')->item( 0 );
-				$item->setAttribute('checked','checked' );
-				$item->setAttribute('disabled','disabled' );
+				$item->setAttribute( 'checked','checked' );
+				$item->setAttribute( 'disabled','disabled' );
 
 				$html = $doc->saveHTML($doc->documentElement);
 			}
