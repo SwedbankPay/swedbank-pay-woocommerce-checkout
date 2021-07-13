@@ -79,20 +79,6 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$this->assertEquals( 'success', $result['result'] );
 	}
 
-	public function test_payment_confirm() {
-		/** @var WC_Order $order */
-		$order = WC_Helper_Order::create_order();
-		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
-		$order->update_meta_data( '_payex_paymentorder_id', '/invalid/payment/id' );
-		$order->save();
-
-		$_GET['key'] = $order->get_order_key();
-
-		$this->expectException( Exception::class );
-		$this->gateway->payment_confirm();
-	}
-
 	public function test_capture_payment() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
