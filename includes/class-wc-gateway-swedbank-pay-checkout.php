@@ -262,9 +262,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
 
-		// Payment confirmation
-		add_action( 'the_post', array( $this, 'payment_confirm' ) );
-
 		// Save order items on refund
 		add_action( 'woocommerce_create_refund', array( $this, 'save_refund_parameters', ), 10, 2 );
 
@@ -643,7 +640,31 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * @param $order_id
 	 */
 	public function thankyou_page( $order_id ) {
-		WC()->session->__unset( 'payex_paymentorder_id' );
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+
+		if ( $order->get_payment_method() !== $this->id ) {
+			return;
+		}
+
+		$payment_order_id = $order->get_meta( '_payex_paymentorder_id' );
+		if ( empty( $payment_order_id ) ) {
+			return;
+		}
+
+		$this->core->log( LogLevel::INFO, __METHOD__ );
+
+		WC()->session->__unset( 'swedbank_paymentorder_id' );
+
+		// Replace token for:
+		// Change Payment Method
+		// Orders with Zero Amount
+		if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
+			// Save token on Verify operation
+			wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-checkout' ) );
+		}
 	}
 
 	/**
@@ -927,6 +948,42 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$paid = $payment_info->getOperationByRel( 'paid-paymentorder', false );
 			if ( ! empty( $paid ) ) {
 				$result = $this->core->request( $paid['method'], $paid['href'] );
+				if ( ! isset( $result['paid'] ) ) {
+					wp_send_json_success( array(
+						'state' => 'failed',
+						'message' => 'Unable to verify the payment'
+					) );
+
+					return;
+				}
+
+				// Get transaction and update order statuses
+				$payment_id = $order->get_meta( '_payex_payment_id' );
+				if ( empty( $payment_id ) ) {
+					// Fetch payment id
+					$payment_id = $this->core->getPaymentIdByPaymentOrder( $paymentorder_id );
+
+					// Save payment ID
+					$order->update_meta_data( '_payex_payment_id', $payment_id );
+					$order->save_meta_data();
+				}
+
+				// Fetch transactions list
+				$transactions = $this->core->fetchTransactionsList( $payment_id );
+				$this->core->saveTransactions( $order->get_id(), $transactions );
+
+				// Process transactions list
+				foreach ( $transactions as $transaction ) {
+					// Process transaction
+					try {
+						$this->core->processTransaction( $order->get_id(), $transaction );
+					} catch ( \Exception $e ) {
+						$this->core->log(
+							LogLevel::INFO,
+							sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
+						);
+					}
+				}
 
 				wp_send_json_success( array(
 					'state' => 'paid',
@@ -1165,77 +1222,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Payment confirm action
-	 */
-	public function payment_confirm() {
-		if ( empty( $_GET['key'] ) ) {
-			return;
-		}
-
-		// Validate Payment Method
-		$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
-		if ( ! $order_id ) {
-			return;
-		}
-
-		$order = wc_get_order( $order_id );
-		if ( ! $order ) {
-			return;
-		}
-
-		if ( $order->get_payment_method() !== $this->id ) {
-			return;
-		}
-
-		WC()->session->__unset( 'swedbank_paymentorder_id' );
-
-		// Check payments list and extract Payment ID
-		$paymentOrderId = $order->get_meta( '_payex_paymentorder_id' );
-
-		// Fetch payment order info
-		if ( empty( $paymentOrderId ) ) {
-			return;
-		}
-
-		$this->core->log( LogLevel::INFO, __METHOD__ );
-
-		$payment_id = $order->get_meta( '_payex_payment_id' );
-		if ( empty( $payment_id ) ) {
-			// Fetch payment id
-			$payment_id = $this->core->getPaymentIdByPaymentOrder( $paymentOrderId );
-
-			// Save payment ID
-			$order->update_meta_data( '_payex_payment_id', $payment_id );
-			$order->save_meta_data();
-		}
-
-		// Fetch transactions list
-		$transactions = $this->core->fetchTransactionsList( $payment_id );
-		$this->core->saveTransactions( $order->get_id(), $transactions );
-
-		// Process transactions list
-		foreach ( $transactions as $transaction ) {
-			// Process transaction
-			try {
-				$this->core->processTransaction( $order->get_id(), $transaction );
-			} catch ( \Exception $e ) {
-				$this->core->log(
-					LogLevel::INFO,
-					sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
-				);
-			}
-		}
-
-		// Replace token for:
-		// Change Payment Method
-		// Orders with Zero Amount
-		if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
-			// Save token on Verify operation
-			wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-checkout' ) );
-		}
 	}
 
 	/**
