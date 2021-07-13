@@ -1,3 +1,11 @@
+Version 5.1.0
+* Added the support form
+* Background queue fixes
+* Transaction processing on payment status checking
+* WC Subscriptions UI fixes in the admin backend
+* Fixed token saving
+* Fixed double order notifications/emails
+
 Version 5.0.4
 * Fix subscription status problem when instant capture is on
 
