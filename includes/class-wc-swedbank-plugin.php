@@ -16,7 +16,6 @@ class WC_Swedbank_Plugin {
 	);
 
 	const PLUGIN_NAME = 'Swedbank Pay Checkout plugin';
-	const PLUGIN_PATH = 'swedbank-pay-woocommerce-checkout/swedbank-pay-woocommerce-checkout.php';
 	const SUPPORT_EMAIL = 'support.ecom@payex.com';
 	const DB_VERSION = '1.0.0';
 	const DB_VERSION_SLUG = 'swedbank_pay_checkout_version';
@@ -36,7 +35,10 @@ class WC_Swedbank_Plugin {
 		$this->includes();
 
 		// Actions
-		add_filter( 'plugin_action_links_' . self::PLUGIN_PATH, array( $this, 'plugin_action_links' ) );
+		add_filter(
+			'plugin_action_links_' . constant(__NAMESPACE__ . '\PLUGIN_PATH'),
+			__CLASS__ . '::plugin_action_links'
+        );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_hook_loaded' ) );
@@ -142,7 +144,7 @@ class WC_Swedbank_Plugin {
 	 *
 	 * @return array
 	 */
-	public function plugin_action_links( $links ) {
+	public static function plugin_action_links( $links ) {
 		$plugin_links = array(
 			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __(
 				'Settings',
@@ -669,7 +671,7 @@ class WC_Swedbank_Plugin {
 		<?php
 
 		// Deactivate the plugin
-		deactivate_plugins( self::PLUGIN_PATH, true );
+		deactivate_plugins( constant(__NAMESPACE__ . '\PLUGIN_PATH'), true );
 	}
 
 
@@ -814,7 +816,7 @@ class WC_Swedbank_Plugin {
 		$zipArchive->close();
 
 		// Get the plugin information
-		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . self::PLUGIN_PATH  );
+		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . constant(__NAMESPACE__ . '\PLUGIN_PATH')  );
 
 		// Make message
 		$message = sprintf(

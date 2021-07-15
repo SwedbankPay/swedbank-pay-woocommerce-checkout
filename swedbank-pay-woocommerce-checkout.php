@@ -28,6 +28,8 @@ class WC_Swedbank_Pay_Checkout extends WC_Swedbank_Plugin {
 	 * Constructor
 	 */
 	public function __construct() {
+		define( 'SwedbankPay\Checkout\WooCommerce\PLUGIN_PATH', plugin_basename( __FILE__ ) );
+
 		parent::__construct();
 
 		// Activation
