@@ -159,6 +159,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $payment_token_class = WC_Payment_Token_Swedbank_Pay::class;
 
 	/**
+	 * Swedbank Pay ip addresses
+	 * @var array
+	 */
+	public $gateway_ip_addresses = [ '91.132.170.1' ];
+
+	/**
 	 * @var WC_Swedbank_Pay_Checkin
 	 */
 	private $checkin_instance;
@@ -1203,6 +1209,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * IPN Callback
 	 * @return void
 	 * @throws \Exception
+	 * @SuppressWarnings(PHPMD.Superglobals)
 	 */
 	public function return_handler() {
 		$raw_body = file_get_contents( 'php://input' );
@@ -1220,6 +1227,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, true ) )
 		);
 
+		// Check IP address of Incoming Callback
+		if ( ! in_array( WC_Geolocation::get_ip_address(),
+			apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
+		) ) {
+			$this->core->log(
+				LogLevel::INFO,
+				sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
+			);
+
+			throw new Exception( 'Incoming Callback has been rejected' );
+		}
+
 		// Decode raw body
 		$data = json_decode( $raw_body, true );
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -1231,12 +1250,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$order_id  = absint(  wc_clean( $_GET['order_id'] ) ); // WPCS: input var ok, CSRF ok.
 			$order_key = empty( $_GET['key'] ) ? '' : wc_clean( wp_unslash( $_GET['key'] ) ); // WPCS: input var ok, CSRF ok.
 
-			if ( empty( $order_id ) || empty( $order_id ) ) {
-				throw new Exception( 'An order ID or order key wasn\'t provided' );
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				throw new Exception( 'Unable to load an order.' );
 			}
 
-			$order = wc_get_order( $order_id );
-			if ( ! $order || ! hash_equals( $order->get_order_key(), $order_key ) ) {
+			if ( ! hash_equals( $order->get_order_key(), $order_key ) ) {
 				throw new Exception( 'A provided order key has been invalid.' );
 			}
 
