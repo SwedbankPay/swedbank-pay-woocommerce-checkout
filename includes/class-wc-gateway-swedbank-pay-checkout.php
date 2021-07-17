@@ -1236,7 +1236,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
 			);
 
-			return;
+			throw new Exception( 'Incoming Callback has been rejected' );
 		}
 
 		// Decode raw body
