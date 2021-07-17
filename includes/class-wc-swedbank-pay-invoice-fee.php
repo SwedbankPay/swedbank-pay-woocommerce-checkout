@@ -25,7 +25,7 @@ class WC_Swedbank_Pay_Invoice_Fee {
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 
 		// JS Scrips
-		if ( 'yes' === $settings['enabled'] && SB_INVOICE_FEE > 0 ) {
+		if ( ( isset( $settings['enabled'] ) && 'yes' === $settings['enabled'] ) && SB_INVOICE_FEE > 0 ) {
 			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		}
 

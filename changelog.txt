@@ -1,3 +1,51 @@
+Version 5.1.1
+* Fix plugin links
+* Fix wrong order status if customer fail with first payment attempt
+
+Version 5.1.0
+* Added the support form
+* Background queue fixes
+* Transaction processing on payment status checking
+* WC Subscriptions UI fixes in the admin backend
+* Fixed token saving
+* Fixed double order notifications/emails
+
+Version 5.0.4
+* Fix subscription status problem when instant capture is on
+
+Version 5.0.3
+* Fixed Uncaught Error: Call to a member function getReference() on array
+
+Version 5.0.2
+* Bugfixes
+
+Version 5.0.0
+* Updates of WooCommerce Subscriptions
+* Added shortcode which provides checkout page
+* Remove usage of woocommerce_order_status_changed
+* Refund fixes
+* Add payment method name
+* Update product class filters
+* Updated core and sdk libraries
+
+Version 4.4.0
+* Implemented paymentUrl
+* Refund with order items
+* Update translations
+* Update Checkin
+
+Version 4.3.0
+* Rename Merchant Token to Access Token
+* Improve Instant capture
+* Check if Terms and conditions checkbox is ticked before checkout
+* Fixed checkout when "Allow customers to place orders without an account" = No
+* Fixed checkout problem when no any saved card and Instant checkout is off
+* Show "Change the address" button after checkin
+* Improved Seamless View
+* Improved payment confirmation page (order-received page)
+* Implemented option: Require checkin
+* Update translations
+
 Version 4.2.0
 * Implemented Invoice fee feature
 * Partial refund with specific order items

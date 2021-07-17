@@ -5,11 +5,10 @@
     "type": "wordpress-plugin",
     "license": "Apache-2.0",
     "prefer-stable": true,
-    "minimum-stability": "dev",
     "require": {
         "php": ">=7.0",
         "adci/full-name-parser": "^0.2.4",
         "ramsey/uuid": "^3.7",
-        "swedbank-pay/swedbank-pay-woocommerce-core": "dev-master"
+        "swedbank-pay/swedbank-pay-woocommerce-core": "~4.0.4"
     }
 }

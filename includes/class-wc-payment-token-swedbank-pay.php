@@ -126,7 +126,7 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 			 \WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment &&
 			 isset( $_GET['change_payment_method'] ) &&
 			 abs( $_GET['change_payment_method'] ) > 0
-        ) {
+		) {
 			$subscription = wcs_get_subscription( $_GET['change_payment_method'] );
 			$tokens       = $subscription->get_payment_tokens();
 			foreach ( $tokens as $token_id ) {
@@ -150,7 +150,7 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 * @return array                           Filtered item.
 	 */
 	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
-		if ( 'swedbankpay' !== strtolower( $payment_token->get_type() ) ) {
+		if ( ! in_array( strtolower( $payment_token->get_type() ), array('swedbankpay', 'swedbank', 'payex') ) ) {
 			return $item;
 		}
 
@@ -178,14 +178,16 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
 		if ( 'payex_checkout' === $method['method']['gateway'] ) {
-			$token = new WC_Payment_Token_Swedbank_Pay( $method['method']['id'] );
-			echo $token->get_display_name(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			if ( isset($method['method']['id'])) {
+				$token = new WC_Payment_Token_Swedbank_Pay( $method['method']['id'] );
+				echo $token->get_display_name(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
 
 			return;
 		}
 
 		if ( ! isset($method['method']['brand']) ) {
-		    return;
+			return;
 		}
 
 		// Default output
@@ -227,7 +229,7 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	public static function payment_token_class( $class_name, $type ) {
-		if ( 'Swedbankpay' === $type ) {
+		if ( in_array( strtolower( $type ), array('swedbankpay', 'swedbank', 'payex') ) ) {
 			$class_name = __CLASS__;
 		}
 
@@ -260,8 +262,7 @@ add_filter(
 // Backward compatibility
 add_filter(
 	'woocommerce_payment_token_class',
-    '\SwedbankPay\Checkout\WooCommerce\WC_Payment_Token_Swedbank_Pay::payment_token_class',
-    10,
-    2
+	'\SwedbankPay\Checkout\WooCommerce\WC_Payment_Token_Swedbank_Pay::payment_token_class',
+	10,
+	2
 );
-

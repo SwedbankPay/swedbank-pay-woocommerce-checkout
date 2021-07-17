@@ -5,7 +5,7 @@ namespace SwedbankPay\Checkout\WooCommerce;
 defined( 'ABSPATH' ) || exit;
 
 use WC_Order;
-use WC_Admin_Meta_Boxes;
+use Automattic\Jetpack\Constants;
 use Exception;
 
 class WC_Swedbank_Plugin {
@@ -16,9 +16,10 @@ class WC_Swedbank_Plugin {
 	);
 
 	const PLUGIN_NAME = 'Swedbank Pay Checkout plugin';
-	const PLUGIN_PATH = 'swedbank-pay-woocommerce-checkout/swedbank-pay-woocommerce-checkout.php';
+	const SUPPORT_EMAIL = 'support.ecom@payex.com';
 	const DB_VERSION = '1.0.0';
 	const DB_VERSION_SLUG = 'swedbank_pay_checkout_version';
+	const ADMIN_SUPPORT_PAGE_SLUG = 'swedbank-pay-checkout-support';
 	const ADMIN_UPGRADE_PAGE_SLUG = 'swedbank-pay-checkout-upgrade';
 
 	/**
@@ -34,7 +35,10 @@ class WC_Swedbank_Plugin {
 		$this->includes();
 
 		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+		add_filter(
+			'plugin_action_links_' . constant(__NAMESPACE__ . '\PLUGIN_PATH'),
+			__CLASS__ . '::plugin_action_links'
+        );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_hook_loaded' ) );
@@ -46,9 +50,6 @@ class WC_Swedbank_Plugin {
 			10,
 			2
 		);
-
-		// Status Change Actions
-		//add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
 
 		// Add meta boxes
 		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
@@ -63,6 +64,8 @@ class WC_Swedbank_Plugin {
 		add_action( 'wp_ajax_swedbank_pay_capture', array( $this, 'ajax_swedbank_pay_capture' ) );
 
 		add_action( 'wp_ajax_swedbank_pay_cancel', array( $this, 'ajax_swedbank_pay_cancel' ) );
+
+		add_action( 'wp_ajax_swedbank_pay_refund', array( $this, 'ajax_swedbank_pay_refund' ) );
 
 		// Filters
 		add_filter( 'swedbank_pay_generate_uuid', array( $this, 'generate_uuid' ), 10, 1 );
@@ -79,6 +82,8 @@ class WC_Swedbank_Plugin {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 99 );
 
 		add_action( 'init', __CLASS__ . '::may_add_notice' );
+
+		add_action( 'admin_post_' . self::ADMIN_SUPPORT_PAGE_SLUG, __CLASS__ . '::support_submit' );
 	}
 
 	public function includes() {
@@ -111,10 +116,12 @@ class WC_Swedbank_Plugin {
 		}
 
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-subscriptions.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-checkin.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-checkout.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-capture.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-invoice-fee.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-shortcode-checkout.php' );
 	}
 
 	/**
@@ -128,6 +135,28 @@ class WC_Swedbank_Plugin {
 		if ( ! get_option( self::DB_VERSION_SLUG ) ) {
 			add_option( self::DB_VERSION_SLUG, self::DB_VERSION );
 		}
+	}
+
+	/**
+	 * Add relevant links to plugins page
+	 *
+	 * @param array $links
+	 *
+	 * @return array
+	 */
+	public static function plugin_action_links( $links ) {
+		$plugin_links = array(
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_checkout' ) . '">' . __(
+				'Settings',
+				'swedbank-pay-woocommerce-checkout'
+			) . '</a>',
+			'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::ADMIN_SUPPORT_PAGE_SLUG ) ) . '">' . __(
+				'Support',
+				'swedbank-pay-woocommerce-checkout'
+			) . '</a>',
+		);
+
+		return array_merge( $plugin_links, $links );
 	}
 
 	/**
@@ -209,93 +238,6 @@ class WC_Swedbank_Plugin {
 	}
 
 	/**
-	 * Order Status Change: Capture/Cancel
-	 *
-	 * @param $order_id
-	 * @param $from
-	 * @param $to
-	 * @param $order
-	 */
-	public static function order_status_changed( $order_id, $from, $to, $order ) {
-		// We are need "on-hold" only
-		if ( 'on-hold' !== $from ) {
-			return;
-		}
-
-		// Disable status change hook
-		remove_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-		remove_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-
-		$payment_method = $order->get_payment_method();
-		if ( ! in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
-			return;
-		}
-
-		// Get Payment Gateway
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
-
-		/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
-		$gateway = $gateways[ $payment_method ];
-
-		switch ( $to ) {
-			case 'cancelled':
-				// Cancel payment
-				try {
-					$gateway->cancel_payment( $order );
-				} catch ( Exception $e ) {
-					$message = $e->getMessage();
-					WC_Admin_Meta_Boxes::add_error( $message );
-
-					// Rollback
-					$order->update_status(
-						$from,
-						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-checkout' ), $message )
-					);
-				}
-				break;
-			case 'processing':
-			case 'completed':
-				// Capture payment
-				try {
-					// Capture
-					$gateway->capture_payment( $order );
-				} catch ( Exception $e ) {
-					$message = $e->getMessage();
-					WC_Admin_Meta_Boxes::add_error( $message );
-
-					// Rollback
-					$order->update_status(
-						$from,
-						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-checkout' ), $message )
-					);
-				}
-				break;
-			default:
-				// no break
-		}
-
-		// Enable status change hook
-		add_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-		add_action(
-			'woocommerce_order_status_changed',
-			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-			10
-		);
-	}
-
-	/**
 	 * Add meta boxes in admin
 	 * @return void
 	 */
@@ -372,6 +314,11 @@ class WC_Swedbank_Plugin {
 	 * @param WC_Order $order
 	 */
 	public static function add_action_buttons( $order ) {
+		if (function_exists('wcs_is_subscription') && wcs_is_subscription($order)) {
+		    // Buttons are available for orders only
+		    return;
+		}
+
 		// Get Payment Gateway
 		$payment_method = $order->get_payment_method();
 		if ( in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
@@ -473,6 +420,36 @@ class WC_Swedbank_Plugin {
 			}
 		}
 	}
+
+	public function ajax_swedbank_pay_refund() {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'swedbank_pay' ) ) {
+			exit( 'No naughty business' );
+		}
+
+		$order_id = (int) $_REQUEST['order_id'];
+		$order    = wc_get_order( $order_id );
+
+		try {
+			// Create the refund object.
+			$refund = wc_create_refund(
+				array(
+					'amount'         => $order->get_total(),
+					'reason'         => __( 'Full refund.', 'swedbank-pay-woocommerce-checkout' ),
+					'order_id'       => $order_id,
+					'refund_payment' => true
+				)
+			);
+
+			if ( is_wp_error( $refund ) ) {
+				throw new Exception( $refund->get_error_message() );
+			}
+
+			wp_send_json_success( __( 'Refund has been successful.', 'swedbank-pay-woocommerce-checkout' ) );
+		} catch ( Exception $e ) {
+			$message = $e->getMessage();
+			wp_send_json_error( $message );
+		}
+    }
 
 	/**
 	 * Generate UUID
@@ -580,12 +557,46 @@ class WC_Swedbank_Plugin {
 		// Add Upgrade Page
 		global $_registered_pages;
 
+		// Add Support Page
+		$hookname = get_plugin_page_hookname( self::ADMIN_SUPPORT_PAGE_SLUG, '' );
+		if ( ! empty( $hookname ) ) {
+			add_action( $hookname, __CLASS__ . '::support_page' );
+		}
+
+		$_registered_pages[ $hookname ] = true;
+
 		$hookname = get_plugin_page_hookname( self::ADMIN_UPGRADE_PAGE_SLUG, '' );
 		if ( ! empty( $hookname ) ) {
 			add_action( $hookname, __CLASS__ . '::upgrade_page' );
 		}
 
 		$_registered_pages[ $hookname ] = true;
+	}
+
+	/**
+	 * Support Page
+	 */
+	public static function support_page() {
+		// Init sessions
+		if ( session_status() === PHP_SESSION_NONE ) {
+			@session_start();
+		}
+
+		wc_get_template(
+			'admin/support.php',
+			array(
+				'form_url' => admin_url( 'admin-post.php' ),
+				'action' => self::ADMIN_SUPPORT_PAGE_SLUG,
+				'errors' => isset( $_SESSION['form_errors'] ) ? (array) $_SESSION['form_errors'] : array(),
+				'notices' => isset( $_SESSION['form_notices'] ) ? (array) $_SESSION['form_notices'] : array(),
+			),
+			'',
+			dirname( __FILE__ ) . '/../templates/'
+		);
+
+		// Reset the form
+		$_SESSION['form_errors'] = array();
+		$_SESSION['form_notices'] = array();
 	}
 
 	/**
@@ -660,7 +671,7 @@ class WC_Swedbank_Plugin {
 		<?php
 
 		// Deactivate the plugin
-		deactivate_plugins( self::PLUGIN_PATH, true );
+		deactivate_plugins( constant(__NAMESPACE__ . '\PLUGIN_PATH'), true );
 	}
 
 
@@ -727,5 +738,147 @@ class WC_Swedbank_Plugin {
             </p>
         </div>
 		<?php
+	}
+
+	/**
+	 * Send support message
+	 */
+	public static function support_submit() {
+		if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'support_submit' ) ) {
+			exit( 'No naughty business' );
+		}
+
+		if ( ! extension_loaded( 'zip' ) ) {
+			$_SESSION['form_errors'] = array();
+			$_SESSION['form_errors'][] = __( 'zip extension is required to perform this operation.', 'swedbank-pay-woocommerce-checkout' );
+
+			wp_redirect( $_POST['_wp_http_referer'] );
+			return;
+		}
+
+		// Init sessions
+		if ( session_status() === PHP_SESSION_NONE ) {
+			@session_start();
+		}
+
+		// Validate the fields
+		if ( empty( $_POST['email'] ) || empty( $_POST['message'] ) ) {
+			$_SESSION['form_errors'] = array();
+			$_SESSION['form_errors'][] = __( 'Invalid form data', 'swedbank-pay-woocommerce-checkout' );
+
+			wp_redirect( $_POST['_wp_http_referer'] );
+			return;
+		}
+
+		// Validate email
+		if ( ! is_email( $_POST['email'] ) ) {
+			$_SESSION['form_errors'] = array();
+			$_SESSION['form_errors'][] = __( 'Invalid email', 'swedbank-pay-woocommerce-checkout' );
+
+			wp_redirect( $_POST['_wp_http_referer'] );
+			return;
+		}
+
+		// Export settings
+		$settings = array();
+		foreach ( self::PAYMENT_METHODS as $payment_method ) {
+			$conf = get_option( 'woocommerce_' . $payment_method . '_settings' );
+			if ( ! is_array( $conf ) ) {
+				$conf = array();
+			}
+
+			$settings[ $payment_method ] = $conf;
+		}
+
+		$jsonSettings = get_temp_dir() . '/settings.json';
+		file_put_contents( $jsonSettings, json_encode( $settings, JSON_PRETTY_PRINT ) );
+
+		// Export system information
+		$jsonReport = get_temp_dir() . '/wc-report.json';
+		$report = wc()->api->get_endpoint_data( '/wc/v3/system_status' );
+		file_put_contents( $jsonReport, json_encode( $report, JSON_PRETTY_PRINT ) );
+
+		// Make zip
+		$zipFile = WC_LOG_DIR . uniqid( 'swedbank' ) . '.zip';
+		$zipArchive = new \ZipArchive();
+		$zipArchive->open( $zipFile,  \ZipArchive::CREATE );
+
+		// Add files
+		$zipArchive->addFile( $jsonSettings, basename( $jsonSettings ) );
+		$zipArchive->addFile( $jsonReport, basename( $jsonReport ) );
+
+		// Add logs
+		$files = self::get_log_files();
+		foreach ($files as $file) {
+			$zipArchive->addFile( WC_LOG_DIR . $file, basename( $file ) );
+		}
+
+		$zipArchive->close();
+
+		// Get the plugin information
+		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . constant(__NAMESPACE__ . '\PLUGIN_PATH')  );
+
+		// Make message
+		$message = sprintf(
+			"Date: %s\nFrom: %s\nMessage: %s\nSite: %s\nPHP version: %s\nWC Version: %s\nWordPress Version: %s\nPlugin Name: %s\nPlugin Version: %s",
+			date( 'Y-m-d H:i:s' ),
+			$_POST['email'],
+			$_POST['message'],
+			get_option( 'siteurl' ),
+			phpversion(),
+			Constants::get_constant( 'WC_VERSION' ),
+			get_bloginfo( 'version' ),
+			$plugin['Name'],
+			$plugin['Version']
+		);
+
+		// Send message
+		$result = wp_mail(
+			self::SUPPORT_EMAIL,
+			'Site support: ' . get_option( 'siteurl' ),
+			$message,
+			array(
+				'Reply-To: ' . $_POST['email'],
+				'Content-Type: text/plain; charset=UTF-8'
+			),
+			array( $zipFile )
+		);
+
+		// Remove temporary files
+		@unlink( $jsonSettings );
+		@unlink( $zipFile );
+		@unlink( $jsonReport );
+
+		if ( ! $result ) {
+			$_SESSION['form_errors'] = array();
+			$_SESSION['form_errors'][] = __( 'Unable to send mail message.', 'swedbank-pay-woocommerce-checkout' );
+		} else {
+			$_SESSION['form_notices'] = array();
+			$_SESSION['form_notices'][] = __( 'Your message has been sent.', 'swedbank-pay-woocommerce-checkout' );
+		}
+
+		wp_redirect( $_POST['_wp_http_referer'] );
+	}
+
+	/**
+	 * Get log files.
+	 *
+	 * @return string[]
+	 */
+	private static function get_log_files() {
+		$result = array();
+		$files = \WC_Log_Handler_File::get_log_files();
+		foreach ( $files as $file ) {
+			foreach ( self::PAYMENT_METHODS as $payment_method ) {
+				if ( strpos( $file, $payment_method ) !== false ||
+				     strpos( $file, 'wc_swedbank' ) !== false ||
+				     strpos( $file, 'fatal-errors' ) !== false
+				) {
+					$result[] = $file;
+				}
+			}
+		}
+
+		return $result;
 	}
 }

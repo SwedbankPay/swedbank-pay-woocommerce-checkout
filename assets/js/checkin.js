@@ -11,17 +11,8 @@ jQuery( function( $ ) {
         init: function() {
             if ( this.isCheckinEnabled() ) {
                 var self = this;
-                $( document.body ).on( 'click change', '#checkin_country', function () {
-                    self.loadCheckIn( $( this ).val() );
-                } );
 
-                // Select the first item
-                let checkin = $( '#checkin_country' );
-                if ( checkin.length > 0 ) {
-                    self.loadCheckIn( checkin.val() );
-                } else {
-                    self.loadCheckIn( WC_Gateway_Swedbank_Pay_Checkin.checkin_country );
-                }
+                self.loadCheckIn();
 
                 $( document.body ).on( 'click', '#change-address-info', function ( event ) {
                     event.preventDefault();
@@ -60,17 +51,15 @@ jQuery( function( $ ) {
 
         /**
          * Load CheckIn
-         * @param country
          * @returns {*}
          */
-        loadCheckIn: function( country ) {
+        loadCheckIn: function() {
             return $.ajax( {
                 type: 'POST',
                 url: WC_Gateway_Swedbank_Pay_Checkin.ajax_url,
                 data: {
                     action: 'swedbank_pay_checkin',
                     nonce: WC_Gateway_Swedbank_Pay_Checkin.nonce,
-                    country: country
                 },
                 dataType: 'json'
             } ).done( function ( data ) {
@@ -131,8 +120,8 @@ jQuery( function( $ ) {
                         wc_sb_checkin.onAddressDetailsAvailable( 'billing', data );
                     },
                     onShippingDetailsAvailable: function( data ) {
-                        if ( WC_Gateway_Swedbank_Pay_Checkin.needs_shipping_address ||
-                            WC_Gateway_Swedbank_Pay_Checkin.ship_to_billing_address_only
+                        if ( WC_Gateway_Swedbank_Pay_Checkin.needs_shipping_address === 'yes' ||
+                            WC_Gateway_Swedbank_Pay_Checkin.ship_to_billing_address_only === 'yes'
                         ) {
                             wc_sb_checkin.onAddressDetailsAvailable( 'billing', data );
                         }

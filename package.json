@@ -1,6 +1,6 @@
 {
-  "name": "payex-woocommerce-checkout",
-  "version": "4.2.0",
+  "name": "swedbank-pay-woocommerce-checkout",
+  "version": "5.1.1",
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {

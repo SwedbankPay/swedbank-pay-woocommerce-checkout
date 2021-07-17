@@ -12,6 +12,9 @@ jobs:
   test:
     name: Run tests
     runs-on: ubuntu-18.04
+    if: |
+      (github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') ||
+      (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]')
 
     steps:
       - name: Checkout
