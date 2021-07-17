@@ -1227,6 +1227,18 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, true ) )
 		);
 
+		// Check IP address of Incoming Callback
+		if ( ! in_array( WC_Geolocation::get_ip_address(),
+			apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
+		) ) {
+			$this->core->log(
+				LogLevel::INFO,
+				sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
+			);
+
+			return;
+		}
+
 		// Decode raw body
 		$data = json_decode( $raw_body, true );
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -1241,16 +1253,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$order = wc_get_order( $order_id );
 			if ( ! $order ) {
 				throw new Exception( 'Unable to load an order.' );
-			}
-
-			if ( empty( $order_key ) ) {
-				if ( ! in_array( $_SERVER['REMOTE_ADDR'],
-					apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
-				) ) {
-					throw new Exception( 'An order key wasn\'t provided' );
-				}
-
-				$order_key = $order->get_order_key();
 			}
 
 			if ( ! hash_equals( $order->get_order_key(), $order_key ) ) {
