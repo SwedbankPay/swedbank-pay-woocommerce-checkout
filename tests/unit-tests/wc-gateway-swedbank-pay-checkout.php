@@ -113,6 +113,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$order->set_currency( 'SEK' );
 
 		$args = array(
+			'order_id' => $order->get_id(),
 			'line_items' => array()
 		);
 
@@ -125,8 +126,33 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 			);
 		}
 
-		WC()->session->set( 'swedbank_refund_parameters', $args );
+		// Save order items of refund
+		set_transient(
+			'sb_refund_parameters_' . $args['order_id'],
+			$args,
+			5 * MINUTE_IN_SECONDS
+		);
+
 		$result = $this->gateway->process_refund( $order->get_id(), 1, 'Test' );
 		$this->assertInstanceOf( 'WP_Error', $result );
+	}
+
+	public function test_save_refund_parameters() {
+		/** @var WC_Order $order */
+		$order  = WC_Helper_Order::create_order();
+		$order->set_payment_method( $this->gateway );
+		$order->set_currency( 'SEK' );
+
+		$args = array(
+			'order_id' => $order->get_id(),
+			'line_items' => array()
+		);
+
+		$this->gateway->save_refund_parameters( null, $args );
+
+		$result = get_transient( 'sb_refund_parameters_' . $args['order_id'] );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'order_id', $result );
+		$this->assertArrayHasKey( 'line_items', $result );
 	}
 }
