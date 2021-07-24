@@ -1,3 +1,9 @@
+Version 5.2.0
+* Add ip verification of incoming callbacks
+* Add `swedbank_gateway_ip_addresses` wp filter
+* Subscriptions: add payment meta and tokens from parent order
+* Partial capture and refund through the merchant admin backend
+
 Version 5.1.1
 * Fix plugin links
 * Fix wrong order status if customer fail with first payment attempt

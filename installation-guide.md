@@ -4,7 +4,7 @@ Installation and configuration manual for Swedbank Pay WooCommerce Checkout
 This plugin is using Swedbank Pay RESTful API. For documentation about the API see https://developer.swedbankpay.com/payments/
 ## Prerequisites
 
-1. WooCommerce 3.*
+1. WooCommerce 5.*
 
 ## Installation
 
