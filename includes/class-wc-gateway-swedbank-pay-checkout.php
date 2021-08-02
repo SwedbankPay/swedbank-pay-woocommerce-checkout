@@ -989,6 +989,27 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the transaction URL.
+	 *
+	 * @param  WC_Order $order Order object.
+	 * @return string
+	 */
+	public function get_transaction_url( $order ) {
+		$payment_order_id = $order->get_meta( '_payex_paymentorder_id' );
+		if ( empty( $payment_order_id ) ) {
+			return parent::get_transaction_url( $order );
+		}
+
+		if ( 'yes' === $this->testmode ) {
+			$view_transaction_url = 'https://admin.externalintegration.payex.com/psp/beta/paymentorders;id=%s';
+		} else {
+			$view_transaction_url = 'https://admin.externalintegration.payex.com/psp/beta/paymentorders;id=%s';
+		}
+
+		return sprintf( $view_transaction_url, urlencode( $payment_order_id ) );
+	}
+
+	/**
 	 * Process Payment
 	 *
 	 * @param int $order_id
