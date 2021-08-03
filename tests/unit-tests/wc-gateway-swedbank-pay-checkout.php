@@ -158,4 +158,20 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 		$this->assertArrayHasKey( 'order_id', $result );
 		$this->assertArrayHasKey( 'line_items', $result );
 	}
+
+	public function test_get_transaction_url() {
+		/** @var WC_Order $order */
+		$order  = WC_Helper_Order::create_order();
+		$order->set_payment_method( $this->gateway );
+		$order->set_currency( 'SEK' );
+		$order->save();
+
+		// Save payment ID
+		$order->update_meta_data( '_payex_paymentorder_id', '/psp/test' );
+		$order->save_meta_data();
+
+		$result = $this->gateway->get_transaction_url( $order );
+
+		$this->assertContains('https', $result);
+	}
 }
