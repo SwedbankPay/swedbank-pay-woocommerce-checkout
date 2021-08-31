@@ -58,6 +58,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	public $debug = 'yes';
 
 	/**
+	 * IP Checking
+	 * @var string
+	 */
+	public $ip_check = 'yes';
+
+	/**
 	 * Locale
 	 * @var string
 	 */
@@ -221,6 +227,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		$this->subsite          = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode         = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug            = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->ip_check         = isset( $this->settings['ip_check'] ) ? $this->settings['ip_check'] : $this->ip_check;
 		$this->culture          = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->auto_capture     = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->logo_url         = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
@@ -372,6 +379,12 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable logging', 'swedbank-pay-woocommerce-checkout' ),
 				'default' => $this->debug,
+			),
+			'ip_check'               => array(
+				'title'   => __( 'Enable IP checking of incoming callbacks', 'swedbank-pay-woocommerce-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable IP checking of incoming callbacks', 'swedbank-pay-woocommerce-checkout' ),
+				'default' => $this->ip_check,
 			),
 			'culture'                => array(
 				'title'       => __( 'Language', 'swedbank-pay-woocommerce-checkout' ),
@@ -1249,15 +1262,17 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		);
 
 		// Check IP address of Incoming Callback
-		if ( ! in_array( WC_Geolocation::get_ip_address(),
-			apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
-		) ) {
-			$this->core->log(
-				LogLevel::INFO,
-				sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
-			);
+		if ( 'yes' === $this->ip_check ) {
+			if ( ! in_array( WC_Geolocation::get_ip_address(),
+				apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
+			) ) {
+				$this->core->log(
+					LogLevel::INFO,
+					sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
+				);
 
-			throw new Exception( 'Incoming Callback has been rejected' );
+				throw new Exception( 'Incoming Callback has been rejected' );
+			}
 		}
 
 		// Decode raw body

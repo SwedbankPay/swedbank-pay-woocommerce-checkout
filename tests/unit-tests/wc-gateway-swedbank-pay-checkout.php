@@ -174,4 +174,11 @@ class WC_Unit_Gateway_Swedbank_Pay_Checkout extends WC_Unit_Test_Case {
 
 		$this->assertContains('https', $result);
 	}
+
+	public function test_settings() {
+		$this->assertNotNull( $this->gateway->ip_check );
+
+		$form_fields = $this->gateway->get_form_fields();
+		$this->assertArrayHasKey( 'ip_check', $form_fields );
+	}
 }
