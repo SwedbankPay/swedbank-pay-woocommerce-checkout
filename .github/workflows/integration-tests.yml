@@ -77,10 +77,9 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
-          WOOCOMMERCE_DIR: ${{ env.GITHUB_WORKSPACE }}/woocommerce
         run: |
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
-          phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
+          WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
