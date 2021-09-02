@@ -116,6 +116,13 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	public function add( $fields ) {
 		global $wpdb;
 
+		// Verify data
+		foreach ( $fields as $key => $value ) {
+			if ( ! in_array( $key, self::$_allowed_fields ) ) {
+				unset( $fields[ $key ] );
+			}
+		}
+
 		$result = $wpdb->insert( $wpdb->prefix . 'payex_transactions', $fields );
 		if ( $result > 0 ) {
 			return $wpdb->insert_id;
@@ -162,6 +169,13 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 */
 	public function update( $transaction_id, $fields ) {
 		global $wpdb;
+
+		// Verify data
+		foreach ( $fields as $key => $value ) {
+			if ( ! in_array( $key, self::$_allowed_fields ) ) {
+				unset( $fields[ $key ] );
+			}
+		}
 
 		$result = $wpdb->update(
 			$wpdb->prefix . 'payex_transactions',
