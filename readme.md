@@ -16,7 +16,7 @@ This plugin provides the Swedbank Pay Checkout for WooCommerce.
 * Requires at least: 5.3
 * Tested up to: 5.6
 * Requires PHP: 7.0
-* Stable tag: 5.4.0
+* Stable tag: 5.4.1
 * [License: Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Description

@@ -1,3 +1,6 @@
+Version 5.4.1
+* Fixed transaction table bug
+
 Version 5.4.0
 * Add "Enable IP checking" option
 * Fix Transactions::import() notice
