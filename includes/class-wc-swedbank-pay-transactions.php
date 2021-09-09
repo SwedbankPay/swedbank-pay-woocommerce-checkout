@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @param $data
 	 * @param $order_id
 	 *
-	 * @return bool|int|mixed
+	 * @return bool|int
 	 *
 	 * @throws Exception
 	 */
@@ -325,7 +325,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 		$data['updated'] = gmdate( 'Y-m-d H:i:s' );
 		$this->update( $saved['transaction_id'], $data );
 
-		return $saved['transaction_id'];
+		return (int) $saved['transaction_id'];
 	}
 
 	/**
