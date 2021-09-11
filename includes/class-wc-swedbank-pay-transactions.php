@@ -116,13 +116,15 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	public function add( $fields ) {
 		global $wpdb;
 
-		// Verify data
-		foreach ( $fields as $key => $value ) {
-			if ( ! in_array( $key, self::$_allowed_fields ) ) {
-				unset( $fields[ $key ] );
-			}
+		if ( ! isset( $fields['created'] ) ) {
+			$fields['created'] = gmdate( 'Y-m-d H:i:s' );
 		}
 
+		if ( ! isset( $fields['updated'] ) ) {
+			$fields['updated'] = gmdate( 'Y-m-d H:i:s' );
+		}
+
+		$fields = $this->prepare( $fields );
 		$result = $wpdb->insert( $wpdb->prefix . 'payex_transactions', $fields );
 		if ( $result > 0 ) {
 			return $wpdb->insert_id;
@@ -146,7 +148,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 
 		$result = $wpdb->delete(
 			$wpdb->prefix . 'payex_transactions',
-			array( 'id' => (int) $transaction_id )
+			array( 'transaction_id' => (int) $transaction_id )
 		);
 
 		if ( false === $result ) {
@@ -170,13 +172,11 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	public function update( $transaction_id, $fields ) {
 		global $wpdb;
 
-		// Verify data
-		foreach ( $fields as $key => $value ) {
-			if ( ! in_array( $key, self::$_allowed_fields ) ) {
-				unset( $fields[ $key ] );
-			}
+		if ( ! isset( $fields['updated'] ) ) {
+			$fields['updated'] = gmdate( 'Y-m-d H:i:s' );
 		}
 
+		$fields = $this->prepare( $fields );
 		$result = $wpdb->update(
 			$wpdb->prefix . 'payex_transactions',
 			$fields,
@@ -276,25 +276,18 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * Prepare data
 	 *
 	 * @param $data
-	 * @param $order_id
 	 *
 	 * @return array
 	 */
-	public function prepare( $data, $order_id ) {
-		$allowed = self::$_allowed_fields;
-		unset( $allowed['transaction_id'], $allowed['transaction_data'], $allowed['order_id'] );
-		$data = array_filter(
-			$data,
-			function ( $value, $key ) use ( $allowed ) {
-				return in_array( $key, $allowed, true );
-			},
-			ARRAY_FILTER_USE_BOTH
-		);
-
+	public function prepare( $data ) {
 		$data['transaction_data'] = json_encode( $data, true );
-		$data['order_id']         = $order_id;
-		$data['created']          = gmdate( 'Y-m-d H:i:s', strtotime( $data['created'] ) );
-		$data['updated']          = gmdate( 'Y-m-d H:i:s', strtotime( $data['updated'] ) );
+
+		// Verify data
+		foreach ( $data as $key => $value ) {
+			if ( ! in_array( $key, self::$_allowed_fields ) ) {
+				unset( $data[ $key ] );
+			}
+		}
 
 		return $data;
 	}
@@ -305,17 +298,20 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @param $data
 	 * @param $order_id
 	 *
-	 * @return bool|int|mixed
+	 * @return bool|int
 	 *
 	 * @throws Exception
 	 */
 	public function import( $data, $order_id ) {
-		global $wpdb;
+		$id               = $data['id'];
+		$data             = $this->prepare( $data );
+		$data['order_id'] = $order_id;
 
-		$id    = $data['id'];
 		$saved = $this->get_by( 'id', $id );
 		if ( ! $saved ) {
-			$data   = $this->prepare( $data, $order_id );
+			$data['created'] = gmdate( 'Y-m-d H:i:s' );
+			$data['updated'] = gmdate( 'Y-m-d H:i:s' );
+
 			$row_id = $this->add( $data );
 			if ( is_wp_error( $row_id ) ) {
 				/** @var WP_Error $row_id */
@@ -326,28 +322,10 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 		}
 
 		// Data should be updated
-		$data['transaction_data'] = json_encode( $data, true );
-		if ( isset( $data['updated'] ) ) {
-			$data['updated'] = gmdate( 'Y-m-d H:i:s', strtotime( $data['updated'] ) );
-		} else {
-			$data['updated'] = gmdate( 'Y-m-d H:i:s' );
-		}
+		$data['updated'] = gmdate( 'Y-m-d H:i:s' );
+		$this->update( $saved['transaction_id'], $data );
 
-		$result = $wpdb->update(
-			$wpdb->prefix . 'payex_transactions',
-			$data,
-			array(
-				'id' => $id,
-			)
-		);
-
-		if ( false === $result ) {
-			throw new Exception(
-				__( 'Failed to update the transaction in the table.', 'swedbank-pay-woocommerce-checkout' )
-			);
-		}
-
-		return $saved['transaction_id'];
+		return (int) $saved['transaction_id'];
 	}
 
 	/**
