@@ -301,14 +301,21 @@ class WC_Swedbank_Pay_Instant_Checkout {
 			// Update Order
 			$result = $this->gateway->core->updatePaymentOrder( $update_url, $order->get_id() );
 
-			WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
+			$js_url = $result->getOperationByRel( 'view-paymentorder' );
+			$redirect_url = $result->getOperationByRel( 'redirect-paymentorder' );
+
+			$order->update_meta_data( '_sb_view_paymentorder', $js_url );
+			$order->update_meta_data( '_sb_redirect_paymentorder', $redirect_url );
+			$order->save_meta_data();
+
+			WC()->session->set( 'sb_payment_url', $js_url );
 
 			return array(
 				'result'                   => 'success',
 				'redirect'                 => '#!swedbank-pay-checkout',
 				'is_swedbank_pay_checkout' => true,
-				'js_url'                   => $result->getOperationByRel( 'view-paymentorder' ),
-				'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
+				'js_url'                   => $js_url,
+				'redirect_url'             => $redirect_url,
 				'payment_id'               => $result['paymentOrder']['id'],
 			);
 		}
@@ -440,13 +447,16 @@ class WC_Swedbank_Pay_Instant_Checkout {
 		}
 
 		// Save PaymentOrder ID
-		update_post_meta( $order_id, '_payex_paymentorder_id', $result['paymentOrder']['id'] );
-		WC()->session->set( 'swedbank_paymentorder_id', $result['paymentOrder']['id'] );
-
-		// Get JS Url
 		$js_url = $result->getOperationByRel( 'view-paymentorder' );
+		$redirect_url = $result->getOperationByRel( 'redirect-paymentorder' );
+
+		$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
+		$order->update_meta_data( '_sb_view_paymentorder', $js_url );
+		$order->update_meta_data( '_sb_redirect_paymentorder', $redirect_url );
+		$order->save_meta_data();
 
 		// Save JS Url in session
+		WC()->session->set( 'swedbank_paymentorder_id', $result['paymentOrder']['id'] );
 		WC()->session->set( 'swedbank_pay_checkout_js_url', $js_url );
 		WC()->session->set( 'sb_payment_url', $js_url );
 
@@ -455,7 +465,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 			'redirect'                 => '#!swedbank-pay-checkout',
 			'is_swedbank_pay_checkout' => true,
 			'js_url'                   => $js_url,
-			'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
+			'redirect_url'             => $redirect_url,
 			'payment_id'               => $result['paymentOrder']['id'],
 		);
 	}
