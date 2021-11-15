@@ -496,9 +496,11 @@ jQuery( function( $ ) {
          */
         checkPaymentUrl: function ( callback ) {
             if ( !! ( new URLSearchParams( document.location.search ) ).get( 'payment_url' ) && this.payment_url ) {
+                var self = this;
                 this.lockCheckout();
                 this.initPaymentJS( this.payment_url, function () {
                     console.log( 'Payment url has been loaded.' );
+                    self.unlockCheckout();
                     callback( true );
                 } );
             } else {
@@ -517,6 +519,13 @@ jQuery( function( $ ) {
                     opacity: 0.6
                 }
             } );
+        },
+        /**
+         * Unlock the checkout
+         */
+        unlockCheckout: function () {
+            this.isLocked = false;
+            $( '.woocommerce-checkout' ).unblock();
         },
     };
 
