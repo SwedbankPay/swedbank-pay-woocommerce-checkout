@@ -2,7 +2,7 @@
 
 let gulp       = require( 'gulp' ),
 	rename     = require( 'gulp-rename' ),
-	sass       = require( 'gulp-sass' ),
+	sass       = require( 'gulp-sass' )(require('node-sass')),
 	sourcemaps = require( 'gulp-sourcemaps' ),
 	cssmin     = require( 'gulp-clean-css' ),
 	uglify     = require( 'gulp-uglify-es' ).default;
