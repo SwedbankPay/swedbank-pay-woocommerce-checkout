@@ -378,11 +378,9 @@ jQuery( function( $ ) {
             console.log( 'updateOrder' );
             let fields = $('.woocommerce-checkout').serialize();
 
-            if ( typeof compatibility === 'undefined' ) {
-                compatibility = false;
+            if ( compatibility ) {
+                alert( 'Order update is not available.' );
             }
-
-            fields += '&compatibility=' + compatibility;
 
             wc_sb_checkout.form.addClass( 'processing' );
             wc_sb_common.block();
