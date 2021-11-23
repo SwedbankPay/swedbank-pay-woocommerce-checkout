@@ -1,3 +1,8 @@
+Version 5.5.0
+* Fix "order update" operation
+* Unlock the checkout after loading of `payment-url`
+* Dedicated dialog for "payment-url"
+
 Version 5.4.2
 * Improve data verification of transaction
 
