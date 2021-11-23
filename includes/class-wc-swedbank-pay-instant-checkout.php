@@ -266,7 +266,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 			$order->calculate_totals( true );
 
 			// Get Payment Order ID
-			$payment_id = get_post_meta( $order_id, '_payex_paymentorder_id', true );
+			$payment_id = $order->get_meta( '_payex_paymentorder_id', true );
 			if ( empty( $payment_id ) ) {
 				$payment_id = WC()->session->get( 'payex_paymentorder_id' );
 			}
@@ -287,14 +287,14 @@ class WC_Swedbank_Pay_Instant_Checkout {
 			}
 
 			// Don't update if amount is not changed
-			if ( round( $order->get_total() * 100 ) === (int) $result['paymentOrder']['amount'] ) {
+			if ( round( $order->get_total() * 100 ) === (int) $result['payment_order']['amount'] ) {
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-checkout',
 					'is_swedbank_pay_checkout' => true,
 					'js_url'                   => $js_url,
 					'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
-					'payment_id'               => $result['paymentOrder']['id'],
+					'payment_id'               => $result['payment_order']['id'],
 				);
 			}
 
@@ -314,18 +314,9 @@ class WC_Swedbank_Pay_Instant_Checkout {
 				'result'                   => 'success',
 				'redirect'                 => '#!swedbank-pay-checkout',
 				'is_swedbank_pay_checkout' => true,
-				'js_url'                   => $js_url,
-				'redirect_url'             => $redirect_url,
-				'payment_id'               => $result['paymentOrder']['id'],
+				'js_url'                   => $result->getOperationByRel( 'view-paymentorder' ),
+				'redirect_url'             => $result->getOperationByRel( 'redirect-paymentorder' ),
 			);
-		}
-
-		// Mode that workaround "Order update is not available"
-		if ( isset( $_POST['is_update_backward_compat'] ) ) {
-			$order->calculate_totals( true );
-
-			// Delete Payment Order ID
-			delete_post_meta( $order_id, '_payex_paymentorder_id' );
 		}
 
 		// Get Consumer Profile
@@ -446,7 +437,13 @@ class WC_Swedbank_Pay_Instant_Checkout {
 			);
 		}
 
-		// Save PaymentOrder ID
+		// Save payment ID
+		$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
+		$order->save_meta_data();
+
+		WC()->session->set( 'swedbank_paymentorder_id', $result['payment_order']['id'] );
+
+		// Get JS Url
 		$js_url = $result->getOperationByRel( 'view-paymentorder' );
 		$redirect_url = $result->getOperationByRel( 'redirect-paymentorder' );
 
@@ -466,7 +463,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 			'is_swedbank_pay_checkout' => true,
 			'js_url'                   => $js_url,
 			'redirect_url'             => $redirect_url,
-			'payment_id'               => $result['paymentOrder']['id'],
+			'payment_id'               => $result['payment_order']['id'],
 		);
 	}
 
@@ -662,11 +659,11 @@ class WC_Swedbank_Pay_Instant_Checkout {
 
 		$_POST['payment_method'] = $this->gateway->id;
 
-		if ( ! empty( $_POST['compat'] ) && (bool) $_POST['compat'] ) {
-			$_POST['is_update_backward_compat'] = 1;
-		} else {
+		//if ( ! empty( $_POST['compatibility'] ) && (bool) $_POST['compatibility'] ) {
+			//$_POST['is_update_backward_compat'] = 1;
+		//} else {
 			$_POST['is_update'] = '1';
-		}
+		//}
 
 		// Update Checkout
 		// @see WC_AJAX::update_order_review()
