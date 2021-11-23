@@ -1131,7 +1131,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				// Save payment ID
 				$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
 				$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
-				$order->save_meta_data();
 
 				// Redirect
 				$order->add_order_note(
@@ -1141,13 +1140,20 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					)
 				);
 
-				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
+				$js_url       = $result->getOperationByRel( 'view-paymentorder' );
+				$redirect_url = $result->getOperationByRel( 'redirect-paymentorder' );
+
+				$order->update_meta_data( '_sb_view_paymentorder', $js_url );
+				$order->update_meta_data( '_sb_redirect_paymentorder', $redirect_url );
+				$order->save_meta_data();
+
+				WC()->session->set( 'sb_payment_url', $js_url );
 
 				// Use redirect method on pay_for_order
 				if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) { // WPCS: input var ok, CSRF ok.
 					return array(
 						'result'   => 'success',
-						'redirect' => $result->getOperationByRel( 'redirect-paymentorder' ),
+						'redirect' => $redirect_url,
 					);
 				}
 
@@ -1155,15 +1161,15 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					return array(
 						'result'   => 'success',
 						'redirect' => '#!swedbank-pay-checkout',
-						'js_url'   => $result->getOperationByRel( 'view-paymentorder' ),
+						'js_url'   => $js_url,
 						'is_swedbank_pay_checkout' => true
 					);
 				}
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-paymentorder' ),
-					'js_url'   => $result->getOperationByRel( 'view-paymentorder' ),
+					'redirect' => $redirect_url,
+					'js_url'   => $js_url,
 				);
 			} else {
 				if ( self::order_contains_subscription( $order ) ) {
@@ -1193,17 +1199,22 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					$generate_token
 				);
 
+				$js_url = $result->getOperationByRel( 'view-paymentorder' );
+				$redirect_url = $result->getOperationByRel( 'redirect-paymentorder' );
+
 				// Save payment ID
 				$order->update_meta_data( '_payex_paymentorder_id', $result['payment_order']['id'] );
+				$order->update_meta_data( '_sb_view_paymentorder', $js_url );
+				$order->update_meta_data( '_sb_redirect_paymentorder', $redirect_url );
 				$order->save_meta_data();
 
-				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-paymentorder' ) );
+				WC()->session->set( 'sb_payment_url', $js_url );
 
 				// Use redirect method on pay_for_order
 				if ( isset( $_GET['pay_for_order'], $_GET['key'] ) ) { // WPCS: input var ok, CSRF ok.
 					return array(
 						'result'   => 'success',
-						'redirect' => $result->getOperationByRel( 'redirect-paymentorder' ),
+						'redirect' => $redirect_url,
 					);
 				}
 
@@ -1211,15 +1222,15 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 					return array(
 						'result'   => 'success',
 						'redirect' => '#!swedbank-pay-checkout',
-						'js_url'   => $result->getOperationByRel( 'view-paymentorder' ),
+						'js_url'   => $js_url,
 						'is_swedbank_pay_checkout' => true
 					);
 				}
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-paymentorder' ),
-					'js_url'   => $result->getOperationByRel( 'view-paymentorder' ),
+					'redirect' => $redirect_url,
+					'js_url'   => $js_url,
 				);
 			}
 		}
