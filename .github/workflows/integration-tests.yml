@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: woocommerce/woocommerce
-          ref: 5.6.0
+          ref: 5.9.0
           path: woocommerce
 
       - name: Install dependencies
@@ -44,6 +44,13 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '12'
+
+      - name: Run PHPCS inspection
+        run: |
+          composer global require "wp-coding-standards/wpcs"
+          phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
+          phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
 
       - name: Build the plugin package
         run: |
@@ -77,23 +84,18 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_RUN_CORE_TESTS: 1
         run: |
-          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
-          composer require yoast/phpunit-polyfills
-          WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
-
+          if [ "$ACCESS_TOKEN" != "" ]; then
+            cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
+            WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
+          fi
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           path: |
             /tmp/wordpress/wp-content/uploads/wc-logs/*.log
             /tmp/swedbank-pay-woocommerce-checkout.zip
-
-      - name: Run PHPCS inspection
-        run: |
-          composer global require "wp-coding-standards/wpcs"
-          phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
-          phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
 
       - name: Upload code coverage report to Codecov
         env:
