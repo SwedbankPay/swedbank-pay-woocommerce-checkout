@@ -10,5 +10,8 @@
         "adci/full-name-parser": "^0.2.4",
         "ramsey/uuid": "^3.7",
         "swedbank-pay/swedbank-pay-woocommerce-core": "~4.1.1"
+    },
+    "require-dev": {
+        "yoast/phpunit-polyfills": "^1.0.2"
     }
 }
