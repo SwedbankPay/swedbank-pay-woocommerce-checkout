@@ -14,6 +14,12 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 	exit( 1 );
 }
 
+define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', __DIR__ . '/../vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php' );
+if ( ! file_exists( WP_TESTS_PHPUNIT_POLYFILLS_PATH ) ) {
+	echo "Could not find " . WP_TESTS_PHPUNIT_POLYFILLS_PATH . PHP_EOL; // WPCS: XSS ok.
+	exit( 1 );
+}
+
 // Give access to tests_add_filter() function.
 require_once $_tests_dir . '/includes/functions.php';
 
