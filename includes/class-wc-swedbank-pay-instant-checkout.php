@@ -447,13 +447,12 @@ class WC_Swedbank_Pay_Instant_Checkout {
 		$js_url = $result->getOperationByRel( 'view-paymentorder' );
 		$redirect_url = $result->getOperationByRel( 'redirect-paymentorder' );
 
-		$order->update_meta_data( '_payex_paymentorder_id', $result['paymentOrder']['id'] );
 		$order->update_meta_data( '_sb_view_paymentorder', $js_url );
 		$order->update_meta_data( '_sb_redirect_paymentorder', $redirect_url );
 		$order->save_meta_data();
 
 		// Save JS Url in session
-		WC()->session->set( 'swedbank_paymentorder_id', $result['paymentOrder']['id'] );
+		WC()->session->set( 'swedbank_paymentorder_id', $result['payment_order']['id'] );
 		WC()->session->set( 'swedbank_pay_checkout_js_url', $js_url );
 		WC()->session->set( 'sb_payment_url', $js_url );
 
@@ -658,12 +657,7 @@ class WC_Swedbank_Pay_Instant_Checkout {
 		unset( $_POST['terms-field'], $_POST['terms'] );
 
 		$_POST['payment_method'] = $this->gateway->id;
-
-		//if ( ! empty( $_POST['compatibility'] ) && (bool) $_POST['compatibility'] ) {
-			//$_POST['is_update_backward_compat'] = 1;
-		//} else {
-			$_POST['is_update'] = '1';
-		//}
+		$_POST['is_update'] = '1';
 
 		// Update Checkout
 		// @see WC_AJAX::update_order_review()
