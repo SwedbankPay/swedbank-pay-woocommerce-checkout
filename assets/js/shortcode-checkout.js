@@ -747,7 +747,6 @@ jQuery( function( $ ) {
                 // Init Checkout
                 if ( self.isCheckinRequired() && ! self.customer_reference ) {
                     console.log( 'Checkin is required.' );
-                    alert( 'Checkin is required.' );
                 } else {
                     self.initCheckout( self.customer_reference );
                 }
