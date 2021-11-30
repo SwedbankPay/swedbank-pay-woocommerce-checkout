@@ -15,11 +15,12 @@ jobs:
 
       - name: Build
         run: |
-          composer install
+          composer install --no-dev
           npm install
           gulp js:build
           gulp css:build
           rm -rf ./node_modules
+          rm -rf ./tests
           rm -rf ./.git
           rm -rf ./vendor/swedbank-pay/swedbank-pay-sdk-php/.git
           rm -rf ./vendor/swedbank-pay/swedbank-pay-woocommerce-core/.git
@@ -28,7 +29,7 @@ jobs:
           rm -f ./package-lock.json
 
       - name: WordPress Plugin Deploy
-        uses: varunsridharan/action-wp-org-deploy@master
+        uses: varunsridharan/action-wp-org-deploy@main
         with:
           WORDPRESS_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           WORDPRESS_USERNAME: ${{ secrets.SVN_USERNAME }}
