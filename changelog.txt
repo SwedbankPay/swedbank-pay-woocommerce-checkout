@@ -1,3 +1,6 @@
+Version 5.5.1
+* Optimize package
+
 Version 5.5.0
 * Fix "order update" operation
 * Unlock the checkout after loading of `payment-url`
