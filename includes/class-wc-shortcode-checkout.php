@@ -261,7 +261,8 @@ class WC_Shortcode_Checkout {
 			'carpay_enabled'               => is_plugin_active( 'aait-sbpay-helper/aait-sbpay-helper.php' )  ? 'yes' : 'no' ,
 			'needs_shipping_address'       => WC()->cart->needs_shipping() ? 'yes' : 'no',
 			'ship_to_billing_address_only' => wc_ship_to_billing_address_only() ? 'yes' : 'no',
-			'tos_enabled'                  => wc_terms_and_conditions_checkbox_enabled(),
+			'tos_enabled'                  => apply_filters( 'woocommerce_checkout_show_terms', true ) &&
+			                                  function_exists( 'wc_terms_and_conditions_checkbox_enabled' ),
 			'checkInStyle'                 => null,
 			'needs_checkin'                => __(
 				'You must check in to be able to pay.',
@@ -305,9 +306,14 @@ class WC_Shortcode_Checkout {
 		), $atts));
 
 		// Check cart has contents.
-		//if ( WC()->cart->is_empty() && ! is_customize_preview() && apply_filters( 'woocommerce_checkout_redirect_empty_cart', true ) ) {
-			//return '';
-		//}
+		if ( WC()->cart->is_empty() && ! is_customize_preview() && apply_filters( 'woocommerce_checkout_redirect_empty_cart', true ) ) {
+			ob_start();
+			wc_get_template( 'cart/cart-empty.php' );
+			$return = ob_get_contents();
+			ob_end_flush();
+
+			return $return;
+		}
 
 		// Init check-in
 		remove_all_actions( 'woocommerce_checkout_init', 10 );
