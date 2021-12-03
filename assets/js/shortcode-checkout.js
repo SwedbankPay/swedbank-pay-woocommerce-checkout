@@ -26,6 +26,10 @@ jQuery( function( $ ) {
 
             var self = this;
 
+            if ( ! this.isTermsAndConditionsEnabled() ) {
+                $( '#place_order' ).prop( 'disabled', true );
+            }
+
             // Init Checkin
             if ( this.isCheckinEnabled() ) {
                 this.loadCheckIn();
@@ -103,6 +107,14 @@ jQuery( function( $ ) {
          */
         isRedirectMethodEnabled() {
             return 'redirect' === WC_Shortcode_Checkout.redirect_method;
+        },
+
+        /**
+         * Check if terms and conditions are enabled
+         * @returns {boolean}
+         */
+        isTermsAndConditionsEnabled() {
+            return WC_Shortcode_Checkout.tos_enabled === '1'
         },
 
         /**

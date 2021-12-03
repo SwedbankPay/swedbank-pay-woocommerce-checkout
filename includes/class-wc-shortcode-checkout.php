@@ -261,6 +261,7 @@ class WC_Shortcode_Checkout {
 			'carpay_enabled'               => is_plugin_active( 'aait-sbpay-helper/aait-sbpay-helper.php' )  ? 'yes' : 'no' ,
 			'needs_shipping_address'       => WC()->cart->needs_shipping() ? 'yes' : 'no',
 			'ship_to_billing_address_only' => wc_ship_to_billing_address_only() ? 'yes' : 'no',
+			'tos_enabled'                  => wc_terms_and_conditions_checkbox_enabled(),
 			'checkInStyle'                 => null,
 			'needs_checkin'                => __(
 				'You must check in to be able to pay.',
