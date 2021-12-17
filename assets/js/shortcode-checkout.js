@@ -26,6 +26,12 @@ jQuery( function( $ ) {
 
             var self = this;
 
+            if ( ! this.isTermsAndConditionsEnabled() ) {
+                setInterval( function () {
+                    $( '#place_order' ).prop( 'disabled', true );
+                }, 1000 );
+            }
+
             // Init Checkin
             if ( this.isCheckinEnabled() ) {
                 this.loadCheckIn();
@@ -103,6 +109,14 @@ jQuery( function( $ ) {
          */
         isRedirectMethodEnabled() {
             return 'redirect' === WC_Shortcode_Checkout.redirect_method;
+        },
+
+        /**
+         * Check if terms and conditions are enabled
+         * @returns {boolean}
+         */
+        isTermsAndConditionsEnabled() {
+            return WC_Shortcode_Checkout.tos_enabled
         },
 
         /**
@@ -484,7 +498,8 @@ jQuery( function( $ ) {
             if ( ! wc_sb_common.validateForm() ) {
                 console.log( 'The checkout form validation is failed.' );
 
-                callback( WC_Shortcode_Checkout.checkin_error );
+                //callback( WC_Shortcode_Checkout.checkin_error );
+                callback( null );
                 return;
             }
 
