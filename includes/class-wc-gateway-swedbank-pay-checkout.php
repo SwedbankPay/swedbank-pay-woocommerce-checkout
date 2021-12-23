@@ -1485,7 +1485,45 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 
 			// Refund without specific items
 			if ( 0 === count( $lines ) ) {
-				$lines = $order->get_items( array( 'line_item', 'shipping', 'fee', 'coupon' ) );
+				$line_items = $order->get_items( array( 'line_item', 'shipping', 'fee', 'coupon' ) );
+				foreach ($line_items as $item_id => $item) {
+					switch ( $item->get_type() ) {
+						case 'line_item':
+							/** @var WC_Order_Item_Product $item */
+							// Use subtotal to get amount without discounts
+							$lines[$item_id] = array(
+								'qty' => $item->get_quantity(),
+								'refund_total' => $item->get_subtotal(),
+								'refund_tax' => array(
+									$item->get_subtotal_tax()
+								)
+							);
+
+							break;
+						case 'fee':
+						case 'shipping':
+							/** @var WC_Order_Item_Fee|WC_Order_Item_Shipping $item */
+							$lines[$item_id] = array(
+								'qty' => $item->get_quantity(),
+								'refund_total' => $item->get_total(),
+								'refund_tax' => array(
+									$item->get_total_tax()
+								)
+							);
+
+							break;
+						case 'coupon':
+							/** @var WC_Order_Item_Coupon $item */
+							$lines[$item_id] = array(
+								'qty' => $item->get_quantity(),
+								'refund_total' => -1 * $item->get_discount(),
+								'refund_tax' => array(
+									-1 * $item->get_discount_tax()
+								)
+							);
+							break;
+					}
+				}
 			}
 
 			// Refund with specific items
@@ -1556,7 +1594,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 							$image = wc_placeholder_img_src( 'full' );
 						}
 
-						if (null === parse_url( $image, PHP_URL_SCHEME ) &&
+						if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
 						    mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
 						) {
 							$image = wp_guess_url() . $image;
