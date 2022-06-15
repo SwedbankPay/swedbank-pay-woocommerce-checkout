@@ -128,7 +128,7 @@ class WC_Swedbank_Pay_Instant_Capture {
 		$payment_method = $order->get_payment_method();
 
 		// Get Payment Gateway
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		$gateways = WC()->payment_gateways()->payment_gateways();
 
 		/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
 

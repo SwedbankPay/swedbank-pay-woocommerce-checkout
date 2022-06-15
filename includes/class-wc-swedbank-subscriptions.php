@@ -398,7 +398,7 @@ class WC_Swedbank_Subscriptions {
 	 * @throws Exception
 	 */
 	private static function get_payment_gateway() {
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		$gateways = WC()->payment_gateways()->payment_gateways();
 
 		if ( isset( $gateways[ self::PAYMENT_ID ] ) ) {
 			return $gateways[ self::PAYMENT_ID ];
