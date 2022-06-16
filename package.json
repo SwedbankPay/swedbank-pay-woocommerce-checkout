@@ -1,12 +1,12 @@
 {
   "name": "swedbank-pay-woocommerce-checkout",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "",
   "main": "gulpfile.js",
   "dependencies": {
     "gulp-clean-css": "^4.3.0",
-    "gulp-sass": "^5.0.0",
-    "node-sass": "^6.0.1"
+    "gulp-sass": "^5.1.0",
+    "node-sass": "^7.0.1"
   },
   "devDependencies": {
     "gulp": "^4.0.2",
