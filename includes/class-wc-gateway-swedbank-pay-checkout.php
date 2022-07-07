@@ -1675,12 +1675,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			// Unset
 			delete_transient( 'sb_refund_parameters_' . $order_id );
 
-			// Calculate VAT amount
-			$vat_amount = array_sum(
-				array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT )
-			) / 100;
-
-			$result = $this->core->refundCheckout( $order->get_id(), $amount, $vat_amount, $items );
+			$result = $this->core->refundCheckout( $order->get_id(), $items );
 
 			// Add transaction id
 			$refund_id = get_transient( 'sb_refund_transaction_' . $order->get_id() );
