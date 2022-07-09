@@ -1556,10 +1556,10 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				$order_item = array(
 					OrderItemInterface::FIELD_NAME        => $product_name,
 					OrderItemInterface::FIELD_DESCRIPTION => $product_name,
-					OrderItemInterface::FIELD_UNITPRICE   => round( $unit_price * 100 ),
-					OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
-					OrderItemInterface::FIELD_AMOUNT      => round( $refund_amount * 100 ),
-					OrderItemInterface::FIELD_VAT_AMOUNT  => round( $refund_tax * 100 ),
+					OrderItemInterface::FIELD_UNITPRICE   => (int)bcmul(100, $unit_price),
+					OrderItemInterface::FIELD_VAT_PERCENT => (int)bcmul(100, $tax_percent),
+					OrderItemInterface::FIELD_AMOUNT      => (int)bcmul(100, $refund_amount),
+					OrderItemInterface::FIELD_VAT_AMOUNT  => (int)bcmul(100, $refund_tax),
 					OrderItemInterface::FIELD_QTY         => $qty,
 					OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
 				);
@@ -1702,6 +1702,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 *
 	 * @return void
 	 * @throws \Exception
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function capture_payment( $order, $amount = false, $vat_amount = 0 ) {
 		if ( is_int( $order ) ) {
@@ -1709,8 +1710,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		}
 
 		try {
-			$order_data = $this->adapter->getOrderData( $order->get_id() );
-			$this->core->captureCheckout( $order->get_id(), $amount, $vat_amount, $order_data[ OrderInterface::ITEMS ] );
+			$this->core->captureCheckout( $order->get_id() );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
 		}
