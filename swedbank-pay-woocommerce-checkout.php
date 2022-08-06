@@ -41,23 +41,6 @@ class WC_Swedbank_Pay_Checkout extends WC_Swedbank_Plugin {
 	}
 
 	/**
-	 * Install
-	 */
-	public function install() {
-		// Check dependencies
-		if ( ! file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
-			die( 'This plugin can\'t be activated. Please run `composer install` to install dependencies.' );
-		}
-
-		parent::install();
-
-		// Set Version
-		if ( ! get_option( 'woocommerce_payex_checkout_version' ) ) {
-			add_option( 'woocommerce_payex_checkout_version', '1.0.0' );
-		}
-	}
-
-	/**
 	 * Init localisations and files
 	 * @return void
 	 */
