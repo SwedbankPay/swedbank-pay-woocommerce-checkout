@@ -1,3 +1,8 @@
+Version 6.1.0
+* Fixed warnings on php8.
+* Capturing fixes
+* Updated the core library
+
 Version 6.0.0
 * Fix order lines of full refund
 * Shortcode mode fixes
