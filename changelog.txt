@@ -1,3 +1,6 @@
+Version 6.2.0
+* Improved refund feature
+
 Version 6.1.0
 * Fixed warnings on php8.
 * Capturing fixes

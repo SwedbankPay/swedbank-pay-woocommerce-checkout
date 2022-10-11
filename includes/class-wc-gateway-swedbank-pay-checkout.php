@@ -4,13 +4,12 @@ defined( 'ABSPATH' ) || exit;
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Checkin;
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Instant_Checkout;
 use SwedbankPay\Core\Adapter\WC_Adapter;
+use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Refund;
 use SwedbankPay\Checkout\WooCommerce\WC_Background_Swedbank_Pay_Queue;
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Checkout\WooCommerce\WC_Payment_Token_Swedbank_Pay;
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Pay_Instant_Capture;
 use SwedbankPay\Core\Core;
-use SwedbankPay\Core\OrderInterface;
-use SwedbankPay\Core\OrderItemInterface;
 use SwedbankPay\Core\Log\LogLevel;
 
 class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
@@ -275,9 +274,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
 
-		// Save order items on refund
-		add_action( 'woocommerce_create_refund', array( $this, 'save_refund_parameters', ), 10, 2 );
-
 		// Ajax Actions
 		add_action( 'wp_ajax_swedbank_pay_checkout_log_error', array( $this, 'ajax_swedbank_pay_checkout_log_error' ) );
 		add_action( 'wp_ajax_nopriv_swedbank_pay_checkout_log_error', array( $this, 'ajax_swedbank_pay_checkout_log_error' ) );
@@ -401,9 +397,9 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				'default'     => $this->culture,
 			),
 			'auto_capture'           => array(
-				'title'   => __( 'Auto Capture Intent', 'swedbank-pay-woocommerce-checkout' ),
+				'title'   => __( 'Auto Capture Intent (for Recurring transactions only)', 'swedbank-pay-woocommerce-checkout' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Auto Capture Intent', 'swedbank-pay-woocommerce-checkout' ),
+				'label'   => __( 'Enable Auto Capture Intent (for Recurring transactions only)', 'swedbank-pay-woocommerce-checkout' ),
 				'description' => __( 'A one phase option that enable capture of funds automatically after authorization.', 'swedbank-pay-woocommerce-checkout' ),
 				'desc_tip'    => true,
 				'default' => $this->auto_capture,
@@ -1412,43 +1408,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Save refund parameters to perform refund with specified products and amounts.
-	 *
-	 * @param \WC_Order_Refund $refund
-	 * @param $args
-	 */
-	public function save_refund_parameters( $refund, $args ) {
-		if ( ! isset( $args['order_id'] ) ) {
-			return;
-		}
-
-		$order = wc_get_order( $args['order_id'] );
-		if ( ! $order ) {
-			return;
-		}
-
-		if ( $this->id !== $order->get_payment_method() ) {
-			return;
-		}
-
-		// Save order items of refund
-		set_transient(
-			'sb_refund_parameters_' . $args['order_id'],
-			$args,
-			5 * MINUTE_IN_SECONDS
-		);
-
-		// Save refund ID to store transaction_id
-		if ( $args['refund_payment'] ) {
-			set_transient(
-				'sb_refund_transaction_' . $args['order_id'],
-				$refund->get_id(),
-				5 * MINUTE_IN_SECONDS
-			);
-		}
-	}
-
-	/**
 	 * Process Refund
 	 *
 	 * If the gateway declares 'refunds' support, this will allow it to refund
@@ -1475,217 +1434,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			return new WP_Error( 'refund', __( 'Amount must be positive.', 'swedbank-pay-woocommerce-checkout' ) );
 		}
 
-		// Prevent refund credit memo creation through Callback
-		set_transient( 'sb_refund_block_' . $order->get_id(), $order_id, 5 * MINUTE_IN_SECONDS );
-
 		try {
-			$args = (array) get_transient( 'sb_refund_parameters_' . $order->get_id() );
-			$lines = isset( $args['line_items'] ) ? $args['line_items'] : [];
-			$items = [];
-
-			// Refund without specific items
-			if ( 0 === count( $lines ) ) {
-				$line_items = $order->get_items( array( 'line_item', 'shipping', 'fee', 'coupon' ) );
-				foreach ($line_items as $item_id => $item) {
-					switch ( $item->get_type() ) {
-						case 'line_item':
-							/** @var WC_Order_Item_Product $item */
-							// Use subtotal to get amount without discounts
-							$lines[$item_id] = array(
-								'qty' => $item->get_quantity(),
-								'refund_total' => $item->get_subtotal(),
-								'refund_tax' => array(
-									$item->get_subtotal_tax()
-								)
-							);
-
-							break;
-						case 'fee':
-						case 'shipping':
-							/** @var WC_Order_Item_Fee|WC_Order_Item_Shipping $item */
-							$lines[$item_id] = array(
-								'qty' => $item->get_quantity(),
-								'refund_total' => $item->get_total(),
-								'refund_tax' => array(
-									$item->get_total_tax()
-								)
-							);
-
-							break;
-						case 'coupon':
-							/** @var WC_Order_Item_Coupon $item */
-							$lines[$item_id] = array(
-								'qty' => $item->get_quantity(),
-								'refund_total' => -1 * $item->get_discount(),
-								'refund_tax' => array(
-									-1 * $item->get_discount_tax()
-								)
-							);
-							break;
-					}
-				}
-			}
-
-			// Refund with specific items
-			// Build order items list
-			foreach ($lines as $item_id => $line) {
-				/** @var WC_Order_Item $item */
-				$item = $order->get_item( $item_id );
-
-				$product_name = trim( $item->get_name() );
-				if ( empty( $product_name ) ) {
-					$product_name = '-';
-				}
-
-				$qty = (int) $line['qty'];
-				if ($qty < 1) {
-					$qty = 1;
-				}
-
-				$refund_total  = (float) $line['refund_total'];
-				$refund_tax    = (float) array_shift( $line['refund_tax'] );
-				$tax_percent   = ( $refund_tax > 0 ) ? round( 100 / ( $refund_total / $refund_tax ) ) : 0;
-				$unit_price    = $qty > 0 ? ( ( $refund_total + $refund_tax ) / $qty ) : 0;
-				$refund_amount = $refund_total + $refund_tax;
-
-				if ( empty( $refund_total ) ) {
-					// Skip zero items
-					continue;
-				}
-
-				$order_item = array(
-					OrderItemInterface::FIELD_NAME        => $product_name,
-					OrderItemInterface::FIELD_DESCRIPTION => $product_name,
-					OrderItemInterface::FIELD_UNITPRICE   => (int)bcmul(100, $unit_price),
-					OrderItemInterface::FIELD_VAT_PERCENT => (int)bcmul(100, $tax_percent),
-					OrderItemInterface::FIELD_AMOUNT      => (int)bcmul(100, $refund_amount),
-					OrderItemInterface::FIELD_VAT_AMOUNT  => (int)bcmul(100, $refund_tax),
-					OrderItemInterface::FIELD_QTY         => $qty,
-					OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-				);
-
-				switch ( $item->get_type() ) {
-					case 'line_item':
-						/** @var WC_Order_Item_Product $item */
-
-						/**
-						 * @var WC_Product $product
-						 */
-						$product = $item->get_product();
-
-						// Get Product Sku
-						$reference = trim(
-							str_replace(
-								array( ' ', '.', ',' ),
-								'-',
-								$product->get_sku()
-							)
-						);
-
-						if ( empty( $reference ) ) {
-							$reference = wp_generate_password( 12, false );
-						}
-
-						// Get Product image
-						$image = wp_get_attachment_image_src( $product->get_image_id(), 'full' );
-						if ( $image ) {
-							$image = array_shift( $image );
-						} else {
-							$image = wc_placeholder_img_src( 'full' );
-						}
-
-						if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
-						    mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
-						) {
-							$image = wp_guess_url() . $image;
-						}
-
-						// Get Product Class
-						$product_class = get_post_meta(
-							$product->get_id(),
-							'_sb_product_class',
-							true
-						);
-
-						if ( empty( $product_class ) ) {
-							$product_class = apply_filters(
-								'sb_product_class',
-								'ProductGroup1',
-								$product
-							);
-						}
-
-						// The field Reference must match the regular expression '[\\w-]*'
-						$order_item[OrderItemInterface::FIELD_REFERENCE] = $reference;
-						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_PRODUCT;
-						$order_item[OrderItemInterface::FIELD_CLASS] = $product_class;
-						$order_item[OrderItemInterface::FIELD_ITEM_URL] = $product->get_permalink();
-						$order_item[OrderItemInterface::FIELD_IMAGE_URL] = $image;
-
-						break;
-					case 'shipping':
-						/** @var WC_Order_Item_Shipping $item */
-						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'shipping';
-						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_SHIPPING;
-						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
-							'sb_product_class_shipping',
-							'ProductGroup1',
-							$order
-						);
-
-						break;
-					case 'fee':
-						/** @var WC_Order_Item_Fee $item */
-						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'fee';
-						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
-						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
-							'sb_product_class_fee',
-							'ProductGroup1',
-							$order
-						);
-
-						break;
-					case 'coupon':
-						/** @var WC_Order_Item_Coupon $item */
-						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'coupon';
-						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
-						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
-							'sb_product_class_coupon',
-							'ProductGroup1',
-							$order
-						);
-
-						break;
-					default:
-						/** @var WC_Order_Item $item */
-						$order_item[OrderItemInterface::FIELD_REFERENCE] = 'other';
-						$order_item[OrderItemInterface::FIELD_TYPE] = OrderItemInterface::TYPE_OTHER;
-						$order_item[OrderItemInterface::FIELD_CLASS] = apply_filters(
-							'sb_product_class_other',
-							'ProductGroup1',
-							$order
-						);
-
-						break;
-				}
-
-				$items[] = $order_item;
-			}
-
-			// Unset
-			delete_transient( 'sb_refund_parameters_' . $order_id );
-
-			$result = $this->core->refundCheckout( $order->get_id(), $items );
-
-			// Add transaction id
-			$refund_id = get_transient( 'sb_refund_transaction_' . $order->get_id() );
-			if ( $refund_id && isset( $result['reversal'] ) ) {
-				$refund = new WC_Order_Refund( $refund_id );
-				$refund->update_meta_data( '_transaction_id', $result['reversal']['transaction']['number'] );
-				$refund->save_meta_data();
-
-				delete_transient( 'sb_refund_transaction_' . $order->get_id() );
-			}
+			WC_Swedbank_Pay_Refund::refund( $this, $order, $amount, $reason );
 
 			return true;
 		} catch ( \Exception $e ) {
