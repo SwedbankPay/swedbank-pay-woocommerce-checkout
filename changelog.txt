@@ -1,3 +1,7 @@
+Version 6.3.0
+* Fixed: Notice: Function is_page was called incorrectly.
+* Updated the core library
+
 Version 6.2.0
 * Improved refund feature
 
