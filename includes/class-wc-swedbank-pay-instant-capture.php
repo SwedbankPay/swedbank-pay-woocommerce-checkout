@@ -97,18 +97,18 @@ class WC_Swedbank_Pay_Instant_Capture {
 		$items = $this->get_instant_capture_items( $order );
 		$this->gateway->adapter->log( LogLevel::INFO, __METHOD__, [ $items ] );
 		if ( count( $items ) > 0 ) {
-			$amount     = array_sum( array_column( $items, OrderItemInterface::FIELD_AMOUNT ) ) / 100;
-			$vat_amount = array_sum( array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT ) ) / 100;
 
 			try {
 				if ( 'payex_checkout' === $order->get_payment_method() ) {
 					// Capture Checkout
-					$this->gateway->core->captureCheckout( $order->get_id(), $amount, $vat_amount, $items );
+					$this->gateway->core->captureCheckout( $order->get_id(), $items );
 				} elseif ( 'payex_psp_invoice' === $order->get_payment_method() ) {
 					// Capture Invoice
-					$this->gateway->core->captureInvoice( $order->get_id(), $amount, $vat_amount, $items );
+					$this->gateway->core->captureInvoice( $order->get_id(), $items );
 				} else {
 					// Capture Payments
+					$amount     = array_sum( array_column( $items, OrderItemInterface::FIELD_AMOUNT ) ) / 100;
+					$vat_amount = array_sum( array_column( $items, OrderItemInterface::FIELD_VAT_AMOUNT ) ) / 100;
 					$this->gateway->core->capture( $order->get_id(), $amount, $vat_amount );
 				}
 			} catch ( \SwedbankPay\Core\Exception $e ) {
@@ -128,7 +128,7 @@ class WC_Swedbank_Pay_Instant_Capture {
 		$payment_method = $order->get_payment_method();
 
 		// Get Payment Gateway
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		$gateways = WC()->payment_gateways()->payment_gateways();
 
 		/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
 

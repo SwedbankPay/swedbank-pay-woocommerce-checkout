@@ -13,13 +13,13 @@ class WC_Swedbank_Pay_Transactions {
 	 *
 	 * @var WC_Swedbank_Pay_Transactions
 	 */
-	protected static $_instance = null;
+	protected static $instance = null;
 
 	/**
 	 * Allowed Fields
 	 * @var array
 	 */
-	protected static $_allowed_fields = array(
+	protected static $allowed_fields = array(
 		'transaction_id',
 		'transaction_data',
 		'order_id',
@@ -42,31 +42,11 @@ class WC_Swedbank_Pay_Transactions {
 	 * @return WC_Swedbank_Pay_Transactions
 	 */
 	public static function instance() {
-		if ( is_null( self::$_instance ) ) {
-			self::$_instance = new self();
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
 		}
 
-		return self::$_instance;
-	}
-
-	/**
-	 * Construct is forbidden.
-	 */
-	private function __construct() {
-	}
-
-	/**
-	 * Cloning is forbidden.
-	 */
-	private function __clone() {
-		/* ... @return Singleton */
-	}
-
-	/**
-	 * Wakeup is forbidden.
-	 */
-	private function __wakeup() {
-		/* ... @return Singleton */
+		return self::$instance;
 	}
 
 	/**
@@ -225,7 +205,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 */
 	public function get_by( $field, $value, $single = true ) {
 		global $wpdb;
-		if ( ! in_array( $field, self::$_allowed_fields, true ) ) {
+		if ( ! in_array( $field, self::$allowed_fields, true ) ) {
 			$field = 'transaction_id';
 		}
 
@@ -251,7 +231,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 
 		$lines = array();
 		foreach ( $conditionals as $key => $value ) {
-			if ( ! in_array( $key, self::$_allowed_fields, true ) ) {
+			if ( ! in_array( $key, self::$allowed_fields, true ) ) {
 				_doing_it_wrong( __METHOD__, __( 'Cheatin&#8217; huh?', 'woocommerce' ), '1.0.0' );
 				die();
 			}
@@ -284,7 +264,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 
 		// Verify data
 		foreach ( $data as $key => $value ) {
-			if ( ! in_array( $key, self::$_allowed_fields ) ) {
+			if ( ! in_array( $key, self::$allowed_fields ) ) {
 				unset( $data[ $key ] );
 			}
 		}

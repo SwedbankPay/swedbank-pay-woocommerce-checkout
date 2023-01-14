@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3.1.0
 
       - name: Build
         run: |
@@ -25,8 +25,11 @@ jobs:
           rm -rf ./vendor/swedbank-pay/swedbank-pay-sdk-php/.git
           rm -rf ./vendor/swedbank-pay/swedbank-pay-woocommerce-core/.git
           rm -rf ./.github
-          rm -f ./composer.lock
           rm -f ./package-lock.json
+          rm -rf ./vendor/bin
+          rm -rf ./vendor/squizlabs/php_codesniffer
+          composer dump-autoload -o
+          rm -f ./composer.lock
 
       - name: WordPress Plugin Deploy
         uses: varunsridharan/action-wp-org-deploy@main

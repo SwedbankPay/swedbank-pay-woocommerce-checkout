@@ -7,11 +7,11 @@
  * Author URI: https://profiles.wordpress.org/swedbankpay/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 6.0.0
+ * Version: 6.3.0
  * Text Domain: swedbank-pay-woocommerce-checkout
  * Domain Path: /languages
  * WC requires at least: 5.5.1
- * WC tested up to: 6.1.0
+ * WC tested up to: 7.0.0
  */
 
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin;
@@ -38,23 +38,6 @@ class WC_Swedbank_Pay_Checkout extends WC_Swedbank_Plugin {
 		// Actions
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 30 );
-	}
-
-	/**
-	 * Install
-	 */
-	public function install() {
-		// Check dependencies
-		if ( ! file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
-			die( 'This plugin can\'t be activated. Please run `composer install` to install dependencies.' );
-		}
-
-		parent::install();
-
-		// Set Version
-		if ( ! get_option( 'woocommerce_payex_checkout_version' ) ) {
-			add_option( 'woocommerce_payex_checkout_version', '1.0.0' );
-		}
 	}
 
 	/**

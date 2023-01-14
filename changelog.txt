@@ -1,3 +1,15 @@
+Version 6.3.0
+* Fixed: Notice: Function is_page was called incorrectly.
+* Updated the core library
+
+Version 6.2.0
+* Improved refund feature
+
+Version 6.1.0
+* Fixed warnings on php8.
+* Capturing fixes
+* Updated the core library
+
 Version 6.0.0
 * Fix order lines of full refund
 * Shortcode mode fixes

@@ -151,7 +151,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 				throw new \Exception( 'Invalid webhook data' );
 			}
 
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+			$gateways = WC()->payment_gateways()->payment_gateways();
 
 			/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
 			$gateway = isset( $gateways[ $item['payment_method_id'] ] ) ? $gateways[ $item['payment_method_id'] ] : false;

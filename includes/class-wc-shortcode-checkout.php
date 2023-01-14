@@ -300,10 +300,9 @@ class WC_Shortcode_Checkout {
 		wp_enqueue_script( 'sb-shortcode-checkout' );
 	}
 
-	public function shortcode($atts) {
+	public function shortcode( $atts ) {
 		// Extract options
-		extract(shortcode_atts(array(
-		), $atts));
+		extract( shortcode_atts( array(), $atts) );
 
 		// Check cart has contents.
 		if ( WC()->cart->is_empty() && ! is_customize_preview() && apply_filters( 'woocommerce_checkout_redirect_empty_cart', true ) ) {
@@ -383,9 +382,9 @@ class WC_Shortcode_Checkout {
 	 * @throws Exception
 	 */
 	private function get_gateway() {
-		$available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
-		foreach ($available_gateways as $gateway) {
-			if ('payex_checkout' === $gateway->id) {
+		$gateways = WC()->payment_gateways()->payment_gateways();
+		foreach ( $gateways as $gateway ) {
+			if ( 'payex_checkout' === $gateway->id ) {
 				return $gateway;
 			}
 		}
