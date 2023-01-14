@@ -89,10 +89,15 @@ class WC_Swedbank_Pay_Refund {
 	 *
 	 * @return void
 	 * @throws \SwedbankPay\Core\Exception
+	 * @throws \Exception
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public static function refund( $gateway, $order, $amount, $reason ) {
-		$args = (array) get_transient( 'sb_refund_parameters_' . $order->get_id() );
+		$args = get_transient( 'sb_refund_parameters_' . $order->get_id() );
+		if ( empty( $args ) ) {
+			$args = array();
+		}
+
 		$lines = isset( $args['line_items'] ) ? $args['line_items'] : [];
 		$items = [];
 
@@ -145,6 +150,9 @@ class WC_Swedbank_Pay_Refund {
 		foreach ( $lines as $item_id => $line ) {
 			/** @var WC_Order_Item $item */
 			$item = $order->get_item( $item_id );
+			if ( ! $item ) {
+				throw new \Exception( 'Unable to retrieve order item: ' . $item_id );
+			}
 
 			$product_name = trim( $item->get_name() );
 			if ( empty( $product_name ) ) {
@@ -221,7 +229,7 @@ class WC_Swedbank_Pay_Refund {
 					}
 
 					if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
-					     mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
+						 mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
 					) {
 						$image = wp_guess_url() . $image;
 					}
