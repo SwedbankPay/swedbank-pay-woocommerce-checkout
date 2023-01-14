@@ -40,10 +40,6 @@ Copy the Token and insert it in the appropriate field in your WooCommerce Paymen
 
 ![image6](https://user-images.githubusercontent.com/6286270/69639000-0c712a00-105c-11ea-944c-a2b254cb34a1.png)
 
-Navigate further down on the same page to select **Checkin country** and mark the country for which the payment method should work.
-
-![image7](https://user-images.githubusercontent.com/6286270/69638120-6244d280-105a-11ea-9453-ae8352722c5b.png)
-
 Don’t Forget to save.
 Note that Tokens differ for Production and Test.
 
