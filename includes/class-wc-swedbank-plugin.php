@@ -38,7 +38,7 @@ class WC_Swedbank_Plugin {
 		add_filter(
 			'plugin_action_links_' . constant(__NAMESPACE__ . '\PLUGIN_PATH'),
 			__CLASS__ . '::plugin_action_links'
-        );
+		);
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_hook_loaded' ) );
@@ -98,6 +98,7 @@ class WC_Swedbank_Plugin {
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-payment-url.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-capture.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-invoice-fee.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-admin.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-refund.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-shortcode-checkout.php' );
 	}
@@ -276,19 +277,19 @@ class WC_Swedbank_Plugin {
 		add_action( 'admin_notices', __CLASS__ . '::check_dependencies' );
 
 		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
-		     current_user_can( 'manage_woocommerce' )
+			 current_user_can( 'manage_woocommerce' )
 		) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
 
 		// Check the decimal settings
-        if ( 0 === wc_get_price_decimals() ) {
-	        add_action( 'admin_notices', __CLASS__ . '::wrong_decimals_notice' );
-	        remove_action(
-	            'admin_notices',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::wrong_decimals_notice'
-            );
-        }
+		if ( 0 === wc_get_price_decimals() ) {
+			add_action( 'admin_notices', __CLASS__ . '::wrong_decimals_notice' );
+			remove_action(
+				'admin_notices',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::wrong_decimals_notice'
+			);
+		}
 	}
 
 	/**
@@ -364,10 +365,10 @@ class WC_Swedbank_Plugin {
 			<p>
 				<?php
 				echo sprintf(
-				    /* translators: 1: plugin name */                        esc_html__(
-					    'Warning! %1$s requires to update the database structure.',
-					    'swedbank-pay-woocommerce-checkout'
-				    ),
+					/* translators: 1: plugin name */                        esc_html__(
+						'Warning! %1$s requires to update the database structure.',
+						'swedbank-pay-woocommerce-checkout'
+					),
 					self::PLUGIN_NAME
 				);
 
@@ -390,25 +391,25 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function missing_woocommerce_notice() {
 		?>
-        <div id="message" class="error">
-            <p class="main">
-                <strong><?php echo esc_html__( 'WooCommerce is inactive or missing.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
-            </p>
-            <p>
+		<div id="message" class="error">
+			<p class="main">
+				<strong><?php echo esc_html__( 'WooCommerce is inactive or missing.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
+			</p>
+			<p>
 				<?php
 				echo esc_html__( 'WooCommerce plugin is inactive or missing. Please install and active it.', 'swedbank-pay-woocommerce-checkout' );
 				echo '<br />';
 				echo sprintf(
-				    /* translators: 1: plugin name */                        esc_html__(
-					    '%1$s will be deactivated.',
-					    'swedbank-pay-woocommerce-checkout'
-				    ),
+					/* translators: 1: plugin name */                        esc_html__(
+						'%1$s will be deactivated.',
+						'swedbank-pay-woocommerce-checkout'
+					),
 					self::PLUGIN_NAME
 				);
 
 				?>
-            </p>
-        </div>
+			</p>
+		</div>
 		<?php
 
 		// Deactivate the plugin
@@ -431,11 +432,11 @@ class WC_Swedbank_Plugin {
 
 		if ( count( $errors ) > 0 ):
 			?>
-            <div id="message" class="error">
-                <p class="main">
-                    <strong><?php echo esc_html__( 'Required extensions are missing.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
-                </p>
-                <p>
+			<div id="message" class="error">
+				<p class="main">
+					<strong><?php echo esc_html__( 'Required extensions are missing.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
+				</p>
+				<p>
 					<?php
 					foreach ( $errors as $error ) {
 						echo $error;
@@ -450,8 +451,8 @@ class WC_Swedbank_Plugin {
 					);
 
 					?>
-                </p>
-            </div>
+				</p>
+			</div>
 		<?php
 		endif;
 	}
@@ -461,11 +462,11 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function wrong_decimals_notice() {
 		?>
-        <div id="message" class="error">
-            <p class="main">
-                <strong><?php echo esc_html__( 'Invalid value of "Number of decimals" detected.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
-            </p>
-            <p>
+		<div id="message" class="error">
+			<p class="main">
+				<strong><?php echo esc_html__( 'Invalid value of "Number of decimals" detected.', 'swedbank-pay-woocommerce-checkout' ); ?></strong>
+			</p>
+			<p>
 				<?php
 				echo sprintf(
 					/* translators: 1: start tag 2: end tag */                        esc_html__(
@@ -476,8 +477,8 @@ class WC_Swedbank_Plugin {
 						'</a>'
 					);
 				?>
-            </p>
-        </div>
+			</p>
+		</div>
 		<?php
 	}
 
@@ -612,8 +613,8 @@ class WC_Swedbank_Plugin {
 		foreach ( $files as $file ) {
 			foreach ( self::PAYMENT_METHODS as $payment_method ) {
 				if ( strpos( $file, $payment_method ) !== false ||
-				     strpos( $file, 'wc_swedbank' ) !== false ||
-				     strpos( $file, 'fatal-errors' ) !== false
+					 strpos( $file, 'wc_swedbank' ) !== false ||
+					 strpos( $file, 'fatal-errors' ) !== false
 				) {
 					$result[] = $file;
 				}
