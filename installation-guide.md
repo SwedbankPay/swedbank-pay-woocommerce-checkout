@@ -27,7 +27,7 @@ If you don’t have a special solution you want to check the box “Use Swedbank
 
 ![image4](https://user-images.githubusercontent.com/6286270/63705382-44828a00-c82d-11e9-9940-b5632c76dd4d.png)
 
-To connect your module to the Swedbank Pay system you need to navigate to https://admin.externalintegration.payex.com/psp/beta for test and https://admin.payex.com/psp/beta for production accounts and generate tokens:
+To connect your module to the Swedbank Pay system you need to navigate to [Swedbank Pay Merchant Portal (test)](https://merchantportal.externalintegration.swedbankpay.com/) for test and [Swedbank Pay Merchant Portal](https://merchantportal.swedbankpay.com/) for production accounts and generate tokens:
 
 ![image5](https://user-images.githubusercontent.com/6286270/63705424-5e23d180-c82d-11e9-8f8d-f332594a444a.png)
 
