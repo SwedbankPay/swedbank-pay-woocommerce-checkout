@@ -80,6 +80,8 @@ class WC_Swedbank_Subscriptions {
 			10,
 			2
 		);
+
+		add_action( 'woocommerce_get_customer_payment_tokens', array( $this, 'filter_tokens' ), 3, 10 );
 	}
 
 	/**
@@ -207,11 +209,11 @@ class WC_Swedbank_Subscriptions {
 
 			$selected = $field_value == $token->get_id() ? ' selected ' : '';
 			echo '<option value="' . esc_attr( $token->get_id() ) . '" ' . $selected . ' >' .
-			     esc_html(
-			     	$token->get_meta( 'masked_pan' ) .
-			        '(' . $token->get_expiry_month() . '/' . substr( $token->get_expiry_year(), 2 ) . ')'
-			     ) .
-			     '</option>'
+				 esc_html(
+					$token->get_meta( 'masked_pan' ) .
+					'(' . $token->get_expiry_month() . '/' . substr( $token->get_expiry_year(), 2 ) . ')'
+				 ) .
+				 '</option>'
 			?>
 			<?php
 		endforeach;
@@ -382,13 +384,56 @@ class WC_Swedbank_Subscriptions {
 			if ( false !== $status ) {
 				$item = $doc->getElementsByTagName('input')->item( 0 );
 				$item->setAttribute( 'checked','checked' );
-				$item->setAttribute( 'disabled','disabled' );
+				$item->setAttribute( 'readonly','readonly' );
+				$item->setAttribute( 'onclick', 'return false;');
 
 				$html = $doc->saveHTML($doc->documentElement);
 			}
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Filter tokens.
+	 *
+	 * @param $tokens
+	 * @param $customer_id
+	 * @param $gateway_id
+	 *
+	 * @return array|mixed
+	 */
+	public function filter_tokens( $tokens, $customer_id, $gateway_id ) {
+		if ( self::PAYMENT_ID !== $gateway_id ) {
+			return $tokens;
+		}
+
+		$result = [];
+		foreach ( $tokens as $token ) {
+			/** @var \WC_Payment_Token $token */
+			if ( self::PAYMENT_ID !== $token->get_gateway_id() ) {
+				$result[] = $token;
+
+				continue;
+			}
+
+			/** @var WC_Payment_Token_Swedbank_Pay $token */
+			$recurrence_token = $token->get_recurrence_token();
+			if ( self::wcs_cart_has_subscription() && empty( $recurrence_token ) ) {
+				// Don't show token
+				continue;
+			}
+
+			$unscheduled_token = $token->get_unscheduled_token();
+			if ( self::wcs_is_payment_change() && empty( $unscheduled_token ) ) {
+				// Don't show token
+				continue;
+			}
+
+			$result[] = $token;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -436,7 +481,7 @@ class WC_Swedbank_Subscriptions {
 	 */
 	private static function wcs_is_payment_change() {
 		return class_exists( '\\WC_Subscriptions_Change_Payment_Gateway', false )
-		       && \WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+			   && \WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 }
 

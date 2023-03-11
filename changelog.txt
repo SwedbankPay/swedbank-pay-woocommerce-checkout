@@ -1,3 +1,7 @@
+Version 7.0.0
+* Implemented payments with unscheduled tokens
+* Updated payment tokens saving
+
 Version 6.4.0
 * Fixed refund bug
 * Fixed payment actions in the order view

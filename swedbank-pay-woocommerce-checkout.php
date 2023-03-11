@@ -7,11 +7,11 @@
  * Author URI: https://profiles.wordpress.org/swedbankpay/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 6.4.0
+ * Version: 7.0.0
  * Text Domain: swedbank-pay-woocommerce-checkout
  * Domain Path: /languages
  * WC requires at least: 5.5.1
- * WC tested up to: 7.3.0
+ * WC tested up to: 7.4.1
  */
 
 use SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin;
