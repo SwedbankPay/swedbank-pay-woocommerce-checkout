@@ -27,7 +27,7 @@ If you don’t have a special solution you want to check the box “Use Swedbank
 
 ![image4](https://user-images.githubusercontent.com/6286270/63705382-44828a00-c82d-11e9-9940-b5632c76dd4d.png)
 
-To connect your module to the Swedbank Pay system you need to navigate to https://admin.externalintegration.payex.com/psp/login for test and https://admin.payex.com/psp/login/ for production accounts and generate tokens:
+To connect your module to the Swedbank Pay system you need to navigate to [Swedbank Pay Merchant Portal (test)](https://merchantportal.externalintegration.swedbankpay.com/) for test and [Swedbank Pay Merchant Portal](https://merchantportal.swedbankpay.com/) for production accounts and generate tokens:
 
 ![image5](https://user-images.githubusercontent.com/6286270/63705424-5e23d180-c82d-11e9-8f8d-f332594a444a.png)
 
@@ -39,10 +39,6 @@ Navigate to **Merchant->New Token** and mark the methods you intend to use. For 
 Copy the Token and insert it in the appropriate field in your WooCommerce Payment Method setting.
 
 ![image6](https://user-images.githubusercontent.com/6286270/69639000-0c712a00-105c-11ea-944c-a2b254cb34a1.png)
-
-Navigate further down on the same page to select **Checkin country** and mark the country for which the payment method should work.
-
-![image7](https://user-images.githubusercontent.com/6286270/69638120-6244d280-105a-11ea-9453-ae8352722c5b.png)
 
 Don’t Forget to save.
 Note that Tokens differ for Production and Test.
