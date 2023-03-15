@@ -1,3 +1,6 @@
+Version 7.0.1
+* Fixed PaymentOrder.Payer.ConsumerProfileRef: Both ConsumerProfileRef and PayerReference cannot be set at the same time.
+
 Version 7.0.0
 * Implemented payments with unscheduled tokens
 * Updated payment tokens saving
