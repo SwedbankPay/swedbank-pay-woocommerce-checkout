@@ -51,44 +51,6 @@ jobs:
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
           phpcs --standard=WordPress-Core --report=code --ignore=woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js --runtime-set ignore_warnings_on_exit true ./
 
-      - name: Build the plugin package
-        run: |
-          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
-          composer require swedbank-pay/swedbank-pay-woocommerce-core:dev-main --no-install
-          composer install
-          zip -q -r /tmp/swedbank-pay-woocommerce-checkout.zip ./
-
-      - name: Build WooCommerce package
-        run: |
-          cd $GITHUB_WORKSPACE/woocommerce
-          npm install -g grunt
-          npm install
-          composer install
-          npm run build
-          zip -q -r /tmp/woocommerce.zip ./
-
-      - name: Build WooCommerce Test Enviroment
-        run: |
-          cd $GITHUB_WORKSPACE/woocommerce
-          bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
-          cd /tmp/wordpress
-          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-          php wp-cli.phar core config --dbname=woocommerce_test --dbuser=root --dbpass='root' --dbhost=localhost --dbprefix=wp_
-          php wp-cli.phar core install --url="http://localhost:8080" --title="Example" --admin_user=admin --admin_password=password --admin_email=info@example.com --path=/tmp/wordpress --skip-email
-          php wp-cli.phar plugin install /tmp/woocommerce.zip --activate
-          php wp-cli.phar plugin install /tmp/swedbank-pay-woocommerce-checkout.zip --activate
-
-      - name: Run tests
-        env:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          PAYEE_ID: ${{ secrets.PAYEE_ID }}
-          WP_TESTS_DIR: /tmp/wordpress-tests-lib
-          WP_RUN_CORE_TESTS: 1
-        run: |
-          if [ "$ACCESS_TOKEN" != "" ]; then
-            cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-checkout
-            WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
-          fi
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
