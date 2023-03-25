@@ -1030,7 +1030,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 				}
 
 				// Replace token
-				delete_post_meta( $order->get_id(), '_payment_tokens' );
+				$order->delete_meta_data( '_payment_tokens' );
 				$order->add_payment_token( $token );
 
 				if ( self::wcs_is_payment_change() ) {
@@ -1322,7 +1322,7 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 			$paymentorder_id = $data['paymentOrder']['id'];
 
 			// Get Order by Order Payment Id
-			$order_id = $this->get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
+			$order_id = sb_get_post_id_by_meta( '_payex_paymentorder_id', $paymentorder_id );
 
 			// Get Order ID from payeeInfo if is not exist
 			if ( empty( $order_id ) ) {
@@ -1542,7 +1542,8 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 	 * @throws Exception
 	 */
 	public function update_address( $order_id ) {
-		$paymentorder_id = get_post_meta( $order_id, '_payex_paymentorder_id', true );
+		$order           = wc_get_order( $order_id );
+		$paymentorder_id = $order->get_meta( '_payex_paymentorder_id' );
 		if ( ! empty( $paymentorder_id ) ) {
 			$result = $this->core->request( 'GET', $paymentorder_id . '/payers' );
 
@@ -1761,26 +1762,6 @@ class WC_Gateway_Swedbank_Pay_Checkout extends WC_Payment_Gateway {
 		} else {
 			WC()->session->set( 'swedbank_pay_checkin_' . $type, $address );
 		}
-	}
-
-	/**
-	 * Get Post Id by Meta
-	 *
-	 * @param $key
-	 * @param $value
-	 *
-	 * @return null|string
-	 */
-	private function get_post_id_by_meta( $key, $value ) {
-		global $wpdb;
-
-		return $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
-				$key,
-				$value
-			)
-		);
 	}
 
 	/**

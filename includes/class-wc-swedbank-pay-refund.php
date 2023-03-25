@@ -202,51 +202,53 @@ class WC_Swedbank_Pay_Refund {
 				case 'line_item':
 					/** @var WC_Order_Item_Product $item */
 
+					$image = null;
+					$product_class = 'ProductGroup1';
+
 					/**
 					 * @var WC_Product $product
 					 */
 					$product = $item->get_product();
+					if ( $product ) {
+						// Get Product Sku
+						$reference = trim(
+							str_replace(
+								array( ' ', '.', ',' ),
+								'-',
+								$product->get_sku()
+							)
+						);
 
-					// Get Product Sku
-					$reference = trim(
-						str_replace(
-							array( ' ', '.', ',' ),
-							'-',
-							$product->get_sku()
-						)
-					);
+						// Get Product image
+						$image = wp_get_attachment_image_src( $product->get_image_id(), 'full' );
+						if ( $image ) {
+							$image = array_shift( $image );
+						}
+
+						// Get Product Class
+						$product_class = $product->get_meta( '_sb_product_class' );
+
+						if ( empty( $product_class ) ) {
+							$product_class = apply_filters(
+								'sb_product_class',
+								'ProductGroup1',
+								$product
+							);
+						}
+					}
 
 					if ( empty( $reference ) ) {
 						$reference = wp_generate_password( 12, false );
 					}
 
-					// Get Product image
-					$image = wp_get_attachment_image_src( $product->get_image_id(), 'full' );
-					if ( $image ) {
-						$image = array_shift( $image );
-					} else {
+					if ( empty( $image ) ) {
 						$image = wc_placeholder_img_src( 'full' );
 					}
 
 					if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
-						 mb_substr( $image, 0, mb_strlen(WP_CONTENT_URL), 'UTF-8' ) === WP_CONTENT_URL
+						 mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
 					) {
 						$image = wp_guess_url() . $image;
-					}
-
-					// Get Product Class
-					$product_class = get_post_meta(
-						$product->get_id(),
-						'_sb_product_class',
-						true
-					);
-
-					if ( empty( $product_class ) ) {
-						$product_class = apply_filters(
-							'sb_product_class',
-							'ProductGroup1',
-							$product
-						);
 					}
 
 					// The field Reference must match the regular expression '[\\w-]*'

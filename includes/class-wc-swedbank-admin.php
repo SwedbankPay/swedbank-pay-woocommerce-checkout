@@ -21,7 +21,7 @@ class WC_Swedbank_Admin {
 		);
 
 		// Add meta boxes
-		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
+		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes', 10, 2 );
 
 		// Add action buttons
 		add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
@@ -60,25 +60,25 @@ class WC_Swedbank_Admin {
 
 	/**
 	 * Add meta boxes in admin
+	 * @param $screen_id
+	 * @param WC_Order $order
 	 * @return void
 	 */
-	public static function add_meta_boxes() {
-		global $post_id;
-
-		$order = wc_get_order( $post_id );
-
+	public static function add_meta_boxes( $screen_id, $order ) {
 		if ( $order ) {
 			$payment_method = $order->get_payment_method();
 			if ( in_array( $payment_method, WC_Swedbank_Plugin::PAYMENT_METHODS, true ) ) {
-				$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
+				$payment_id = $order->get_meta( '_payex_payment_id' );
 				if ( ! empty( $payment_id ) ) {
+					$screen = sb_is_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
+
 					add_meta_box(
 						'swedbank_payment_actions',
 						__( 'Swedbank Pay Payments Actions', 'swedbank-pay-woocommerce-checkout' ),
 						__CLASS__ . '::order_meta_box_payment_actions',
-						'shop_order',
+						$screen,
 						'side',
-						'default'
+						'high'
 					);
 				}
 			}
@@ -87,13 +87,11 @@ class WC_Swedbank_Admin {
 
 	/**
 	 * MetaBox for Payment Actions
+	 * @param WC_Order $order
 	 * @return void
 	 */
-	public static function order_meta_box_payment_actions() {
-		global $post_id;
-
-		$order      = wc_get_order( $post_id );
-		$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
+	public static function order_meta_box_payment_actions( $order ) {
+		$payment_id = $order->get_meta( '_payex_payment_id' );
 		if ( empty( $payment_id ) ) {
 			return;
 		}
@@ -118,7 +116,7 @@ class WC_Swedbank_Admin {
 			array(
 				'gateway'    => $gateway,
 				'order'      => $order,
-				'order_id'   => $post_id,
+				'order_id'   => $order->get_id(),
 				'payment_id' => $payment_id,
 				'info'       => $result,
 			),
@@ -133,7 +131,7 @@ class WC_Swedbank_Admin {
 	 * @param WC_Order $order
 	 */
 	public static function add_action_buttons( $order ) {
-		if (function_exists('wcs_is_subscription') && wcs_is_subscription($order)) {
+		if ( function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $order ) ) {
 			// Buttons are available for orders only
 			return;
 		}
@@ -168,7 +166,8 @@ class WC_Swedbank_Admin {
 	 * @return void
 	 */
 	public static function admin_enqueue_scripts( $hook ) {
-		if ( 'post.php' === $hook ) {
+		$hook_to_check = sb_is_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'post.php';
+		if ( $hook_to_check === $hook ) {
 			// Scripts
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 			wp_register_script(

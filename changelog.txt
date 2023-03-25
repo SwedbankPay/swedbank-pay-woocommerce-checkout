@@ -1,3 +1,8 @@
+Version 7.1.0
+* High-Performance Order Storage support
+* Fixed critical error when a product have been deleted in the admin backend
+* Session fixes
+
 Version 7.0.1
 * Fixed PaymentOrder.Payer.ConsumerProfileRef: Both ConsumerProfileRef and PayerReference cannot be set at the same time.
 

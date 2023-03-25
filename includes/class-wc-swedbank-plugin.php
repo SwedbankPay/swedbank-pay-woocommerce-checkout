@@ -91,6 +91,7 @@ class WC_Swedbank_Plugin {
 			}
 		}
 
+		require_once( dirname( __FILE__ ) . '/functions.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-subscriptions.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-checkin.php' );

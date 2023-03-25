@@ -175,7 +175,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			// Get Order by Payment Id
 			$transaction_id = $data['transaction']['number'];
 			$payment_id     = $data['payment']['id'];
-			$order_id       = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
+			$order_id       = sb_get_post_id_by_meta( '_payex_payment_id', $payment_id );
 			if ( ! $order_id ) {
 				throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
 			}
@@ -234,25 +234,5 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		if ( ! empty( $this->data ) ) {
 			$this->save()->dispatch();
 		}
-	}
-
-	/**
-	 * Get Post Id by Meta
-	 *
-	 * @param $key
-	 * @param $value
-	 *
-	 * @return null|string
-	 */
-	private function get_post_id_by_meta( $key, $value ) {
-		global $wpdb;
-
-		return $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
-				$key,
-				$value
-			)
-		);
 	}
 }
