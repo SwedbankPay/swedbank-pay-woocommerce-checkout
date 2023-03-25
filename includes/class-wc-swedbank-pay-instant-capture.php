@@ -175,12 +175,7 @@ class WC_Swedbank_Pay_Instant_Capture {
 			}
 
 			// Get Product Class
-			$product_class = get_post_meta(
-				$order_item->get_product()->get_id(),
-				'_sb_product_class',
-				true
-			);
-
+			$product_class = $product->get_meta( '_sb_product_class' );
 			if ( empty( $product_class ) ) {
 				$product_class = 'ProductGroup1';
 			}

@@ -39,7 +39,9 @@ class WC_Swedbank_Pay_Payment_Url {
 
 		$this->payment_menu_style = isset( $this->settings['paymentMenuStyle'] ) ? $this->settings['paymentMenuStyle'] : $this->payment_menu_style;
 
-		add_action( 'init', array( $this, 'override_checkout_shortcode' ), 20 );
+		if ( isset( $_GET['payment_url'] ) ) { // WPCS: input var ok, CSRF ok.
+			add_action( 'init', array( $this, 'override_checkout_shortcode' ), 100 );
+		}
 	}
 
 	/**
@@ -63,16 +65,22 @@ class WC_Swedbank_Pay_Payment_Url {
 	 */
 	public function shortcode_woocommerce_checkout( $atts )
 	{
+		// Check WC sessions
+		if ( ! WC()->session ) {
+			WC()->initialize_session();
+		}
+
 		$payment_url = WC()->session->get( 'sb_payment_url' );
 
 		if ( empty( $payment_url ) ) {
 			$order_id = absint( WC()->session->get( 'order_awaiting_payment' ) );
 			if ( $order_id > 0 ) {
-				$payment_url = get_post_meta( $order_id, '_sb_view_paymentorder', true );
+				$order       = wc_get_order( $order_id );
+				$payment_url = $order->get_meta( '_sb_view_paymentorder' );
 			}
 		}
 
-		if ( isset( $_GET['payment_url'] ) && ! empty( $payment_url ) ) { // WPCS: input var ok, CSRF ok.
+		if ( ! empty( $payment_url ) ) {
 			wp_dequeue_script( 'featherlight' );
 			wp_dequeue_script( 'wc-sb-seamless-checkout' );
 			wp_dequeue_script( 'wc-sb-checkout' );
