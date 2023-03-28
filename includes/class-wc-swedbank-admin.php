@@ -61,11 +61,13 @@ class WC_Swedbank_Admin {
 	/**
 	 * Add meta boxes in admin
 	 * @param $screen_id
-	 * @param WC_Order $order
+	 * @param WC_Order|\WP_Post $order
 	 * @return void
 	 */
 	public static function add_meta_boxes( $screen_id, $order ) {
-		if ( $order ) {
+		$hook_to_check = sb_is_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
+		if ( $hook_to_check === $screen_id ) {
+			$order          = wc_get_order( $order );
 			$payment_method = $order->get_payment_method();
 			if ( in_array( $payment_method, WC_Swedbank_Plugin::PAYMENT_METHODS, true ) ) {
 				$payment_id = $order->get_meta( '_payex_payment_id' );
@@ -87,11 +89,12 @@ class WC_Swedbank_Admin {
 
 	/**
 	 * MetaBox for Payment Actions
-	 * @param WC_Order $order
+	 * @param WC_Order|\WP_Post $order
 	 * @return void
 	 */
 	public static function order_meta_box_payment_actions( $order ) {
-		$payment_id = $order->get_meta( '_payex_payment_id' );
+		$order      = wc_get_order( $order );
+ 		$payment_id = $order->get_meta( '_payex_payment_id' );
 		if ( empty( $payment_id ) ) {
 			return;
 		}
