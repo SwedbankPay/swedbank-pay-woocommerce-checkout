@@ -1,3 +1,6 @@
+Version 7.1.1
+* Fixed fatal errors in the admin backend
+
 Version 7.1.0
 * High-Performance Order Storage support
 * Fixed critical error when a product have been deleted in the admin backend
