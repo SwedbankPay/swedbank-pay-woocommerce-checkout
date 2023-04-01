@@ -1,3 +1,6 @@
+Version 7.1.2
+* Fixed instant capture
+
 Version 7.1.1
 * Fixed fatal errors in the admin backend
 

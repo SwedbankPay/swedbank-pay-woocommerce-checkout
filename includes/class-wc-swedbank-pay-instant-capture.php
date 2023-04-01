@@ -47,13 +47,14 @@ class WC_Swedbank_Pay_Instant_Capture {
 			return;
 		}
 
-		$this->gateway = $this->get_payment_method( $order );
-
-		if ( 'yes' === $this->gateway->auto_capture ) {
+		$payment_order_id = $order->get_meta( '_payex_paymentorder_id' );
+		if ( empty( $payment_order_id ) ) {
 			return;
 		}
 
-		$payment_id = $order->get_meta('_payex_payment_id');
+		$this->gateway = $this->get_payment_method( $order );
+
+		$payment_id = $this->gateway->core->getPaymentIdByPaymentOrder( $payment_order_id );
 		if ( empty( $payment_id ) ) {
 			return;
 		}
@@ -97,7 +98,6 @@ class WC_Swedbank_Pay_Instant_Capture {
 		$items = $this->get_instant_capture_items( $order );
 		$this->gateway->adapter->log( LogLevel::INFO, __METHOD__, [ $items ] );
 		if ( count( $items ) > 0 ) {
-
 			try {
 				if ( 'payex_checkout' === $order->get_payment_method() ) {
 					// Capture Checkout
