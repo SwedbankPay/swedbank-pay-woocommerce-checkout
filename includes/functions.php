@@ -58,6 +58,10 @@ function sb_get_post_id_by_meta( $key, $value ) {
 	if ( count( $orders ) > 0 ) {
 		$order = array_shift( $orders );
 
+		if ( is_int( $order ) ) {
+			return $order;
+		}
+
 		return $order->get_id();
 	}
 
