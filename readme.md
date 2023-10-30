@@ -4,10 +4,7 @@
 
 ## About
 
-**UNSUPPORTED**: This plugin is at an early stage of development and is not
-supported as of yet by Swedbank Pay. It is provided as a convenience to speed
-up your development, so please feel free to play around. However, if you need
-support, please wait for a future, stable release.
+**DEPRECATED**: This plugin is deprecated. Please use [Swedbank Pay Payment Menu][http://www.apache.org/licenses/LICENSE-2.0](https://wordpress.org/plugins/swedbank-pay-payment-menu/)
 
 This plugin provides the Swedbank Pay Checkout for WooCommerce.
 
